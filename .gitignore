@@ -1,0 +1,26 @@
+# Билды приложения (тут лежат иконки и готовый .exe)
+/build/bin/
+/build/windows/
+
+# Фронтенд (React/Vite/другое)
+/frontend/node_modules/
+/frontend/dist/
+/frontend/build/
+.eslintcache
+
+# Wails генерируемый код (биндинги Go к JS)
+# Его лучше не пушить, так как он обновляется при каждом запуске
+/frontend/src/wailsjs/
+
+# Go зависимости и бинарники
+/bin/
+go.work
+/vendor/
+*.exe
+*.dll
+
+# IDE и системные файлы
+.vscode/
+.idea/
+.DS_Store
+*.log

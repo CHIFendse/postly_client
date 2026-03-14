@@ -1,0 +1,120 @@
+/* Главный контейнер внутри компонента Chat */
+.chat-window {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: #e6c785;
+    box-sizing: border-box;
+    height: calc(100vh - 120px); 
+    position: relative;
+    /* Убедись, что нет лишних margin, которые толкают окно вниз */
+    margin: 0;
+    overflow: hidden;
+
+}
+
+/* Список сообщений — занимает всё свободное место */
+.messages-list {
+    flex: 1; /* Выталкивает инпут вниз */
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 20px;
+    padding-top: 70px; /* Чтобы не прятаться под шапку чата */
+    gap: 12px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.messages-list::-webkit-scrollbar {
+    width: 6px;
+}
+.messages-list::-webkit-scrollbar-thumb {
+    background-color: #1e1f22;
+    border-radius: 10px;
+}
+
+/* Пузырьки сообщений */
+.message-bubble {
+    max-width: 70%;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    color: white;
+}
+
+.message-bubble.received {
+    align-self: flex-start;
+    background-color: #383a40;
+}
+
+.message-bubble.sent {
+    align-self: flex-end;
+    background-color: #c68325;
+}
+
+/* Контейнер инпута — ТЕПЕРЬ БЕЗ POSITION: FIXED */
+.chat-input-container {
+    width: 100%;
+    padding: 20px; /* Одинаковые отступы со всех сторон */
+    background-color: #313338;
+    box-sizing: border-box; /* Чтобы padding не расширял блок за экран */
+}
+
+.chat-input {
+    width: 100%;
+    padding: 14px 20px;
+    background-color: #383a40;
+    border: none;
+    border-radius: 8px;
+    color: #dbdee1;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+
+/* В твоем существующем .main-content добавь это: */
+.main-content {
+    /* ... твои свойства (margin, width, height) ... */
+    display: flex;
+    flex-direction: column; 
+    /* align-items: stretch; — это правильно */
+}
+
+/* ЭТО ВАЖНО: заставляем компонент Chat занять всё место */
+.main-content > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-placeholder {
+    height: calc(100vh - 60px); /* Высота экрана минус высота хедера */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.placeholder-content {
+    /* Если хедеры "наползают" сверху, добавим небольшой отступ сверху, 
+       чтобы компенсировать их высоту */
+    margin-top: -60px; /* Попробуй подвигать это значение, если текст смещен */
+    z-index: 10;
+}
+
+.placeholder-content p {
+    color: #ffffff !important;
+    font-size: 18px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3); /* Темная подложка, чтобы текст выделился */
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+/* Опционально: добавим иконку над текстом для красоты */
+.placeholder-content::before {      
+    display: block;
+    font-size: 50px;
+    margin-bottom: 15px;
+    opacity: 0.2;            /* Делаем её полупрозрачной */
+}
