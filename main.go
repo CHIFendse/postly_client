@@ -16,6 +16,7 @@ func main() {
 	// Create an instance of the app structure
 	voiceService := pages.NewVoiceChat()
 	chatApp := pages.GetChat()
+	chatWS := &pages.ChatWS{}
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "client",
@@ -28,10 +29,13 @@ func main() {
 		OnStartup: func(ctx context.Context) {
             voiceService.SetContext(ctx)
 			chatApp.SetContext(ctx)
+			chatWS.Startup(ctx)
         },
 		Bind: []interface{}{
 			voiceService,
 			chatApp,
+			chatWS,
+
 		},
 	})
 

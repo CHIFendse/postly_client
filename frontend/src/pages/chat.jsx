@@ -2,28 +2,41 @@ import './chat.css'
 
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 
-import { GetMessages, AddMessage } from '../../wailsjs/go/pages/Chat';
+import { GetMessages} from '../../wailsjs/go/pages/Chat';
 
+import { EventsOn } from '../../wailsjs/runtime/runtime';
+import { SendWSMessage, SetToken, Connect } from '../../wailsjs/go/pages/ChatWS';
 
 
 function Chat({ chatId }) {
 
     const myId = localStorage.getItem("id");
 
-    const token = localStorage.getItem('jwt_token');
-
     const [messages, setMessages] = useState([]);
 
     const [inputText, setInputText] = useState("");
-
-   
 
     const messagesEndRef = useRef(null);
 
     const isInitialMount = useRef(true);
 
 
-
+    useEffect(() => {
+        const quit = EventsOn("server_message", (data) => {
+            try {
+                
+                const newMessage = JSON.parse(data);
+                if (!newMessage.id) {
+                    newMessage.id = Date.now() + Math.random(); 
+                }
+                console.error("Сообщение:", newMessage);
+                setMessages((prevMessages) => [...prevMessages, newMessage]);
+            } catch (err) {
+                console.error("Ошибка парсинга сообщения:", err);
+            }
+            });
+            return () => quit(); // Отписка при закрытии компонента
+        }, []);
     // Функция скролла теперь принимает тип анимации
 
     const scrollToBottom = (behavior = "auto") => {
@@ -37,13 +50,22 @@ function Chat({ chatId }) {
     };
 
 
-
-    // 1. Загрузка при смене чата
+    useEffect(() => {
+        const token = localStorage.getItem('jwt_token');
+        if (token) {
+            // 1. Передаем токен в Go
+            SetToken(token).then(() => {
+                // 2. Инициируем соединение
+                Connect();
+            });
+        }
+    }, []);
+        // 1. Загрузка при смене чата
 
     useEffect(() => {
 
         if (chatId) {
-
+            const token = localStorage.getItem('jwt_token');
             isInitialMount.current = true; // Сбрасываем флаг для нового чата
 
             GetMessages(chatId, token)
@@ -83,23 +105,15 @@ function Chat({ chatId }) {
     const handleSendMessage = async (e) => {
 
         if (e.key === 'Enter' && inputText.trim() !== "") {
-
-            try {
-
-                await AddMessage(chatId, myId, inputText, token);
-
-                setInputText("");
-
-                const result = await GetMessages(chatId, token);
-
-                setMessages(result || []);
-
-            } catch (err) {
-
-                console.error("Ошибка при отправке:", err);
-
+            const currentToken = localStorage.getItem('jwt_token');
+            const messageObj = {
+                chat_id: chatId,
+                sender_id: myId,
+                text: inputText.trim(),
+                token: currentToken
             }
-
+            SendWSMessage(JSON.stringify(messageObj));
+            setInputText("");
         }
 
     };
