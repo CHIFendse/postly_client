@@ -1,13 +1,13 @@
 import './friendsMenu.css'
 import { useState, useEffect } from 'react';
 import { GetUserChats } from '../../wailsjs/go/pages/Chat';
-
-function FriendsMenu({ currentUserId, activeChatId, onSelectChat }) {
+import  {CreateChat} from '../../wailsjs/go/components/Friends'
+function FriendsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, onChatCreated }) {
     const [chats, setChats] = useState([]);
-    // const [activeChatId, setActiveChatId] = useState(null);
-    const token = localStorage.getItem('jwt_token')
+    const [inputText, setInputText] = useState("");
+    const token = localStorage.getItem('jwt_token');
+
     useEffect(() => {
-        
         if (currentUserId) {
             GetUserChats(currentUserId, token)
                 .then((result) => {
@@ -16,11 +16,41 @@ function FriendsMenu({ currentUserId, activeChatId, onSelectChat }) {
                 .catch((err) => {
                     console.error("Ошибка загрузки чатов:", err);
                 });
-            console.log(chats)
         }
-    }, [currentUserId]);
+    }, [currentUserId, refreshTrigger]);
+
+
+    const handleSendMessage = async (e) => {
+        if (e.key === 'Enter' && inputText.trim() !== "") {
+            const userId = localStorage.getItem('id');
+            const token = localStorage.getItem('jwt_token');
+            const targetUsername = inputText.trim();
+
+            try {
+                const newChatId = await CreateChat(userId, targetUsername, token);
+                
+                console.log("Чат успешно создан или найден, ID:", newChatId);
+                if (onChatCreated) onChatCreated();
+                onSelectChat(newChatId, targetUsername);
+                setInputText("");
+                
+            } catch (err) {
+                console.error("Ошибка при создании чата:", err);
+            }
+        }
+    };
+
+
     return (
         <div className="friends-menu">
+            <input
+                    type="text"
+                    placeholder="Найти друга..."
+                    className="search-friend"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={handleSendMessage}
+                />
             <div className="friends-header">Чаты</div>
             <div className="friends-list">
                 {chats.map((chat) => (

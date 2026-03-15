@@ -33,8 +33,8 @@ func NewVoiceChat() *VoiceChat {
 }
 
 func (s *VoiceChat) SetContext(ctx context.Context) { s.ctx = ctx }
-func (s *VoiceChat) SetToken(token string)         { s.mu.Lock(); defer s.mu.Unlock(); s.userToken = token }
-func (s *VoiceChat) SetRoomID(id string)          { s.mu.Lock(); defer s.mu.Unlock(); s.currentRoomID = id }
+func (s *VoiceChat) SetToken(token string) { s.mu.Lock(); defer s.mu.Unlock(); s.userToken = token }
+func (s *VoiceChat) SetRoomID(id string) { s.mu.Lock(); defer s.mu.Unlock(); s.currentRoomID = id }
 
 func (s *VoiceChat) Connect() error {
 	s.mu.Lock()

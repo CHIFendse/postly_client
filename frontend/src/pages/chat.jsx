@@ -11,7 +11,7 @@ function Chat({ chatId }) {
     const messagesEndRef = useRef(null);
     const isInitialMount = useRef(true);
 
-    // 1. ЭФФЕКТ: Управление соединением и событиями
+    // Управление соединением и событиями
     useEffect(() => {
         if (!chatId) return;
         setMessages([]); 
@@ -39,7 +39,7 @@ function Chat({ chatId }) {
         };
     }, [chatId]);
 
-    // 2. ЭФФЕКТ: Загрузка истории сообщений (HTTP)
+    // Загрузка истории сообщений (HTTP)
     useEffect(() => {
         if (!chatId) return;
         const token = localStorage.getItem('jwt_token');
@@ -56,7 +56,7 @@ function Chat({ chatId }) {
         }
     };
 
-    // 2. Скролл при изменении массива сообщений
+    // Скролл при изменении массива сообщений
     useLayoutEffect(() => {
         if (messages.length > 0) {
             const behavior = isInitialMount.current ? "auto" : "smooth";

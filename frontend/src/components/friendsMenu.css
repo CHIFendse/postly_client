@@ -68,3 +68,11 @@
     background-color: #5e5e5e;
     border-radius: 50%;
 }
+
+.search-friend {
+    padding: 16px 20px;
+    background-color: #261f14;
+    color: #dbdee1;
+    font-size: 16px;
+    border-radius: 0;
+}

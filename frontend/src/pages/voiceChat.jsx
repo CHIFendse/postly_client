@@ -12,19 +12,20 @@ function VoiceChat({ token, handleLogout }) {
   const myId = localStorage.getItem("id")
   const [activeChatId, setActiveChatId] = useState(localStorage.getItem('lastActiveChatId'));
   const [activeChatName, setActiveChatName] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleChatSelection = (chatId, username) => {
-    setActiveChatId(chatId); // Обновляем экран
+    setActiveChatId(chatId);
     localStorage.setItem("lastActiveChatId", chatId);
-    setActiveChatName(username); // Сохраняем в память
-    // Устанавливаем токен (если еще не установлен)
+    setActiveChatName(username);
     SetToken(token);
     
-    // Устанавливаем ID комнаты. 
     const roomIdInt = chatId;
       SetRoomID(roomIdInt);
       console.log(roomIdInt);
   };
+
+  const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
   
   return (
     <div className="container" >
@@ -34,6 +35,8 @@ function VoiceChat({ token, handleLogout }) {
                 currentUserId={myId}
                 onSelectChat={handleChatSelection} 
                 activeChatId={activeChatId} 
+                refreshTrigger={refreshTrigger}
+                onChatCreated={triggerRefresh}
             />
       <div className="main-content">
         <Header token={token} chatName={activeChatName}/> 

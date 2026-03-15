@@ -6,7 +6,6 @@ import micOn from '../assets/images/mic-fill.png';
 import decall from '../assets/images/phone-line.png'
 import callIcon from '../assets/images/phone-fill.png'
 
-// Добавляем setExternalConnected в деструктуризацию пропсов
 function Header({ token, chatName }) {
     const [status, setStatus] = useState('');
     const [isConnected, setIsConnected] = useState(false);
@@ -40,11 +39,8 @@ function Header({ token, chatName }) {
                     return;
                 }
                 
-                // 1. Передаем токен в Go
                 await SetToken(token);
-                // 2. Коннект
                 await Connect();
-                
                 setIsConnected(true);
             
             } catch (err) {
@@ -55,9 +51,7 @@ function Header({ token, chatName }) {
             try {
                 await Disconnect();
                 setIsConnected(false);
-                // Сообщаем VoiceChat, что мы вышли
                 if (setExternalConnected) setExternalConnected(false);
-                
                 setStatus('Вы вышли');
                 setTimeout(() => setStatus(''), 2000);
             } catch (err) {
@@ -78,8 +72,7 @@ function Header({ token, chatName }) {
 
     const toggleMute = () => {
         setIsMuted(!isMuted);
-        // Здесь можно вызвать функцию из Go для выключения микрофона
-        // MuteMicrophone(!isMuted);
+        // MuteMicrophone(!isMuted); НУЖНО РЕАЛИЗОВАТЬ  
     };
     return (
         <>
@@ -130,7 +123,6 @@ function Header({ token, chatName }) {
                                 onClick={handleDisconnect}
                                 title="Завершить звонок"
                             >
-                                {/* Для сброса используем decall (красная трубка) */}
                                 <img 
                                     src={decall} 
                                     alt="End Call" 

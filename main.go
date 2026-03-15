@@ -7,6 +7,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"client/pages"
+	"client/components"
 )
 
 //go:embed all:frontend/dist
@@ -17,6 +18,7 @@ func main() {
 	voiceService := pages.NewVoiceChat()
 	chatApp := pages.GetChat()
 	chatWS := &pages.ChatWS{}
+	friendsApp := components.NewFriends()
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "client",
@@ -30,12 +32,13 @@ func main() {
             voiceService.SetContext(ctx)
 			chatApp.SetContext(ctx)
 			chatWS.Startup(ctx)
+			friendsApp.SetContext(ctx)
         },
 		Bind: []interface{}{
 			voiceService,
 			chatApp,
 			chatWS,
-
+			friendsApp,
 		},
 	})
 
