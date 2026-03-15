@@ -48,6 +48,7 @@ function App() {
                 }
             } catch (err) {
                 console.error("Ошибка сети при проверке токена");
+                 return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', colorAdjust: 'red'}}>Нет соединения :(</div>;
                 // Не разлогиниваем при ошибке сети, чтобы можно было работать офлайн/локально
             } finally {
                 setIsLoading(false);
@@ -81,7 +82,7 @@ function App() {
     }
 
     if (isLoading) {
-        return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Проверка...</div>;
+        return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Загрузка...</div>;
     }
 
     return (

@@ -3,10 +3,10 @@ package pages
 import (
 	"context"
 	"log"
-
+    "net/http"
 	"github.com/gorilla/websocket"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"net/http"
+	"fmt"
 )
 
 type ChatWS struct {
@@ -25,21 +25,31 @@ func (a *ChatWS) Startup(ctx context.Context) {
     log.Println("ChatWS: Контекст инициализирован")
 }
 
-func (a *ChatWS) Connect() {
-    if a.token == "" {
-        log.Println("Ошибка: Токен пуст, подключение невозможно")
+func (a *ChatWS) Connect(chatID string) {
+    if chatID == "" || a.token == "" {
+        log.Println("Ошибка: Отсутствует chat_id или токен")
         return
     }
 
+    // Если соединение уже есть — закрываем его корректно
+    if a.conn != nil {
+        log.Println("Закрытие предыдущего соединения...")
+        a.conn.Close()
+        a.conn = nil // Обязательно зануляем!
+    }
+
+    // Формируем финальный URL
+    url := fmt.Sprintf("ws://84.22.132.243:8081/ws?chat_id=%s", chatID)
     header := make(http.Header)
-    header.Add("Authorization", "Bearer " + a.token)
+    header.Add("Authorization", "Bearer "+a.token)
+    log.Printf("КЛИЕНТ: Подключение к чату %s (токен: %s...)", chatID, a.token[:10])
 
-    log.Printf("Попытка подключения к ws://84.22.132.243:8081/ws с токеном: %s...", a.token[:10])
-
-    c, resp, err := websocket.DefaultDialer.Dial("ws://84.22.132.243:8081/ws", header)
+    // Выполняем подключение
+    c, resp, err := websocket.DefaultDialer.Dial(url, header)
+    
     if err != nil {
         if resp != nil {
-            log.Printf("Сервер ответил кодом: %d", resp.StatusCode)
+            log.Printf("Сервер отклонил запрос. HTTP Код: %d", resp.StatusCode)
         }
         log.Printf("Ошибка Dial: %v", err)
         return
@@ -47,8 +57,11 @@ func (a *ChatWS) Connect() {
     
     a.conn = c
     log.Println("Успех! WebSocket соединен.")
+    
+    // Запускаем чтение в отдельной горутине
     go a.listenToMessages()
 }
+
 
 func (a *ChatWS) listenToMessages() {
     log.Println("КЛИЕНТ: Цикл чтения запущен")
