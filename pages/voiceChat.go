@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
 	"github.com/gen2brain/malgo"
 	"github.com/hraban/opus"
 )
@@ -33,8 +34,8 @@ func NewVoiceChat() *VoiceChat {
 }
 
 func (s *VoiceChat) SetContext(ctx context.Context) { s.ctx = ctx }
-func (s *VoiceChat) SetToken(token string) { s.mu.Lock(); defer s.mu.Unlock(); s.userToken = token }
-func (s *VoiceChat) SetRoomID(id string) { s.mu.Lock(); defer s.mu.Unlock(); s.currentRoomID = id }
+func (s *VoiceChat) SetToken(token string)         { s.mu.Lock(); defer s.mu.Unlock(); s.userToken = token }
+func (s *VoiceChat) SetRoomID(id string)          { s.mu.Lock(); defer s.mu.Unlock(); s.currentRoomID = id }
 
 func (s *VoiceChat) Connect() error {
 	s.mu.Lock()
@@ -45,7 +46,7 @@ func (s *VoiceChat) Connect() error {
 	token := s.userToken
 	s.mu.Unlock()
 
-	// Валидация API
+	// Авторизация
 	req, _ := http.NewRequest("GET", "http://84.22.132.243:8081/", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -80,90 +81,98 @@ func (s *VoiceChat) startAudioCapture() {
 		nextSeqToPlay uint32
 		firstPacket   = true
 		seq           uint32
+		lastSample    int16 // Для плавного затухания
+
+		// Параметры под Wi-Fi
+		idealBuffer = 6  // 120мс запаса (критично для Wi-Fi)
+		maxBuffer   = 15 // 300мс лимит задержки
 	)
 
-	// 1. Сетевое подключение
 	serverAddr, _ := net.ResolveUDPAddr("udp", "84.22.132.243:8082")
 	conn, err := net.DialUDP("udp", nil, serverAddr)
-	if err != nil {
-		return
-	}
+	if err != nil { return }
 	defer conn.Close()
 
-	// Регистрация на сервере
+	// Увеличиваем системные буферы сокета
+	conn.SetReadBuffer(1024 * 1024)
+	conn.SetWriteBuffer(1024 * 1024)
+
 	s.mu.Lock()
 	conn.Write([]byte(fmt.Sprintf("HELLO %s %s", s.userToken, s.currentRoomID)))
 	s.mu.Unlock()
 
-	// 2. Инициализация Opus
 	enc, _ := opus.NewEncoder(targetSampleRate, targetChannels, opus.AppVoIP)
 	dec, _ := opus.NewDecoder(targetSampleRate, targetChannels)
 	enc.SetBitrate(24000)
+	enc.SetInBandFEC(true)
+	enc.SetPacketLossPerc(15)
 	compBuf := make([]byte, 1500)
 
-	// --- ЕДИНЫЙ ОБРАБОТЧИК ЗВУКА ---
 	onData := func(pOutput, pInput []byte, frameCount uint32) {
-        bufferMu.Lock()
-        defer bufferMu.Unlock()
+		bufferMu.Lock()
+		defer bufferMu.Unlock()
 
-        // 1. Очищаем выход (важно, чтобы не было эха/шума)
-        for i := range pOutput { pOutput[i] = 0 }
+		// Очистка выхода
+		for i := range pOutput { pOutput[i] = 0 }
 
-        // 2. Логика воспроизведения
-        if !firstPacket {
-            // Если пакета нет, не прыгаем сразу, а ждем (даем шансы сети)
-            if _, ok := jitterBuffer[nextSeqToPlay]; !ok {
-                // Если в буфере скопилось слишком много (например > 10), 
-                // значит мы реально отстали — тогда прыгаем вперед
-                if len(jitterBuffer) > 10 {
-                    var closest uint32 = 0xFFFFFFFF
-                    for k := range jitterBuffer {
-                        if k > nextSeqToPlay && k < closest { closest = k }
-                    }
-                    nextSeqToPlay = closest
-                }
-            }
+		if !firstPacket {
+			// 1. Адаптивный сброс (если накопилось слишком много из-за лага)
+			if len(jitterBuffer) > maxBuffer {
+				for len(jitterBuffer) > idealBuffer {
+					delete(jitterBuffer, nextSeqToPlay)
+					nextSeqToPlay++
+				}
+			}
 
-            if pcm, ok := jitterBuffer[nextSeqToPlay]; ok {
-                // Копируем напрямую, проверяя границы
-                for i := 0; i < int(frameCount) && i < len(pcm); i++ {
-                    if i*2+1 < len(pOutput) {
-                        binary.LittleEndian.PutUint16(pOutput[i*2:], uint16(pcm[i]))
-                    }
-                }
-                delete(jitterBuffer, nextSeqToPlay)
-                nextSeqToPlay++
-            }
-        }
+			// 2. Воспроизведение
+			if pcm, ok := jitterBuffer[nextSeqToPlay]; ok {
+				for i := 0; i < int(frameCount); i++ {
+					if i < len(pcm) && i*2+1 < len(pOutput) {
+						lastSample = pcm[i]
+						sample := uint16(lastSample)
+						pOutput[i*2] = byte(sample)
+						pOutput[i*2+1] = byte(sample >> 8)
+					}
+				}
+				delete(jitterBuffer, nextSeqToPlay)
+				nextSeqToPlay++
+			} else {
+				// 3. ПЛАВНОЕ ЗАТУХАНИЕ (убирает металл)
+				// Если пакета нет, плавно снижаем громкость последнего сэмпла
+				for i := 0; i < int(frameCount); i++ {
+					lastSample = int16(float32(lastSample) * 0.98) 
+					sample := uint16(lastSample)
+					if i*2+1 < len(pOutput) {
+						pOutput[i*2] = byte(sample)
+						pOutput[i*2+1] = byte(sample >> 8)
+					}
+				}
+			}
+		}
 
-        // 3. Логика микрофона (оптимизированная)
-        if pInput != nil && len(pInput) >= int(frameCount)*2 {
-            var maxAmp int16
-            // Используем заранее созданный буфер samples, чтобы не аллоцировать память
-            samples := make([]int16, frameCount) // В идеале вынеси это за пределы onData
-            
-            for i := 0; i < int(frameCount); i++ {
-                val := int16(binary.LittleEndian.Uint16(pInput[i*2 : i*2+2]))
-                boosted := int32(val) * 3
-                if boosted > 32767 { boosted = 32767 } else if boosted < -32768 { boosted = -32768 }
-                samples[i] = int16(boosted)
-                
-                absV := samples[i]; if absV < 0 { absV = -absV }
-                if absV > maxAmp { maxAmp = absV }
-            }
+		// Запись микрофона
+		if pInput != nil {
+			samples := make([]int16, frameCount)
+			var maxAmp int16
+			for i := 0; i < int(frameCount); i++ {
+				val := int16(binary.LittleEndian.Uint16(pInput[i*2 : i*2+2]))
+				boosted := int32(val) * 2 // Умеренное усиление
+				if boosted > 32767 { boosted = 32767 } else if boosted < -32768 { boosted = -32768 }
+				samples[i] = int16(boosted)
+				absV := samples[i]; if absV < 0 { absV = -absV }; if absV > maxAmp { maxAmp = absV }
+			}
 
-            if maxAmp > 100 {
-                n, err := enc.Encode(samples, compBuf[4:])
-                if err == nil && n > 0 {
-                    binary.BigEndian.PutUint32(compBuf[:4], seq)
-                    conn.Write(compBuf[:n+4])
-                    seq++
-                }
-            }
-        }
-    }
+			if maxAmp > 150 {
+				n, err := enc.Encode(samples, compBuf[4:])
+				if err == nil && n > 0 {
+					binary.BigEndian.PutUint32(compBuf[:4], seq)
+					conn.Write(compBuf[:n+4])
+					seq++
+				}
+			}
+		}
+	}
 
-	// 3. Настройка Malgo (Duplex с откатом)
 	malgoCtx, _ := malgo.InitContext(nil, malgo.ContextConfig{}, nil)
 	defer malgoCtx.Uninit()
 
@@ -177,19 +186,16 @@ func (s *VoiceChat) startAudioCapture() {
 
 	pDev, err := malgo.InitDevice(malgoCtx.Context, deviceConfig, malgo.DeviceCallbacks{Data: onData})
 	if err != nil {
-		fmt.Println("Микрофон не найден, переключаемся в режим только прослушивания...")
 		deviceConfig.DeviceType = malgo.Playback
-		pDev, err = malgo.InitDevice(malgoCtx.Context, deviceConfig, malgo.DeviceCallbacks{Data: onData})
-		if err != nil {
-			fmt.Printf("Ошибка аудио: %v\n", err)
-			return
-		}
+		pDev, _ = malgo.InitDevice(malgoCtx.Context, deviceConfig, malgo.DeviceCallbacks{Data: onData})
 	}
 	
-	pDev.Start()
-	defer pDev.Uninit()
+	if pDev != nil {
+		pDev.Start()
+		defer pDev.Uninit()
+	}
 
-	// 4. Поток приема UDP
+	// Прием UDP
 	go func() {
 		buf := make([]byte, 2048)
 		out := make([]int16, opusFrameSize)
@@ -207,9 +213,11 @@ func (s *VoiceChat) startAudioCapture() {
 
 			bufferMu.Lock()
 			if firstPacket {
-				nextSeqToPlay = inSeq
-				firstPacket = false
-				fmt.Printf(">>> Звук пошел! Seq: %d\n", inSeq)
+				// Ждем накопления буфера перед стартом
+				if len(jitterBuffer) >= idealBuffer {
+					nextSeqToPlay = inSeq - uint32(idealBuffer)
+					firstPacket = false
+				}
 			}
 			jitterBuffer[inSeq] = ready
 			bufferMu.Unlock()
