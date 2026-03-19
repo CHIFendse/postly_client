@@ -40,6 +40,7 @@ func main() {
 			chatWS,
 			friendsApp,
 		},
+		
 	})
 
 	if err != nil {
