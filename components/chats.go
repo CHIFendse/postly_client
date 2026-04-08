@@ -9,22 +9,22 @@ import (
 	"time"
 )
 
-type Friends struct {
+type Chats struct {
 	ctx context.Context
 }
 
-// NewFriends инициализирует компонент
-func NewFriends() *Friends {
-	return &Friends{}
+// NewChats инициализирует компонент
+func NewChats() *Chats {
+	return &Chats{}
 }
 
 // SetContext сохраняет контекст Wails
-func (f *Friends) SetContext(ctx context.Context) {
+func (f *Chats) SetContext(ctx context.Context) {
 	f.ctx = ctx
 }
 
 // CreateChat создает новый чат между текущим пользователем и выбранным собеседником
-func (f *Friends) CreateChat(userId string, targetUsername string, token string) (string, error) {
+func (f *Chats) CreateChat(userId string, targetUsername string, token string) ([]map[string]interface{}, error) {
 	// Подготавливаем данные для сервера
 	data := map[string]string{
 		"user_id":        userId,
@@ -33,12 +33,12 @@ func (f *Friends) CreateChat(userId string, targetUsername string, token string)
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return "", fmt.Errorf("ошибка кодирования JSON: %w", err)
+		return nil, fmt.Errorf("ошибка кодирования JSON: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", "http://84.22.132.243:8081/createChat", bytes.NewBuffer(jsonData))
 	if err != nil {
-		return "", fmt.Errorf("ошибка создания запроса: %w", err)
+		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -47,28 +47,28 @@ func (f *Friends) CreateChat(userId string, targetUsername string, token string)
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("сервер недоступен: %w", err)
+		return nil, fmt.Errorf("сервер недоступен: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == 409 {
-            return "", fmt.Errorf("пользователь с таким именем не найден")
+            return nil, fmt.Errorf("пользователь с таким именем не найден")
         }
-        return "", fmt.Errorf("ошибка сервера: %d", resp.StatusCode)
+        return nil, fmt.Errorf("ошибка сервера: %d", resp.StatusCode)
 	}
 
-	var result map[string]string
+	var result []map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("ошибка парсинга ответа: %w", err)
+		return nil, fmt.Errorf("ошибка парсинга ответа: %w", err)
 	}
 
 	// Возвращаем ID созданного (или найденного) чата
-	return result["id"], nil
+	return result, nil
 }
 
 // SearchUsers можно добавить сюда же метод для поиска новых людей по никнейму
-func (f *Friends) SearchUsers(query string, token string) ([]map[string]interface{}, error) {
+func (f *Chats) SearchUsers(query string, token string) ([]map[string]interface{}, error) {
 	data := map[string]string{"query": query}
 	jsonData, _ := json.Marshal(data)
 
@@ -89,4 +89,35 @@ func (f *Friends) SearchUsers(query string, token string) ([]map[string]interfac
 	var users []map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&users)
 	return users, nil
+}
+
+func (f *Chats) GetGroups(userId, token string) ([]map[string]interface{}, error){
+	data := map[string]string{"id": userId}
+	jsonData, _ := json.Marshal(data)
+
+	req, err := http.NewRequest("POST", "http://84.22.132.243:8081/getGroups", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	// Добавляем токен
+	req.Header.Set("Authorization", "Bearer "+token)
+	
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("сервер вернул ошибку: %d", resp.StatusCode)
+	}
+
+	var chats []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&chats); err != nil {
+		return nil, err
+	}
+	
+	return chats, nil
 }

@@ -18,3 +18,13 @@
     height: 30px;
     align-content: center;
 }
+
+.groups-button{
+    height: 60px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+.groupsIcon{
+    filter: invert(75%) sepia(53%) saturate(4447%) hue-rotate(3deg) brightness(103%) contrast(105%);
+}

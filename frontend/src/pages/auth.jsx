@@ -38,7 +38,7 @@ function Auth({ onLogin }) {
             if (isRegister) {
                 alert("Регистрация успешна! Теперь войдите.");
                 setIsRegister(false);
-                setForm({ user: '', pass: '', email: '', phone: '' }); // Очистка для входа
+                setForm({ user: '', pass: '', email: '', phone: '' });
             } else {
                 onLogin(data.token, data.username, data.id); 
             }

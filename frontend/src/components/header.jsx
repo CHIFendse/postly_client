@@ -13,6 +13,7 @@ function Header({ token, chatName, chatId }) {
     const [isConnected, setIsConnected] = useState(false);
     const [timer, setTimer] = useState('00:00');
     const [isMuted, setIsMuted] = useState(false);
+    
 
     useEffect(() => {
     let interval;
@@ -40,11 +41,8 @@ function Header({ token, chatName, chatId }) {
                     return;
                 }
                 
-                // 1. Передаем токен в Go
                 await SetToken(token);
-                // 2. Коннект
                 await Connect();
-                
                 setIsConnected(true);
             
             } catch (err) {
@@ -55,9 +53,7 @@ function Header({ token, chatName, chatId }) {
             try {
                 await Disconnect();
                 setIsConnected(false);
-                // Сообщаем VoiceChat, что мы вышли
                 if (setExternalConnected) setExternalConnected(false);
-                
                 setStatus('Вы вышли');
                 setTimeout(() => setStatus(''), 2000);
             } catch (err) {
@@ -149,7 +145,6 @@ function Header({ token, chatName, chatId }) {
                                 onClick={handleDisconnect}
                                 title="Завершить звонок"
                             >
-                                {/* Для сброса используем decall (красная трубка) */}
                                 <img 
                                     src={decall} 
                                     alt="End Call" 

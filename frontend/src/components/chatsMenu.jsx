@@ -1,23 +1,27 @@
-import './friendsMenu.css'
+import './chatsMenu.css'
 import { useState, useEffect } from 'react';
 import { GetUserChats } from '../../wailsjs/go/pages/Chat';
-import  { CreateChat } from '../../wailsjs/go/components/Friends'
-
-function FriendsMenu({ currentUserId, activeChatId, onSelectChat }) {
+import  { CreateChat, GetGroups } from '../../wailsjs/go/components/Chats'
+function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, onChatCreated, view }) {
     const [chats, setChats] = useState([]);
     const [inputText, setInputText] = useState("");
-    const token = localStorage.getItem('jwt_token')
-    useEffect(() => {
+    const token = localStorage.getItem('jwt_token');
+
+     useEffect(() => {
         if (currentUserId) {
-            GetUserChats(currentUserId, token)
+            const fetchMethod = view === 'groups' ? GetGroups : GetUserChats;
+
+            fetchMethod(currentUserId, token)
                 .then((result) => {
                     setChats(result || []);
                 })
                 .catch((err) => {
-                    console.error("Ошибка загрузки чатов:", err);
+                    console.error("Ошибка загрузки данных:", err);
+                    setChats([])
                 });
         }
-    }, [currentUserId]);
+    }, [currentUserId, refreshTrigger, view]);
+
 
     const handleSendMessage = async (e) => {
         if (e.key === 'Enter' && inputText.trim() !== "") {
@@ -38,31 +42,33 @@ function FriendsMenu({ currentUserId, activeChatId, onSelectChat }) {
             }
         }
     };
+
+
     return (
-        <div className="friends-menu">
+        <div className="chats-menu">
             <input
                     type="text"
                     placeholder="Найти друга..."
-                    className="search-friend"
+                    className="search-chat"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={handleSendMessage}
                 />
-            <div className="friends-header">Чаты</div>
-            <div className="friends-list">
+            <div className="chats-header">{view === 'groups' ? 'Группы' : 'Чаты'}</div>
+            <div className="chats-list">
                 {chats.map((chat) => (
                     <div
-                        className={`friend-item ${chat.id === activeChatId ? 'active' : ''}`}
+                        className={`chat-item ${chat.id === activeChatId ? 'active' : ''}`}
                         key={chat.id} 
-                        onClick={() => onSelectChat(chat.id, chat.username)}
+                        onClick={() => onSelectChat(chat.id, chat.name)}
                     >
                         <div className="avatar-placeholder"></div>
-                        <span>{chat.username}</span>
+                        <span>{chat.name}</span>
                     </div>
                 ))}
                 {chats.length === 0 && (
                     <div style={{padding: '10px', color: '#949ba4', fontSize: '12px'}}>
-                        Чаты не найдены
+                        {view === 'groups' ? 'Группы не найдены' : 'Чаты не найдены'}
                     </div>
                 )}
             </div>
@@ -70,4 +76,4 @@ function FriendsMenu({ currentUserId, activeChatId, onSelectChat }) {
     );
 }
 
-export default FriendsMenu;
+export default ChatsMenu;

@@ -1,33 +1,40 @@
-/* Главный контейнер внутри компонента Chat */
 .chat-window {
     display: flex;
     flex-direction: column;
     width: 100%;
     background-color: #e6c785;
-    box-sizing: border-box;
     height: calc(100vh - 120px); 
     position: relative;
-    /* Убедись, что нет лишних margin, которые толкают окно вниз */
-    margin: 0;
-    overflow: hidden;
-
+    overflow: hidden; /* Важно: сам контейнер не скроллится */
 }
 
-/* Список сообщений — занимает всё свободное место */
 .messages-list {
-    flex: 1; /* Выталкивает инпут вниз */
+    flex: 1;
     display: flex;
     flex-direction: column;
     width: 100%;
     padding: 20px;
-    padding-top: 70px; /* Чтобы не прятаться под шапку чата */
+    
+    /* УБИРАЕМ padding-top: 70px; */
+    padding-top: 10px; 
+    
+    /* ДОБАВЛЯЕМ margin-top, равный высоте твоего хедера чата */
+    margin-top: 60px; 
+    
     gap: 12px;
-    overflow-y: auto;
+    overflow-y: auto; /* Скролл теперь начнется ниже margin-top */
     box-sizing: border-box;
 }
 
+/* Скроллбар */
 .messages-list::-webkit-scrollbar {
     width: 6px;
+}
+
+/* Настраиваем отступ сверху для самой дорожки скроллбара */
+.messages-list::-webkit-scrollbar-track {
+    margin-top: -10px; 
+    margin-bottom: 5px;
 }
 .messages-list::-webkit-scrollbar-thumb {
     background-color: #1e1f22;

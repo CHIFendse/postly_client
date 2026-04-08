@@ -1,19 +1,15 @@
-import {useState, useEffect} from 'react'
 import './menu.css'
-import groups from '../assets/images/users.svg'
+import groupsIcon from '../assets/images/users.svg'
 
-function Menu() {
-
+function Menu({ setView }) {
     return (
         <div className='menu'>
-            <p>{'ВНЕШНЕЕ МЕНЮ'}</p>
-            <button>
-                <img
-                src={groups}
-                />
+
+            {/* Кнопка Групп */}
+            <button className="groups-button" onClick={() => setView('groups')}>
+                <img src={groupsIcon} className="groupsIcon" alt="groups" />
             </button>
         </div>
     )
 }
-
 export default Menu;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Auth from './pages/auth';
 import VoiceChat from './pages/voiceChat'; 
 import { SetToken } from '../wailsjs/go/pages/VoiceChat';
@@ -6,8 +6,7 @@ import { SetToken } from '../wailsjs/go/pages/VoiceChat';
 function App() {
     const [token, setToken] = useState(() => {
         const saved = localStorage.getItem('jwt_token');
-        
-        // ЖЕСТКАЯ ПРОВЕРКА: если не строка, если слишком короткий, если мусор
+        //Изменить проверку
         if (typeof saved !== 'string' || saved.length < 10 || saved === "null" || saved === "undefined") {
             return null;
         }
@@ -16,10 +15,9 @@ function App() {
     
     const [isLoading, setIsLoading] = useState(true);
 
-    // 1. Синхронизация токена с Go-частью
+
     useEffect(() => {
         if (token) {
-            // Как только токен появился или обновился, прокидываем его в VoiceChat.go
             SetToken(token).catch(err => console.error("Ошибка установки токена в Go:", err));
         }
         window.document.title = `Token: ${token ? 'EXISTS' : 'EMPTY'}`;
@@ -42,13 +40,13 @@ function App() {
                 });
 
                 if (response.status === 401) {
-                    handleLogout(); // Токен реально протух
+                    handleLogout();
                 } else if (!response.ok) {
                     console.warn("Сервер недоступен, но сессию сохраняем");
                 }
             } catch (err) {
                 console.error("Ошибка сети при проверке токена");
-                // Не разлогиниваем при ошибке сети, чтобы можно было работать офлайн/локально
+                 return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', colorAdjust: 'red'}}>Нет соединения :(</div>;
             } finally {
                 setIsLoading(false);
             }
@@ -65,8 +63,6 @@ function App() {
             setToken(newToken);
         }
     };
-    // localStorage.removeItem('jwt_token');
-    // setToken(null);
     const handleLogout = () => {
         localStorage.removeItem('jwt_token');
         localStorage.removeItem('username');
@@ -82,7 +78,7 @@ function App() {
     }
 
     if (isLoading) {
-        return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Проверка...</div>;
+        return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Загрузка...</div>;
     }
 
     return (
