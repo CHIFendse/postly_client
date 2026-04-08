@@ -1,0 +1,185 @@
+.header {
+    height: 50px;      /* Может быть чуть ниже основного */
+    width: calc(100% - 312px); /* Оставляем место под меню */
+    position: fixed;
+    top: 60px;         /* Смещаем вниз под MainHeader */
+    right: 0;          /* Прижимаем вправо */
+    background-color: #312f2b;
+    z-index: 70;       /* Ниже меню и MainHeader */
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #1e1f22;
+}
+
+.call-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    
+}
+
+.call-button.connected {
+    background-color: #ed4245; /* Красный */
+}
+
+.call-button.disconnected {
+    background-color: #3ba55d; /* Зеленый */
+}
+
+.call-button:hover {
+    filter: brightness(0.9);
+}
+
+.call-button:active {
+    transform: scale(0.92);
+}
+
+.status-text {
+    color: #b5bac1;
+    font-size: 14px;
+    font-family: sans-serif;
+
+}
+.button-icon {
+    width: 25px;   /* Размер иконки внутри круга */
+    height: 25px;
+    object-fit: contain; /* Сохраняет пропорции картинки */
+    pointer-events: none; /* Чтобы картинка не мешала клику по кнопке */
+    /* Если картинка черная, а нужна белая, можно добавить фильтр: */
+    filter: brightness(0) invert(1); 
+}
+.left-group {
+    flex: 1;           /* Занимает всё место слева */
+    display: flex !important;
+    visibility: visible !important;
+}
+
+.chat-name {
+    color: #FFA500 !important; /* Ядовито-зеленый для теста */
+    font-size: 20px !important;
+}
+
+/* Контейнер меню звонка */
+.call-overlay {
+    position: fixed;
+    top: 80px; /* Сразу под хедером */
+    right: 20px;
+    background: #1e1f22; /* Темный фон в стиле Discord */
+    border: 1px solid #35373c;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 1000;
+    min-width: 200px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.call-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.call-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #5865f2;
+}
+
+.call-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.call-nickname {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.call-timer {
+    color: #2ecc71; /* Зеленый таймер */
+    font-size: 12px;
+}
+
+.call-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 12px;
+}
+
+.control-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #4e5058; /* Цвет фона кнопки микрофона */
+    transition: background 0.2s;
+}
+
+.control-btn.muted {
+    background: #ed4245; /* Красный фон, если звук выключен */
+}
+
+.disconnect-btn {
+    background: #ed4245; /* Всегда красный для сброса */
+}
+
+.control-icon {
+    width: 25px;
+    height: 25px;
+   filter: invert(1); /*Белый цвет для кнопок сброса и микрофона*/
+}
+
+.control-btn:hover {
+    filter: brightness(1.2);
+}
+
+.disconnect-btn {
+    background: #ed4245;
+    color: white;
+}
+
+.disconnect-btn:hover {
+    background: #c0392b;
+}
+
+.muted {
+    background: #4e5058;
+    color: #f2f3f5;
+}
+
+.adduser-button{
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+.addUserIcon{
+    filter: invert(75%) sepia(53%) saturate(4447%) hue-rotate(3deg) brightness(103%) contrast(105%);
+}

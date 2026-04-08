@@ -1,0 +1,20 @@
+.menu {
+    width: 72px;
+    height: calc(100vh - 60px); /* Высота за вычетом MainHeader */
+    position: fixed;
+    top: 60px;         /* Смещаем вниз */
+    left: 0;
+    background-color:  #312f2b;
+    z-index: 80;       /* Ниже, чем MainHeader */
+}
+
+.menu p {
+    color: #b5bac1;
+    font-size: 10px;           /* Маленький текст, так как меню узкое */
+    text-align: center;
+    word-wrap: break-word;     /* Чтобы текст не вылезал за границы */
+    margin: 0;
+    background-color: #707071;
+    height: 30px;
+    align-content: center;
+}

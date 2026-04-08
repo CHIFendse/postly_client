@@ -1,0 +1,78 @@
+.friends-menu {
+    width: 240px;
+    height: calc(100vh - 60px); /* Под MainHeader */
+    position: fixed;
+    top: 60px;
+    left: 72px;               /* Сдвигаем вправо на ширину первого меню */
+    background-color:  #3b3833; /* Чуть светлее, чем основное меню */
+    z-index: 75;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1e1f22;
+}
+
+.friends-header {
+    padding: 20px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #1e1f22;
+}
+
+.friends-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column; /* Выстраиваем элементы в колонку */
+    gap: 6px;
+}
+
+.friend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    background-color: #c68325;
+    cursor: pointer;
+}
+
+.friend-item.active{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 4px; /* Чуть меньше скругление для строгости */
+    font-weight: 600;
+    background-color: #724c17;
+    color: #ffffff; /* Чтобы текст всегда читался на темном фоне */
+    cursor: pointer;
+    border: 1px solid #6c5c3e; 
+    
+    /* Небольшой эффект глубины */
+    transition: background-color 0.2s ease;
+}
+
+.friend-item:hover {
+    background-color: #724c17;
+    color: white;
+}
+
+
+.avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    background-color: #5e5e5e;
+    border-radius: 50%;
+}
+
+.search-friend {
+    padding: 16px 20px;
+    background-color: #261f14;
+    color: #dbdee1;
+    font-size: 16px;
+    border-radius: 0;
+}
