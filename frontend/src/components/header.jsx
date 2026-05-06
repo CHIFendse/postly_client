@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import './header.css';
-import { Connect, Disconnect, SetToken } from '../../wailsjs/go/pages/VoiceChat';
-import micOff from '../assets/images/mic-off-fill.png'; 
-import micOn from '../assets/images/mic-fill.png';
+import { Connect, Disconnect, SetToken, OpenCallWindow  } from '@bindings/client/pages/voicechat';
 import decall from '../assets/images/phone-line.png'
 import callIcon from '../assets/images/phone-fill.png'
 import addUserImg from '../assets/images/user-plus.svg'
@@ -15,50 +13,14 @@ function Header({ token, chatName, chatId }) {
     const [isMuted, setIsMuted] = useState(false);
     
 
-    useEffect(() => {
-    let interval;
-    if (isConnected) {
-      const startTime = Date.now();
-      interval = setInterval(() => {
-        const seconds = Math.floor((Date.now() - startTime) / 1000);
-        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const secs = String(seconds % 60).padStart(2, '0');
-        setTimer(`${mins}:${secs}`);
-        setStatus(`${mins}:${secs}`);
-      }, 1000);
-    } else {
-      setTimer('Подключение...');
-    }
-    return () => clearInterval(interval);
-  }, [isConnected]);
 
     const handleToggleCall = async () => {
-        if (!isConnected) {
-            try {
-                if (!token) {
-                    setStatus('Ошибка: нет токена');
-                    console.error("Токен отсутствует в пропсах Header");
-                    return;
-                }
-                
-                await SetToken(token);
-                await Connect();
-                setIsConnected(true);
-            
-            } catch (err) {
-                setStatus('Сервер не отвечает...');
-                console.error(err);
-            }
-        } else {
-            try {
-                await Disconnect();
-                setIsConnected(false);
-                if (setExternalConnected) setExternalConnected(false);
-                setStatus('Вы вышли');
-                setTimeout(() => setStatus(''), 2000);
-            } catch (err) {
-                console.error(err);
-            }
+        try {
+            await OpenCallWindow(chatId.toString(), chatName);
+            await SetToken(token);
+            await Connect();
+        } catch (err) {
+            console.error("Не удалось открыть окно звонка:", err);
         }
     };
     const addUser = async () => {
@@ -103,7 +65,6 @@ function Header({ token, chatName, chatId }) {
                         alt="Add New User"
                         />
                     </button>
-                {!isConnected && (
                     <button 
                         className="call-button disconnected"
                         onClick={handleToggleCall}
@@ -115,45 +76,9 @@ function Header({ token, chatName, chatId }) {
                             className="button-icon"
                         />
                     </button>
-                )}
                 </div>
             </header>
-            {isConnected && (
-                    <div className="call-overlay">
-                        <div className="call-info">
-                            <img src={"пенис" || callIcon} alt="Avatar" className="call-avatar" />
-                            <div className="call-details">
-                                <span className="call-nickname">{chatName}</span>
-                                <span className="call-timer">{timer}</span>
-                            </div>
-                        </div>
-                        <div className="call-controls">
-                            <button 
-                                className={`control-btn ${isMuted ? 'muted' : ''}`} 
-                                onClick={toggleMute}
-                                title={isMuted ? "Включить микрофон" : "Выключить микрофон"}
-                            >
-                                
-                                <img 
-                                    src={isMuted ? micOff : micOn} 
-                                    alt="Mute" 
-                                    className="control-icon" 
-                                />
-                            </button>
-                            <button 
-                                className="control-btn disconnect-btn" 
-                                onClick={handleDisconnect}
-                                title="Завершить звонок"
-                            >
-                                <img 
-                                    src={decall} 
-                                    alt="End Call" 
-                                    className="control-icon" 
-                                />
-                            </button>
-                        </div>
-                    </div>
-                )}
+            
             </>
     );
 }

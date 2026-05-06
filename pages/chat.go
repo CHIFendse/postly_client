@@ -2,7 +2,6 @@ package pages
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -20,7 +19,6 @@ type MessageInfo struct {
 }
 
 type Chat struct {
-	ctx      context.Context
 	stopChan chan struct{}
 	mu       sync.Mutex
 	running  bool
@@ -33,10 +31,12 @@ func GetChat() *Chat {
 	}
 }
 
-// SetContext сохраняет контекст Wails
-func (c *Chat) SetContext(ctx context.Context) {
-	c.ctx = ctx
-}
+func (s *Chat) ServiceName() string { return "Chat" }
+
+// SetContext в v3 больше не нужен для работы с рантаймом,
+// оставляем пустую реализацию для совместимости с твоим main.go,
+// если ты еще не успел его обновить.
+func (c *Chat) SetContext(_ any) {}
 
 // GetMessages обращается к твоему серверному эндпоинту handleGetMessages
 func (c *Chat) GetMessages(chatId string, token string) ([]MessageInfo, error) {
@@ -86,7 +86,7 @@ func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface
 	req.Header.Set("Content-Type", "application/json")
 	// Добавляем токен
 	req.Header.Set("Authorization", "Bearer "+token)
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -102,7 +102,7 @@ func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface
 	if err := json.NewDecoder(resp.Body).Decode(&chats); err != nil {
 		return nil, err
 	}
-	
+
 	return chats, nil
 }
 
@@ -110,7 +110,7 @@ func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface
 func (c *Chat) AddMessage(chat_id, sender_id, text, token string) (string, error) {
 	data := map[string]string{"chat_id": chat_id, "sender_id": sender_id, "text": text}
 	jsonData, _ := json.Marshal(data)
-	
+
 	req, err := http.NewRequest("POST", "http://84.22.132.243:8081/addMessage", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err

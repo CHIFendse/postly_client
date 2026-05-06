@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Auth from './pages/auth';
 import VoiceChat from './pages/voiceChat'; 
-import { SetToken } from '../wailsjs/go/pages/VoiceChat';
+import { SetToken } from '@bindings/client/pages/voicechat';
 
 function App() {
     const [token, setToken] = useState(() => {

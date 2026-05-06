@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"context"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/gen2brain/malgo"
 	"github.com/hraban/opus"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 const (
@@ -21,21 +21,47 @@ const (
 )
 
 type VoiceChat struct {
-	ctx           context.Context
 	mu            sync.Mutex
 	running       bool
 	stopChan      chan struct{}
 	userToken     string
 	currentRoomID string
+	app           *application.App
 }
 
 func NewVoiceChat() *VoiceChat {
 	return &VoiceChat{stopChan: make(chan struct{})}
 }
 
-func (s *VoiceChat) SetContext(ctx context.Context) { s.ctx = ctx }
-func (s *VoiceChat) SetToken(token string)         { s.mu.Lock(); defer s.mu.Unlock(); s.userToken = token }
-func (s *VoiceChat) SetRoomID(id string)          { s.mu.Lock(); defer s.mu.Unlock(); s.currentRoomID = id }
+func (v *VoiceChat) ServiceName() string {
+	return "VoiceChat"
+}
+
+func (v *VoiceChat) OpenCallWindow(roomID, nickname string) {
+	// В v3 мы создаем окно через глобальное приложение или контекст
+	application.Get().Window.NewWithOptions(application.WebviewWindowOptions{
+		Title: "Звонок: " + nickname,
+		// Width:  450,
+		// Height: 600,
+		URL:         "/#/call/" + roomID + "/" + nickname,
+		AlwaysOnTop: true,
+	})
+}
+
+// В v3 SetContext больше не нужен, так как рантайм доступен глобально
+func (s *VoiceChat) SetContext(_ any) {}
+
+func (s *VoiceChat) SetToken(token string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.userToken = token
+}
+
+func (s *VoiceChat) SetRoomID(id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.currentRoomID = id
+}
 
 func (s *VoiceChat) Connect() error {
 	s.mu.Lock()
@@ -84,16 +110,17 @@ func (s *VoiceChat) startAudioCapture() {
 		lastSample    int16 // Для плавного затухания
 
 		// Параметры под Wi-Fi
-		idealBuffer = 6  // 120мс запаса (критично для Wi-Fi)
+		idealBuffer = 6  // 120мс запаса
 		maxBuffer   = 15 // 300мс лимит задержки
 	)
 
 	serverAddr, _ := net.ResolveUDPAddr("udp", "84.22.132.243:8082")
 	conn, err := net.DialUDP("udp", nil, serverAddr)
-	if err != nil { return }
+	if err != nil {
+		return
+	}
 	defer conn.Close()
 
-	// Увеличиваем системные буферы сокета
 	conn.SetReadBuffer(1024 * 1024)
 	conn.SetWriteBuffer(1024 * 1024)
 
@@ -112,11 +139,11 @@ func (s *VoiceChat) startAudioCapture() {
 		bufferMu.Lock()
 		defer bufferMu.Unlock()
 
-		// Очистка выхода
-		for i := range pOutput { pOutput[i] = 0 }
+		for i := range pOutput {
+			pOutput[i] = 0
+		}
 
 		if !firstPacket {
-			// 1. Адаптивный сброс (если накопилось слишком много из-за лага)
 			if len(jitterBuffer) > maxBuffer {
 				for len(jitterBuffer) > idealBuffer {
 					delete(jitterBuffer, nextSeqToPlay)
@@ -124,7 +151,6 @@ func (s *VoiceChat) startAudioCapture() {
 				}
 			}
 
-			// 2. Воспроизведение
 			if pcm, ok := jitterBuffer[nextSeqToPlay]; ok {
 				for i := 0; i < int(frameCount); i++ {
 					if i < len(pcm) && i*2+1 < len(pOutput) {
@@ -137,10 +163,8 @@ func (s *VoiceChat) startAudioCapture() {
 				delete(jitterBuffer, nextSeqToPlay)
 				nextSeqToPlay++
 			} else {
-				// 3. ПЛАВНОЕ ЗАТУХАНИЕ (убирает металл)
-				// Если пакета нет, плавно снижаем громкость последнего сэмпла
 				for i := 0; i < int(frameCount); i++ {
-					lastSample = int16(float32(lastSample) * 0.98) 
+					lastSample = int16(float32(lastSample) * 0.98)
 					sample := uint16(lastSample)
 					if i*2+1 < len(pOutput) {
 						pOutput[i*2] = byte(sample)
@@ -150,16 +174,25 @@ func (s *VoiceChat) startAudioCapture() {
 			}
 		}
 
-		// Запись микрофона
 		if pInput != nil {
 			samples := make([]int16, frameCount)
 			var maxAmp int16
 			for i := 0; i < int(frameCount); i++ {
 				val := int16(binary.LittleEndian.Uint16(pInput[i*2 : i*2+2]))
-				boosted := int32(val) * 2 // Умеренное усиление
-				if boosted > 32767 { boosted = 32767 } else if boosted < -32768 { boosted = -32768 }
+				boosted := int32(val) * 2
+				if boosted > 32767 {
+					boosted = 32767
+				} else if boosted < -32768 {
+					boosted = -32768
+				}
 				samples[i] = int16(boosted)
-				absV := samples[i]; if absV < 0 { absV = -absV }; if absV > maxAmp { maxAmp = absV }
+				absV := samples[i]
+				if absV < 0 {
+					absV = -absV
+				}
+				if absV > maxAmp {
+					maxAmp = absV
+				}
 			}
 
 			if maxAmp > 150 {
@@ -189,31 +222,35 @@ func (s *VoiceChat) startAudioCapture() {
 		deviceConfig.DeviceType = malgo.Playback
 		pDev, _ = malgo.InitDevice(malgoCtx.Context, deviceConfig, malgo.DeviceCallbacks{Data: onData})
 	}
-	
+
 	if pDev != nil {
 		pDev.Start()
 		defer pDev.Uninit()
 	}
 
-	// Прием UDP
 	go func() {
 		buf := make([]byte, 2048)
 		out := make([]int16, opusFrameSize)
 		for {
 			n, _, err := conn.ReadFromUDP(buf)
-			if err != nil { return }
-			if n < 20 { continue }
+			if err != nil {
+				return
+			}
+			if n < 20 {
+				continue
+			}
 
 			inSeq := binary.BigEndian.Uint32(buf[:4])
 			nDec, err := dec.Decode(buf[4:n], out)
-			if err != nil { continue }
+			if err != nil {
+				continue
+			}
 
 			ready := make([]int16, nDec)
 			copy(ready, out)
 
 			bufferMu.Lock()
 			if firstPacket {
-				// Ждем накопления буфера перед стартом
 				if len(jitterBuffer) >= idealBuffer {
 					nextSeqToPlay = inSeq - uint32(idealBuffer)
 					firstPacket = false
@@ -224,12 +261,14 @@ func (s *VoiceChat) startAudioCapture() {
 		}
 	}()
 
-	// Keep-alive
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)
 			s.mu.Lock()
-			if !s.running { s.mu.Unlock(); return }
+			if !s.running {
+				s.mu.Unlock()
+				return
+			}
 			conn.Write([]byte(fmt.Sprintf("HELLO %s %s", s.userToken, s.currentRoomID)))
 			s.mu.Unlock()
 		}

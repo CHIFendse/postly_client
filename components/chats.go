@@ -27,7 +27,7 @@ func (f *Chats) SetContext(ctx context.Context) {
 func (f *Chats) CreateChat(userId string, targetUsername string, token string) ([]map[string]interface{}, error) {
 	// Подготавливаем данные для сервера
 	data := map[string]string{
-		"user_id":        userId,
+		"user_id":         userId,
 		"target_username": targetUsername,
 	}
 
@@ -53,9 +53,9 @@ func (f *Chats) CreateChat(userId string, targetUsername string, token string) (
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == 409 {
-            return nil, fmt.Errorf("пользователь с таким именем не найден")
-        }
-        return nil, fmt.Errorf("ошибка сервера: %d", resp.StatusCode)
+			return nil, fmt.Errorf("пользователь с таким именем не найден")
+		}
+		return nil, fmt.Errorf("ошибка сервера: %d", resp.StatusCode)
 	}
 
 	var result []map[string]interface{}
@@ -91,7 +91,7 @@ func (f *Chats) SearchUsers(query string, token string) ([]map[string]interface{
 	return users, nil
 }
 
-func (f *Chats) GetGroups(userId, token string) ([]map[string]interface{}, error){
+func (f *Chats) GetGroups(userId, token string) ([]map[string]interface{}, error) {
 	data := map[string]string{"id": userId}
 	jsonData, _ := json.Marshal(data)
 
@@ -102,7 +102,7 @@ func (f *Chats) GetGroups(userId, token string) ([]map[string]interface{}, error
 	req.Header.Set("Content-Type", "application/json")
 	// Добавляем токен
 	req.Header.Set("Authorization", "Bearer "+token)
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -118,6 +118,6 @@ func (f *Chats) GetGroups(userId, token string) ([]map[string]interface{}, error
 	if err := json.NewDecoder(resp.Body).Decode(&chats); err != nil {
 		return nil, err
 	}
-	
+
 	return chats, nil
 }

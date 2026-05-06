@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=postly_temp
+Exec=postly_temp
+Icon=postly_temp
+Categories=Development;
+Terminal=false
+Keywords=wails
+Version=1.0
+StartupNotify=false

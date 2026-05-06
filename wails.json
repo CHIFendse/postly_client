@@ -1,13 +1,7 @@
 {
-  "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "client",
-  "outputfilename": "client",
-  "frontend:install": "npm install",
-  "frontend:build": "npm run build",
-  "frontend:dev:watcher": "npm run dev",
-  "frontend:dev:serverUrl": "auto",
-  "author": {
-    "name": "CHIFendse",
-    "email": "timgranden@yandex.ru"
-  }
+  "name": "postly",
+  "frontend:dev:serverUrl": "http://84.22.132.243:5173",
+  "frontend:dev:server": "npm run dev",
+  "bindings:languages": "js",
+  "outputname": "postly"
 }

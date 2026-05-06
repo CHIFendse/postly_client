@@ -1,8 +1,10 @@
 import './chat.css'
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { GetMessages } from '../../wailsjs/go/pages/Chat';
-import { EventsOn } from '../../wailsjs/runtime/runtime';
-import { SendWSMessage, SetToken, Connect } from '../../wailsjs/go/pages/ChatWS';
+import { Events } from '@wailsio/runtime';
+// ИСПРАВЛЕНИЕ: В v3 биндинги лежат по новому пути. 
+// Замени 'postly' на имя своего проекта из go.mod, если оно отличается.
+import { GetMessages } from '@bindings/client/pages/chat';
+import { SendWSMessage, SetToken, Connect } from '@bindings/client/pages/chatws';
 
 function Chat({ chatId }) {
     const myId = localStorage.getItem("id");
@@ -10,39 +12,46 @@ function Chat({ chatId }) {
     const [inputText, setInputText] = useState("");
     const messagesEndRef = useRef(null);
     const isInitialMount = useRef(true);
-
-    // Управление соединением и событиями
+    // Подписка на новые сообщения
     useEffect(() => {
         if (!chatId) return;
-        setMessages([]); 
-        isInitialMount.current = true;
 
-        const token = localStorage.getItem('jwt_token');
-        if (token) {
-            SetToken(token).then(() => Connect(chatId));
-        }
+        console.log("Подписываемся на чат:", chatId);
 
-        const quit = EventsOn("server_message", (data) => {
+        const unsubscribe = Events.On("server_message", (event) => {
             try {
-                const newMessage = JSON.parse(data);
-                if (newMessage.chat_id === chatId) {
-                    setMessages((prev) => [...prev, newMessage]);
+                // В v3 Wails данные события часто приходят в поле data
+                const rawData = event.data || event;
+                const messageData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                
+                // Важно: проверяем, что это именно сообщение, а не системное уведомление
+                const newMessage = messageData.data || messageData;
+
+                if (newMessage && newMessage.chat_id === chatId) {
+                    setMessages((prev) => {
+                        // Проверка на дубликаты (чтобы сообщение не двоилось)
+                        if (prev.find(m => m.id === newMessage.id && m.id !== undefined)) {
+                            return prev;
+                        }
+                        return [...prev, newMessage];
+                    });
                 }
             } catch (err) {
-                console.error("Ошибка парсинга WS сообщения:", err);
+                console.error("Ошибка парсинга сообщения:", err);
             }
         });
 
         return () => {
-            console.log("Cleanup для чата:", chatId);
-            quit();
+            console.log("Отписка от чата:", chatId);
+            if (unsubscribe) unsubscribe();
         };
-    }, [chatId]);
+    }, [chatId]); // Подписка пересоздается только при смене ID чата
 
-    // Загрузка истории сообщений (HTTP)
+    // Загрузка истории сообщений (HTTP через Go Bindings)
     useEffect(() => {
         if (!chatId) return;
         const token = localStorage.getItem('jwt_token');
+        
         GetMessages(chatId, token)
             .then((result) => {
                 setMessages(result || []);
@@ -56,7 +65,6 @@ function Chat({ chatId }) {
         }
     };
 
-    // Скролл при изменении массива сообщений
     useLayoutEffect(() => {
         if (messages.length > 0) {
             const behavior = isInitialMount.current ? "auto" : "smooth";
@@ -74,8 +82,13 @@ function Chat({ chatId }) {
                 text: inputText.trim(),
                 token: currentToken
             }
-            SendWSMessage(JSON.stringify(messageObj));
-            setInputText("");
+            // Вызываем биндинг
+            try {
+                await SendWSMessage(JSON.stringify(messageObj));
+                setInputText("");
+            } catch (err) {
+                console.error("Ошибка отправки сообщения:", err);
+            }
         }
     };
 
@@ -92,9 +105,9 @@ function Chat({ chatId }) {
     return (
         <div className='chat-window'>
             <div className='messages-list'>
-                {messages.map((msg) => (
+                {messages.map((msg, index) => (
                     <div
-                        key={msg.id}
+                        key={msg.id || index}
                         className={`message-bubble ${msg.sender_id === myId ? 'sent' : 'received'}`}
                     >
                         {msg.text}

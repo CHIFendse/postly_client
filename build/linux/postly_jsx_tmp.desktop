@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=postly_jsx_tmp
+Exec=postly_jsx_tmp
+Icon=postly_jsx_tmp
+Categories=Development;
+Terminal=false
+Keywords=wails
+Version=1.0
+StartupNotify=false

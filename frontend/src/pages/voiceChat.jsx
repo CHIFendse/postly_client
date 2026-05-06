@@ -4,38 +4,48 @@ import Menu from '../components/menu';
 import Header from '../components/header';
 import MainHeader from '../components/mainHeader';
 import ChatsMenu from '../components/chatsMenu';
-import Chat from './chat'
-import {SetRoomID, SetToken} from '../../wailsjs/go/pages/VoiceChat'
-import { EventsOn } from '../../wailsjs/runtime/runtime';
+import Chat from './chat';
+import { Events } from '@wailsio/runtime';
+
+// ИСПРАВЛЕНИЕ: В Wails v3 пути к биндингам изменились. 
+// Проверь точный путь в своей папке bindings (обычно она в корне frontend/src)
+import { SetRoomID, SetToken } from '@bindings/client/pages/voicechat';
 
 function VoiceChat({ token, handleLogout }) {
-  const username = localStorage.getItem("username")
-  const myId = localStorage.getItem("id")
-  const [view, setView] = useState('chats'); // 'chats' или 'groups'
+  const username = localStorage.getItem("username");
+  const myId = localStorage.getItem("id");
+  const [view, setView] = useState('chats');
   const [activeChatId, setActiveChatId] = useState(localStorage.getItem('lastActiveChatId'));
   const [activeChatName, setActiveChatName] = useState(localStorage.getItem('lastChatName'));
   const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = EventsOn("friend_added", (data) => {
-        // Вызываем обновление списка
+    // ИСПРАВЛЕНИЕ: В v3 события доступны через глобальный объект window.wails
+    // Если ты сгенерировал bindings, можно импортировать Events оттуда,
+    // но самый надежный способ для v3 сейчас — использовать window.wails.Events
+    const unsubscribe = Events.On("friend_added", (data) => {
         triggerRefresh();
     });
 
-    return () => unsubscribe(); // Отписываемся при размонтировании
+    return () => unsubscribe(); 
   }, []);
 
-  const handleChatSelection = (chatId, name) => {
-    setActiveChatId(chatId); // Обновляем экран
+  const handleChatSelection = async (chatId, name) => {
+    setActiveChatId(chatId);
     localStorage.setItem("lastActiveChatId", chatId);
     setActiveChatName(name);
     localStorage.setItem("lastChatName", name);
-    SetToken(token);
-    
-    // Устанавливаем ID комнаты. 
-    const roomIdInt = chatId;
-      SetRoomID(roomIdInt);
+
+    // В v3 функции возвращают Promise, лучше использовать await или .then()
+    try {
+        await SetToken(token);
+        const roomIdInt = chatId;
+        await SetRoomID(roomIdInt);
+    } catch (err) {
+        console.error("Ошибка вызова методов Go:", err);
+    }
   };
+
   const triggerRefresh = () => setRefreshTrigger(prev => !prev);
 
   return (
@@ -70,6 +80,5 @@ function VoiceChat({ token, handleLogout }) {
     </div>
   );
 }
-
 
 export default VoiceChat;

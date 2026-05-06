@@ -2,48 +2,49 @@ package main
 
 import (
 	"embed"
-	"context"
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"client/pages"
+	"log"
+
 	"client/components"
+	"client/pages"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
-	// Create an instance of the app structure
-	voiceService := pages.NewVoiceChat()
-	chatApp := pages.GetChat()
-	chatWS := &pages.ChatWS{}
-	chatAdd := components.NewChats()
-	// Create application with options
-	err := wails.Run(&options.App{
-		Title:  "client",
+
+	app := application.New(application.Options{
+        Name: "Postly",
+        Assets: application.AssetOptions{
+            Handler: application.AssetFileServerFS(assets),
+        },
+    })
+
+    // 2. Инициализируем сервисы, передавая им app
+    voiceService := pages.NewVoiceChat()
+    chatWSService := &pages.ChatWS{}
+    chatService := pages.GetChat()
+    chatsComponent := components.NewChats()
+
+    // 3. Регистрируем каждый сервис через метод, который мы видим на скриншоте
+    app.RegisterService(application.NewService(voiceService))
+	app.RegisterService(application.NewService(chatWSService))
+	app.RegisterService(application.NewService(chatService))
+	app.RegisterService(application.NewService(chatsComponent))
+
+	// 3. Описываем главное окно
+	app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:  "Postly",
 		Width:  1024,
 		Height: 768,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
-		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup: func(ctx context.Context) {
-            voiceService.SetContext(ctx)
-			chatApp.SetContext(ctx)
-			chatWS.Startup(ctx)
-			chatAdd.SetContext(ctx)
-        },
-		Bind: []interface{}{
-			voiceService,
-			chatApp,
-			chatWS,
-			chatAdd,
-		},
-		
+		URL:    "/", // или твой стартовый путь
 	})
+	// Запускаем
+	err := app.Run()
 
 	if err != nil {
-		println("Error:", err.Error())
-	}
+		log.Println("Предупреждение: .env файл не найден, используются системные переменные")
+	}	
 }
