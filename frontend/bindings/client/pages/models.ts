@@ -9,6 +9,36 @@ import { Create as $Create } from "@wailsio/runtime";
 // @ts-ignore: Unused imports
 import * as time$0 from "../../time/models.js";
 
+export class AuthResponse {
+    "token": string;
+    "username": string;
+    "id": string;
+    "message"?: string;
+
+    /** Creates a new AuthResponse instance. */
+    constructor($$source: Partial<AuthResponse> = {}) {
+        if (!("token" in $$source)) {
+            this["token"] = "";
+        }
+        if (!("username" in $$source)) {
+            this["username"] = "";
+        }
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AuthResponse instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AuthResponse {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AuthResponse($$parsedSource as Partial<AuthResponse>);
+    }
+}
+
 /**
  * MessageInfo описывает структуру сообщения для фронтенда
  */

@@ -1,26 +1,63 @@
-# Билды приложения (тут лежат иконки и готовый .exe)
-/build/bin/
-/build/windows/
+# === Секреты и Конфигурация (КРИТИЧЕСКОЕ) ===
+.env
+.env.*
+!.env.example
+config.json
+# Скрываем локальные настройки Wails
+wails.local.json
 
-# Фронтенд (React/Vite/другое)
-/frontend/node_modules/
-/frontend/dist/
-/frontend/build/
+
+# === Go (Backend) ===
+# Бинарники
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Имя твоего исполняемого файла (замени 'postly', если другое)
+postly
+postly_client
+build/bin/
+
+# Инструменты разработки Go
+/vendor/
+/sdk/
+obj/
+*.test
+*.out
+
+# === Node.js & Frontend ===
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.production.local
+frontend/.env.development.local
+
+# Логи npm/yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 .eslintcache
 
-# Wails генерируемый код (биндинги Go к JS)
-# Его лучше не пушить, так как он обновляется при каждом запуске
-/frontend/src/wailsjs/
+frontend/bindings/
 
-# Go зависимости и бинарники
-/bin/
-go.work
-/vendor/
-*.exe
-*.dll
+# Временные файлы сборки
+build/
+bin/
 
-# IDE и системные файлы
-.vscode/
-.idea/
+# === Системный мусор ===
 .DS_Store
-*.log
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# === Пакеты (Debian/Windows) ===
+*.deb
+*.rpm
+*.msi
+*.zip
+*.tar.gz

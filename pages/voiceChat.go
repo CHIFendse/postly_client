@@ -11,6 +11,7 @@ import (
 	"github.com/gen2brain/malgo"
 	"github.com/hraban/opus"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"os"
 )
 
 const (
@@ -18,6 +19,9 @@ const (
 	targetChannels   = 1
 	frameSizeMs      = 20
 	opusFrameSize    = (targetSampleRate * frameSizeMs) / 1000
+)
+var (
+	baseURL = "http://"+os.Getenv("API_BASE_URL")
 )
 
 type VoiceChat struct {
@@ -73,7 +77,8 @@ func (s *VoiceChat) Connect() error {
 	s.mu.Unlock()
 
 	// Авторизация
-	req, _ := http.NewRequest("GET", "http://84.22.132.243:8081/", nil)
+	tmp := baseURL + ":8081/"
+	req, _ := http.NewRequest("GET", tmp, nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
@@ -113,8 +118,8 @@ func (s *VoiceChat) startAudioCapture() {
 		idealBuffer = 6  // 120мс запаса
 		maxBuffer   = 15 // 300мс лимит задержки
 	)
-
-	serverAddr, _ := net.ResolveUDPAddr("udp", "84.22.132.243:8082")
+	tmp := baseURL + ":8082"
+	serverAddr, _ := net.ResolveUDPAddr("udp", tmp)
 	conn, err := net.DialUDP("udp", nil, serverAddr)
 	if err != nil {
 		return

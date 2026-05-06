@@ -77,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
                 String url = request.getUrl().toString();
                 Log.d(TAG, "Intercepting request: " + url);
 
-                // Handle wails.84.22.132.243 requests
                 if (request.getUrl().getHost() != null &&
                         request.getUrl().getHost().equals(WAILS_HOST)) {
 

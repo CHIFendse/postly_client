@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/websocket"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -37,7 +38,7 @@ func (a *ChatWS) Connect(chatID string) {
 		a.conn = nil
 	}
 
-	url := "ws://84.22.132.243:8081/ws"
+	url := "ws://"+os.Getenv("API_BASE_URL")+":8081/ws"
 	if chatID != "" {
 		url = fmt.Sprintf("%s?chat_id=%s", url, chatID)
 	}

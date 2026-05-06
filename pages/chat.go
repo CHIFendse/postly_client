@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"os"
 )
-
+var (
+	baseUrl = "http://"+os.Getenv("API_BASE_URL")+":8081/"
+)
 // MessageInfo описывает структуру сообщения для фронтенда
 type MessageInfo struct {
 	Id        string    `json:"id"`
@@ -45,8 +48,8 @@ func (c *Chat) GetMessages(chatId string, token string) ([]MessageInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка кодирования JSON: %w", err)
 	}
-
-	req, err := http.NewRequest("POST", "http://84.22.132.243:8081/getMessages", bytes.NewBuffer(jsonData))
+	url := baseURL + "getMessages"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
 	}
@@ -78,8 +81,8 @@ func (c *Chat) GetMessages(chatId string, token string) ([]MessageInfo, error) {
 func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface{}, error) {
 	data := map[string]string{"id": userId}
 	jsonData, _ := json.Marshal(data)
-
-	req, err := http.NewRequest("POST", "http://84.22.132.243:8081/getChats", bytes.NewBuffer(jsonData))
+	url := baseURL + "getChats"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +113,8 @@ func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface
 func (c *Chat) AddMessage(chat_id, sender_id, text, token string) (string, error) {
 	data := map[string]string{"chat_id": chat_id, "sender_id": sender_id, "text": text}
 	jsonData, _ := json.Marshal(data)
-
-	req, err := http.NewRequest("POST", "http://84.22.132.243:8081/addMessage", bytes.NewBuffer(jsonData))
+	url := baseURL + "addMessage"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}

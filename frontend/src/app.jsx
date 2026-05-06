@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import Auth from './pages/auth';
 import VoiceChat from './pages/voiceChat'; 
 import { SetToken } from '@bindings/client/pages/voicechat';
+// Импортируем наш новый метод из биндингов AuthService
+import { VerifyToken } from '@bindings/client/pages/authservice';
 
 function App() {
     const [token, setToken] = useState(() => {
         const saved = localStorage.getItem('jwt_token');
-        //Изменить проверку
         if (typeof saved !== 'string' || saved.length < 10 || saved === "null" || saved === "undefined") {
             return null;
         }
@@ -14,7 +15,7 @@ function App() {
     });
     
     const [isLoading, setIsLoading] = useState(true);
-
+    const [isNetworkError, setIsNetworkError] = useState(false);
 
     useEffect(() => {
         if (token) {
@@ -24,37 +25,32 @@ function App() {
     }, [token]);
 
     useEffect(() => {
-        const verifyToken = async () => {
+        const checkToken = async () => {
             if (!token) {
                 setIsLoading(false);
                 return;
             }
 
             try {
-                const response = await fetch('http://84.22.132.243:8081/verify', {
-                    method: 'GET',
-                    headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.status === 401) {
+                // ВЫЗОВ GO-МЕТОДА вместо fetch
+                const isValid = await VerifyToken(token);
+                
+                if (!isValid) {
                     handleLogout();
-                } else if (!response.ok) {
-                    console.warn("Сервер недоступен, но сессию сохраняем");
                 }
+                setIsNetworkError(false);
             } catch (err) {
-                console.error("Ошибка сети при проверке токена");
-                 return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', colorAdjust: 'red'}}>Нет соединения :(</div>;
+                console.error("Ошибка при проверке токена через Go:", err);
+                setIsNetworkError(true);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        verifyToken();
+        checkToken();
     }, [token]);
 
+    // Обработчики входа/выхода остаются такими же...
     const handleLogin = (newToken, newUsername, newUserId) => {
         if (newToken) {
             localStorage.setItem('jwt_token', newToken);
@@ -63,27 +59,36 @@ function App() {
             setToken(newToken);
         }
     };
+
     const handleLogout = () => {
-        localStorage.removeItem('jwt_token');
-        localStorage.removeItem('username');
-        localStorage.removeItem('id');
-        localStorage.removeItem('lastActiveChatId')
-        localStorage.removeItem('lastChatName');
+        localStorage.clear(); // Быстрый способ очистить всё сразу
         setToken(null);
     };
 
-    // БАРЬЕР: Если токена нет (null), мы возвращаем ТОЛЬКО Auth и выходим из функции
+    // Рендеринг состояний
+    if (isNetworkError) {
+        return (
+            <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                <span style={{color: '#f04747'}}>Нет соединения с сервером :(</span>
+            </div>
+        );
+    }
+
     if (token === null) {
         return <Auth onLogin={handleLogin} />;
     }
 
     if (isLoading) {
-        return <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Загрузка...</div>;
+        return (
+            <div style={{background: '#383731', height: '100vh', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                Загрузка...
+            </div>
+        );
     }
 
     return (
         <div className="app-container" style={{ backgroundColor: '#383731', minHeight: '100vh', color: 'white' }}>
-            <main >
+            <main>
                 <VoiceChat token={token} handleLogout={handleLogout} /> 
             </main>
         </div>

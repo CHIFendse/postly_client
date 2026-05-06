@@ -1,6 +1,6 @@
 {
   "name": "postly",
-  "frontend:dev:serverUrl": "http://84.22.132.243:5173",
+  "frontend:dev:serverUrl": "http://localhost:5173",
   "frontend:dev:server": "npm run dev",
   "bindings:languages": "js",
   "outputname": "postly"
