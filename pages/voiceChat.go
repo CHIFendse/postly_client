@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"os"
+
 	"github.com/gen2brain/malgo"
 	"github.com/hraban/opus"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"os"
 )
 
 const (
@@ -19,9 +20,6 @@ const (
 	targetChannels   = 1
 	frameSizeMs      = 20
 	opusFrameSize    = (targetSampleRate * frameSizeMs) / 1000
-)
-var (
-	baseURL = "http://"+os.Getenv("API_BASE_URL")
 )
 
 type VoiceChat struct {
@@ -31,10 +29,12 @@ type VoiceChat struct {
 	userToken     string
 	currentRoomID string
 	app           *application.App
+	url			  string
 }
 
 func NewVoiceChat() *VoiceChat {
-	return &VoiceChat{stopChan: make(chan struct{})}
+	url := "http://"+os.Getenv("API_BASE_URL")
+	return &VoiceChat{stopChan: make(chan struct{}), url: url}
 }
 
 func (v *VoiceChat) ServiceName() string {
@@ -77,7 +77,7 @@ func (s *VoiceChat) Connect() error {
 	s.mu.Unlock()
 
 	// Авторизация
-	tmp := baseURL + ":8081/"
+	tmp := s.url + ":8081/"
 	req, _ := http.NewRequest("GET", tmp, nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -118,7 +118,7 @@ func (s *VoiceChat) startAudioCapture() {
 		idealBuffer = 6  // 120мс запаса
 		maxBuffer   = 15 // 300мс лимит задержки
 	)
-	tmp := baseURL + ":8082"
+	tmp := s.url + ":8082"
 	serverAddr, _ := net.ResolveUDPAddr("udp", tmp)
 	conn, err := net.DialUDP("udp", nil, serverAddr)
 	if err != nil {

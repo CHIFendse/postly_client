@@ -10,16 +10,17 @@ import (
 	"os"
 )
 
-var (
-	baseUrl = "http://"+os.Getenv("API_BASE_URL")+":8081/"
-)
 type Chats struct {
 	ctx context.Context
+	url string
 }
 
 // NewChats инициализирует компонент
 func NewChats() *Chats {
-	return &Chats{}
+	url := "http://"+os.Getenv("API_BASE_URL")+":8081/"
+	return &Chats{
+		url: url,
+	}
 }
 
 // SetContext сохраняет контекст Wails
@@ -39,7 +40,7 @@ func (f *Chats) CreateChat(userId string, targetUsername string, token string) (
 	if err != nil {
 		return nil, fmt.Errorf("ошибка кодирования JSON: %w", err)
 	}
-	url := baseUrl + "createChat"
+	url := f.url + "createChat"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
@@ -75,7 +76,7 @@ func (f *Chats) CreateChat(userId string, targetUsername string, token string) (
 func (f *Chats) SearchUsers(query string, token string) ([]map[string]interface{}, error) {
 	data := map[string]string{"query": query}
 	jsonData, _ := json.Marshal(data)
-	url := baseUrl+"searchUsers"
+	url := f.url+"searchUsers"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
@@ -98,7 +99,7 @@ func (f *Chats) SearchUsers(query string, token string) ([]map[string]interface{
 func (f *Chats) GetGroups(userId, token string) ([]map[string]interface{}, error) {
 	data := map[string]string{"id": userId}
 	jsonData, _ := json.Marshal(data)
-	url := baseUrl+"getGroups"
+	url := f.url+"getGroups"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
