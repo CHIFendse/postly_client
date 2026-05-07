@@ -63,6 +63,8 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
 
    const handleSendMessage = async (e) => {
         if (e.key === 'Enter' && inputText.trim() !== "") {
+            // Проверяем, что chatId существует
+            if (!chatId) return;
             const userId = localStorage.getItem('id');
             const token = localStorage.getItem('jwt_token');
             const targetUsername = inputText.trim();
