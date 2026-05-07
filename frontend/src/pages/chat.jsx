@@ -12,41 +12,33 @@ function Chat({ chatId }) {
     const [inputText, setInputText] = useState("");
     const messagesEndRef = useRef(null);
     const isInitialMount = useRef(true);
-    // Подписка на новые сообщения
+    console.log("CHAT RENDER CHECK: ", chatId);
     useEffect(() => {
         if (!chatId) return;
 
-        console.log("Подписываемся на чат:", chatId);
-
         const unsubscribe = Events.On("server_message", (event) => {
-            try {
-                // В v3 Wails данные события часто приходят в поле data
-                const rawData = event.data || event;
-                const messageData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                
-                // Важно: проверяем, что это именно сообщение, а не системное уведомление
-                const newMessage = messageData.data || messageData;
+            // В v3 объект события содержит поле data
+            const msg = event.data; 
 
-                if (newMessage && newMessage.chat_id === chatId) {
-                    setMessages((prev) => {
-                        // Проверка на дубликаты (чтобы сообщение не двоилось)
-                        if (prev.find(m => m.id === newMessage.id && m.id !== undefined)) {
-                            return prev;
-                        }
-                        return [...prev, newMessage];
-                    });
+            console.log("Получен объект из события:", msg);
+
+            // Проверяем, что объект не пустой
+            if (msg && msg.type === "NEW_MESSAGE") {
+                // Если chat_id все еще пустой из-за бэкенда, 
+                // проверка msg.chat_id === chatId не сработает.
+                // Пока для теста можно закомментировать проверку ID:
+                if (msg.chat_id === chatId || msg.chat_id === "") {
+                    setMessages((prev) => [...prev, {
+                        ...msg,
+                        // Если текст пустой, выведем хоть что-то для теста
+                        text: msg.text || "Тестовое сообщение (пустое в JSON)"
+                    }]);
                 }
-            } catch (err) {
-                console.error("Ошибка парсинга сообщения:", err);
             }
         });
 
-        return () => {
-            console.log("Отписка от чата:", chatId);
-            if (unsubscribe) unsubscribe();
-        };
-    }, [chatId]); // Подписка пересоздается только при смене ID чата
-
+        return () => unsubscribe();
+    }, [chatId]);
     // Загрузка истории сообщений (HTTP через Go Bindings)
     useEffect(() => {
         if (!chatId) return;
@@ -76,18 +68,28 @@ function Chat({ chatId }) {
     const handleSendMessage = async (e) => {
         if (e.key === 'Enter' && inputText.trim() !== "") {
             const currentToken = localStorage.getItem('jwt_token');
+            
+            // Формируем объект сообщения
             const messageObj = {
                 chat_id: chatId,
                 sender_id: myId,
                 text: inputText.trim(),
-                token: currentToken
-            }
-            // Вызываем биндинг
+            };
+
             try {
+                // ПЕРЕД отправкой сообщения НЕ НУЖНО каждый раз вызывать Connect.
+                // Это должно быть сделано ОДИН РАЗ при загрузке приложения.
+                
                 await SendWSMessage(JSON.stringify(messageObj));
-                setInputText("");
+                setInputText(""); 
             } catch (err) {
-                console.error("Ошибка отправки сообщения:", err);
+                // Если ошибка "connection not established", 
+                // значит нужно проверить, вызывался ли Connect вообще.
+                console.error("Ошибка отправки. Соединение живое?", err);
+                
+                // В крайнем случае, пробуем переподключиться, если упало
+                await SetToken(currentToken);
+                await Connect();
             }
         }
     };

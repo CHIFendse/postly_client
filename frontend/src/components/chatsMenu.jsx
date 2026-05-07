@@ -4,6 +4,8 @@ import { Events } from '@wailsio/runtime';
 import { GetUserChats } from '@bindings/client/pages/chat';
 import { CreateChat, GetGroups } from '@bindings/client/components/chats';
 import { getAvatarColor, getFirstLetter } from '../utils/avatarHelper';
+import { SetToken, Connect } from '@bindings/client/pages/voicechat';
+
 
 function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, onChatCreated, view }) {
     const [chats, setChats] = useState([]);
@@ -11,39 +13,25 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
     const token = localStorage.getItem('jwt_token');
 
     useEffect(() => {
-        const unsubscribe = Events.On("server_message", (event) => {
-            try {
-                const rawData = event.data || event;
-                const messageData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                
-                // Если пришло уведомление о новом чате
-                if (messageData.type === 'NEW_CHAT') {
-                    console.log("Уведомление: создан новый чат");
-                    
-                    // Просто вызываем функцию обновления, которая уже есть в пропсах
-                    if (onChatCreated) {
-                        onChatCreated(); 
-                    }
-                    
-                    // Либо принудительно обновляем список, если refreshTrigger не используется
-                    fetchChats(); 
-                }
-                
-                if (messageData.type === 'NEW_MESSAGE') {
-                    const chatExists = chats.some(c => c.id === messageData.data.chat_id);
-                    if (!chatExists) {
-                        onChatCreated?.();
-                    }
-                }
-            } catch (err) {
-                console.error("Ошибка обработки события в меню:", err);
-            }
-        });
+    const unsubscribe = Events.On("server_message", (event) => {
+        try {
+            const rawData = event.data || event;
+            const messageData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+            
+            console.log("Событие в меню:", messageData.type);
 
-        return () => {
-            if (unsubscribe) unsubscribe();
-        };
-    }, [chats, onChatCreated]); // Следим за списком чатов
+            if (messageData.type === 'NEW_CHAT' || messageData.type === 'NEW_MESSAGE') {
+                // Просто триггерим обновление списка чатов в App.js
+                // Это заставит сработать второй useEffect, который сделает fetch
+                if (onChatCreated) onChatCreated(); 
+            }
+        } catch (err) {
+            console.error("Ошибка в сокете меню:", err);
+        }
+    });
+
+    return () => unsubscribe && unsubscribe();
+}, [onChatCreated]);
      useEffect(() => {
         if (currentUserId) {
             // В v3 функции возвращают Promise, логика вызова через .then сохраняется
@@ -63,34 +51,24 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
 
    const handleSendMessage = async (e) => {
         if (e.key === 'Enter' && inputText.trim() !== "") {
-            // Проверяем, что chatId существует
-            if (!chatId) return;
+            const targetUsername = inputText.trim();
             const userId = localStorage.getItem('id');
             const token = localStorage.getItem('jwt_token');
-            const targetUsername = inputText.trim();
 
             try {
-                // 1. Получаем объект ответа от Go
-                const result = await CreateChat(
-                    String(userId), 
-                    String(targetUsername), 
-                    String(token)
-                );
-                
-                // 2. Извлекаем ID из объекта { "id": "..." }
-                const actualChatId = result.id; 
+                // 1. СНАЧАЛА создаем чат через HTTP (CreateChat)
+                const result = await CreateChat(String(userId), targetUsername, token);
+                const actualChatId = result.id;
 
-                console.log("Чат успешно создан или найден, ID:", actualChatId);
-                
+                // 2. Уведомляем систему, что список чатов надо обновить
                 if (onChatCreated) onChatCreated();
-                
-                // 3. Передаем уже СТРОКУ (ID), а не весь объект
+
+                // 3. Переходим в чат
                 onSelectChat(actualChatId, targetUsername);
                 
                 setInputText("");
-                
             } catch (err) {
-                console.error("Ошибка при создании чата:", err);
+                console.error("Ошибка:", err);
             }
         }
     };

@@ -32,7 +32,7 @@ function VoiceChat({ token, handleLogout }) {
     localStorage.setItem("lastActiveChatId", chatId);
     setActiveChatName(name);
     localStorage.setItem("lastChatName", name);
-
+    console.log("Текущий activeChatId в VoiceChat:", activeChatId);
     // В v3 функции возвращают Promise, лучше использовать await или .then()
     try {
         await SetToken(token);
@@ -64,6 +64,7 @@ function VoiceChat({ token, handleLogout }) {
                 view={view}
             />
       <div className="main-content">
+        
         <Header token={token} chatName={activeChatName} chatId={activeChatId}/>
                 {activeChatId ? (
                     <Chat chatId={activeChatId}/>

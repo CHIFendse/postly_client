@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import Auth from './pages/auth';
 import VoiceChat from './pages/voiceChat'; 
-import { SetToken } from '@bindings/client/pages/voicechat';
+import { SetToken, Connect } from '@bindings/client/pages/chatws';
 // Импортируем наш новый метод из биндингов AuthService
 import { VerifyToken } from '@bindings/client/pages/authservice';
 
+
 function App() {
     const [token, setToken] = useState(() => {
-        const saved = localStorage.getItem('jwt_token');
+    const saved = localStorage.getItem('jwt_token');
         if (typeof saved !== 'string' || saved.length < 10 || saved === "null" || saved === "undefined") {
             return null;
         }
@@ -49,6 +50,23 @@ function App() {
 
         checkToken();
     }, [token]);
+    useEffect(() => {
+        const initWS = async () => {
+            if (token) {
+                try {
+                    await SetToken(token); // Устанавливаем токен именно для ChatWS
+                    await Connect("");     // Коннектимся
+                    console.log("WebSocket запущен");
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        };
+
+        if (!isLoading && token) {
+            initWS();
+        }
+    }, [token, isLoading]);
 
     // Обработчики входа/выхода остаются такими же...
     const handleLogin = (newToken, newUsername, newUserId) => {

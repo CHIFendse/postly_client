@@ -7,7 +7,7 @@ import CallWindow from './components/CallWindow';
 
 const container = document.getElementById('root');
 const root = createRoot(container);
-
+console.log("Root")
 root.render(
     <Router>
         <Routes>
