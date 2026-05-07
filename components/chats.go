@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 	"os"
+	"io"
 )
 
 type Chats struct {
@@ -29,7 +30,7 @@ func (f *Chats) SetContext(ctx context.Context) {
 }
 
 // CreateChat создает новый чат между текущим пользователем и выбранным собеседником
-func (f *Chats) CreateChat(userId string, targetUsername string, token string) ([]map[string]interface{}, error) {
+func (f *Chats) CreateChat(userId string, targetUsername string, token string) (map[string]interface{}, error) {
 	// Подготавливаем данные для сервера
 	data := map[string]string{
 		"user_id":         userId,
@@ -63,9 +64,16 @@ func (f *Chats) CreateChat(userId string, targetUsername string, token string) (
 		return nil, fmt.Errorf("ошибка сервера: %d", resp.StatusCode)
 	}
 
-	var result []map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("ошибка парсинга ответа: %w", err)
+	// Читаем всё тело в память
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось прочитать тело: %w", err)
+	}
+
+	// Парсим из байтов, а не из потока
+	var result map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		return nil, fmt.Errorf("ошибка парсинга (тело было: %s): %w", string(bodyBytes), err)
 	}
 
 	// Возвращаем ID созданного (или найденного) чата

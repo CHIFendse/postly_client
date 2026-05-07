@@ -6,9 +6,6 @@ import MainHeader from '../components/mainHeader';
 import ChatsMenu from '../components/chatsMenu';
 import Chat from './chat';
 import { Events } from '@wailsio/runtime';
-
-// ИСПРАВЛЕНИЕ: В Wails v3 пути к биндингам изменились. 
-// Проверь точный путь в своей папке bindings (обычно она в корне frontend/src)
 import { SetRoomID, SetToken } from '@bindings/client/pages/voicechat';
 
 function VoiceChat({ token, handleLogout }) {

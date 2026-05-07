@@ -8,9 +8,9 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 /**
  * CreateChat создает новый чат между текущим пользователем и выбранным собеседником
  */
-export function CreateChat(userId: string, targetUsername: string, token: string): $CancellablePromise<{ [_ in string]?: any }[]> {
+export function CreateChat(userId: string, targetUsername: string, token: string): $CancellablePromise<{ [_ in string]?: any }> {
     return $Call.ByID(2206227622, userId, targetUsername, token).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType0($result);
     });
 }
 
