@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './header.css';
-import { Connect, Disconnect, SetToken, OpenCallWindow  } from '@bindings/client/pages/voicechat';
+import { Connect, Disconnect, SetToken, OpenCallWindow, SetRoomID  } from '@bindings/client/pages/voicechat';
 import decall from '../assets/images/phone-line.png'
 import callIcon from '../assets/images/phone-fill.png'
 import addUserImg from '../assets/images/user-plus.svg'
@@ -18,6 +18,7 @@ function Header({ token, chatName, chatId }) {
         try {
             await OpenCallWindow(chatId.toString(), chatName);
             await SetToken(token);
+            await SetRoomID(chatId.toString());
             await Connect();
         } catch (err) {
             console.error("Не удалось открыть окно звонка:", err);

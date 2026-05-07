@@ -33,7 +33,7 @@ type VoiceChat struct {
 }
 
 func NewVoiceChat() *VoiceChat {
-	url := "http://"+os.Getenv("API_BASE_URL")
+	url := os.Getenv("API_BASE_URL")
 	return &VoiceChat{stopChan: make(chan struct{}), url: url}
 }
 
@@ -77,7 +77,7 @@ func (s *VoiceChat) Connect() error {
 	s.mu.Unlock()
 
 	// Авторизация
-	tmp := s.url + ":8081/"
+	tmp := "http://"+s.url + ":8081/"
 	req, _ := http.NewRequest("GET", tmp, nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -125,7 +125,6 @@ func (s *VoiceChat) startAudioCapture() {
 		return
 	}
 	defer conn.Close()
-
 	conn.SetReadBuffer(1024 * 1024)
 	conn.SetWriteBuffer(1024 * 1024)
 
@@ -139,7 +138,7 @@ func (s *VoiceChat) startAudioCapture() {
 	enc.SetInBandFEC(true)
 	enc.SetPacketLossPerc(15)
 	compBuf := make([]byte, 1500)
-
+	
 	onData := func(pOutput, pInput []byte, frameCount uint32) {
 		bufferMu.Lock()
 		defer bufferMu.Unlock()
