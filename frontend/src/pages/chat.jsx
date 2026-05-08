@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { Events } from '@wailsio/runtime';
 // ИСПРАВЛЕНИЕ: В v3 биндинги лежат по новому пути. 
 // Замени 'postly' на имя своего проекта из go.mod, если оно отличается.
-import { GetMessages } from '@bindings/client/pages/chat';
+import { GetMessages, GetUserChats } from '@bindings/client/pages/chat';
 import { SendWSMessage, SetToken, Connect } from '@bindings/client/pages/chatws';
 
 function Chat({ chatId }) {

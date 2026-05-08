@@ -12,6 +12,42 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
     const [inputText, setInputText] = useState("");
     const token = localStorage.getItem('jwt_token');
 
+    const fetchChats = async () => {
+        const token = localStorage.getItem('jwt_token');
+        const result = await GetUserChats(token);
+        setChats(result || []);
+    };
+
+    useEffect(() => {
+        const unsubscribe = Events.On("server_message", (event) => {
+            const msg = event.data;
+            if (msg?.type === "NEW_MESSAGE") {
+                setChats((prevChats) => {
+                    // 1. Находим чат, в который пришло сообщение
+                    const chatIndex = prevChats.findIndex(c => c.id === msg.chat_id);
+                    
+                    if (chatIndex !== -1) {
+                        const updatedChats = [...prevChats];
+                        // 2. Обновляем текст последнего сообщения и время
+                        updatedChats[chatIndex] = {
+                            ...updatedChats[chatIndex],
+                            last_message: msg.text,
+                            updated_at: new Date().toISOString() // или время с сервера
+                        };
+                        // 3. Перемещаем его в начало списка (сортировка)
+                        const [movedChat] = updatedChats.splice(chatIndex, 1);
+                        return [movedChat, ...updatedChats];
+                    } else {
+                        // Если чата нет в списке (например, новый чат), лучше перекачать список
+                        fetchChats();
+                        return prevChats;
+                    }
+                });
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
     useEffect(() => {
         const unsubscribe = Events.On("server_message", (event) => {
             try {
@@ -20,7 +56,7 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
                 
                 console.log("Событие в меню:", messageData.type);
 
-                if (messageData.type === 'NEW_CHAT' || messageData.type === 'NEW_MESSAGE') {
+                if (messageData.type === 'NEW_CHAT') {
                     if (onChatCreated) onChatCreated(); 
                 }
             } catch (err) {
