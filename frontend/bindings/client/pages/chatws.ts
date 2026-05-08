@@ -16,7 +16,3 @@ export function SendWSMessage(payload: string): $CancellablePromise<void> {
 export function SetToken(token: string): $CancellablePromise<void> {
     return $Call.ByID(1687395988, token);
 }
-
-export function Startup($0: any): $CancellablePromise<void> {
-    return $Call.ByID(3923247390, $0);
-}

@@ -83,14 +83,8 @@ function Chat({ chatId }) {
                 await SendWSMessage(JSON.stringify(messageObj));
                 setInputText(""); 
             } catch (err) {
-                // Если ошибка "connection not established", 
-                // значит нужно проверить, вызывался ли Connect вообще.
                 console.error("Ошибка отправки. Соединение живое?", err);
-                
-                // В крайнем случае, пробуем переподключиться, если упало
-                await SetToken(currentToken);
-                await Connect();
-            }
+            } 
         }
     };
 

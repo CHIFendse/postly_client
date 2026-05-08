@@ -15,7 +15,8 @@ function Auth({ onLogin }) {
         try {
             if (isRegister) {
                 await Register(form.user, form.pass, form.email, form.phone);
-                alert("Регистрация успешна! Теперь войдите.");
+                const data = await Login(form.user, form.pass);
+                onLogin(data.token, data.username, data.id); 
                 setIsRegister(false);
                 setForm({ user: '', pass: '', email: '', phone: '' });
             } else {
@@ -26,7 +27,7 @@ function Auth({ onLogin }) {
             }
         } catch (err) {
             // Ошибки из Go придут прямо сюда
-            setError(err.toString());
+            setError("Ошибка:", err.toString());
         }
     };
 

@@ -7,23 +7,12 @@ import { VerifyToken } from '@bindings/client/pages/authservice';
 
 
 function App() {
-    const [token, setToken] = useState(() => {
-    const saved = localStorage.getItem('jwt_token');
-        if (typeof saved !== 'string' || saved.length < 10 || saved === "null" || saved === "undefined") {
-            return null;
-        }
-        return saved;
-    });
-    
+    const [token, setToken] = useState(localStorage.getItem('jwt_token'));
+
     const [isLoading, setIsLoading] = useState(true);
     const [isNetworkError, setIsNetworkError] = useState(false);
 
-    useEffect(() => {
-        if (token) {
-            SetToken(token).catch(err => console.error("Ошибка установки токена в Go:", err));
-        }
-        window.document.title = `Token: ${token ? 'EXISTS' : 'EMPTY'}`;
-    }, [token]);
+
 
     useEffect(() => {
         const checkToken = async () => {

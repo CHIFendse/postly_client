@@ -3,6 +3,7 @@ package pages
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -69,12 +70,13 @@ func (s *AuthService) Register(username, password, email, phone string) (string,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var errData map[string]string
+		var errData map[string]error
 		json.NewDecoder(resp.Body).Decode(&errData)
-		return "", fmt.Errorf(errData["message"])
+		if errData["error"] != nil{
+			return "", errors.New("Ошибка авторизации")
+		}
 	}
-
-	return "Регистрация успешна", nil
+	return "Авторизация успешна, перелогиньтесь", nil
 }
 // VerifyToken проверяет валидность токена на сервере
 func (s *AuthService) VerifyToken(token string) (bool, error) {

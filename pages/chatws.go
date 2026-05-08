@@ -30,12 +30,8 @@ func (s *ChatWS) ServiceName() string { return "ChatWS" }
 
 func (a *ChatWS) SetToken(token string) {
 	a.token = token
-	log.Println("Токен установлен, теперь можно подключаться")
 }
 
-func (a *ChatWS) Startup(_ any) {
-	log.Println("ChatWS: Инициализировано (v3)")
-}
 func (a *ChatWS) Connect(chatID string) {
     a.mu.Lock()
     defer a.mu.Unlock()
@@ -66,7 +62,6 @@ func (a *ChatWS) Connect(chatID string) {
     }
 
     a.conn = c
-    log.Println("Успех! WebSocket соединен (Клиент).")
 
     // Запускаем чтение в отдельной рутине
     go a.listenToMessages(c)
@@ -79,21 +74,11 @@ func (a *ChatWS) listenToMessages(c *websocket.Conn) {
             return
         }
 
-        // ЛОГ ДЛЯ ПРОВЕРКИ: что именно прислал сервер 8081?
-        log.Printf("СЫРЫЕ ДАННЫЕ ОТ СЕРВЕРА: %s", string(message))
-
         var msg MessageDTO
         if err := json.Unmarshal(message, &msg); err != nil {
             log.Printf("Ошибка парсинга: %v", err)
             continue
         }
-
-        // Если в логе выше поля есть, а после Unmarshal пропали — 
-        // значит теги json:"..." в структуре MessageDTO не совпадают с ключами в JSON.
-        
-        msg.Type = "NEW_MESSAGE"
-
-        // Пробрасываем объект целиком
         application.Get().Event.Emit("server_message", msg)
     }
 }

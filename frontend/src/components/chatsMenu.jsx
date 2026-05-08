@@ -13,25 +13,25 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
     const token = localStorage.getItem('jwt_token');
 
     useEffect(() => {
-    const unsubscribe = Events.On("server_message", (event) => {
-        try {
-            const rawData = event.data || event;
-            const messageData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-            
-            console.log("Событие в меню:", messageData.type);
+        const unsubscribe = Events.On("server_message", (event) => {
+            try {
+                const rawData = event.data || event;
+                const messageData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                
+                console.log("Событие в меню:", messageData.type);
 
-            if (messageData.type === 'NEW_CHAT' || messageData.type === 'NEW_MESSAGE') {
-                // Просто триггерим обновление списка чатов в App.js
-                // Это заставит сработать второй useEffect, который сделает fetch
-                if (onChatCreated) onChatCreated(); 
+                if (messageData.type === 'NEW_CHAT' || messageData.type === 'NEW_MESSAGE') {
+                    if (onChatCreated) onChatCreated(); 
+                }
+            } catch (err) {
+                console.error("Ошибка в сокете меню:", err);
             }
-        } catch (err) {
-            console.error("Ошибка в сокете меню:", err);
-        }
-    });
+        });
 
-    return () => unsubscribe && unsubscribe();
-}, [onChatCreated]);
+        return () => unsubscribe && unsubscribe();
+    }, [onChatCreated]);
+
+
      useEffect(() => {
         if (currentUserId) {
             // В v3 функции возвращают Promise, логика вызова через .then сохраняется
@@ -56,7 +56,6 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
             const token = localStorage.getItem('jwt_token');
 
             try {
-                // 1. СНАЧАЛА создаем чат через HTTP (CreateChat)
                 const result = await CreateChat(String(userId), targetUsername, token);
                 const actualChatId = result.id;
 
