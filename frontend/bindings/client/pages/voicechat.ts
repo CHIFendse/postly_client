@@ -13,8 +13,8 @@ export function Disconnect(): $CancellablePromise<void> {
     return $Call.ByID(221538233);
 }
 
-export function OpenCallWindow(roomID: string, nickname: string): $CancellablePromise<void> {
-    return $Call.ByID(3676285039, roomID, nickname);
+export function OpenCallWindow(roomID: string, nickname: string, typing: string): $CancellablePromise<void> {
+    return $Call.ByID(3676285039, roomID, nickname, typing);
 }
 
 /**
@@ -30,4 +30,8 @@ export function SetRoomID(id: string): $CancellablePromise<void> {
 
 export function SetToken(token: string): $CancellablePromise<void> {
     return $Call.ByID(3154383142, token);
+}
+
+export function StartVoice(chatID: string): $CancellablePromise<void> {
+    return $Call.ByID(1292191029, chatID);
 }

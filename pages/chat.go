@@ -29,7 +29,7 @@ type Chat struct {
 
 // GetChat инициализирует компонент
 func GetChat() *Chat {
-	url := os.Getenv("API_BASE_URL")+":8081"
+	url := "http://"+os.Getenv("API_BASE_URL")+":8081"
 	return &Chat{
 		url: url,
 		stopChan: make(chan struct{}),
@@ -50,7 +50,7 @@ func (c *Chat) GetMessages(chatId string, token string) ([]MessageInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка кодирования JSON: %w", err)
 	}
-	url := "http://"+ c.url + "/getMessages"
+	url := c.url + "/getMessages"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
@@ -83,7 +83,7 @@ func (c *Chat) GetMessages(chatId string, token string) ([]MessageInfo, error) {
 func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface{}, error) {
 	data := map[string]string{"id": userId}
 	jsonData, _ := json.Marshal(data)
-	url := "http://"+ c.url + "/getChats"
+	url := c.url + "/getChats"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface
 func (c *Chat) AddMessage(chat_id, sender_id, text, token string) (string, error) {
 	data := map[string]string{"chat_id": chat_id, "sender_id": sender_id, "text": text}
 	jsonData, _ := json.Marshal(data)
-	url := "http://"+c.url + "/addMessage"
+	url := c.url + "/addMessage"
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err

@@ -4,12 +4,11 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
-	"net/http"
 	"sync"
 	"time"
-
+	"net/http"
 	"os"
-
+	"log"
 	"github.com/gen2brain/malgo"
 	"github.com/hraban/opus"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -32,6 +31,13 @@ type VoiceChat struct {
 	url			  string
 }
 
+type CallEventDTO struct {
+    Type  string `json:"type"`      // CALL_INVITE, CALL_ACCEPT, CALL_REJECT, CALL_HANGUP
+    ChatID   string `json:"chat_id"`   // ID комнаты/чата
+    SenderID string `json:"sender_id"` // Кто инициировал действие
+    Data     string `json:"data"`     // Дополнительная инфа (например, имя звонящего)
+}
+
 func NewVoiceChat() *VoiceChat {
 	url := os.Getenv("API_BASE_URL")
 	return &VoiceChat{stopChan: make(chan struct{}), url: url}
@@ -41,13 +47,11 @@ func (v *VoiceChat) ServiceName() string {
 	return "VoiceChat"
 }
 
-func (v *VoiceChat) OpenCallWindow(roomID, nickname string) {
+func (v *VoiceChat) OpenCallWindow(roomID, nickname, typing string) {
 	// В v3 мы создаем окно через глобальное приложение или контекст
 	application.Get().Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "Звонок: " + nickname,
-		// Width:  450,
-		// Height: 600,
-		URL:         "/#/call/" + roomID + "/" + nickname,
+		URL:         "/#/call/" + roomID + "/" + nickname + "/" + typing,
 		AlwaysOnTop: true,
 	})
 }
@@ -67,43 +71,41 @@ func (s *VoiceChat) SetRoomID(id string) {
 	s.currentRoomID = id
 }
 
-func (s *VoiceChat) Connect() error {
-	s.mu.Lock()
-	if s.running {
-		s.mu.Unlock()
-		return fmt.Errorf("уже подключено")
-	}
-	token := s.userToken
-	s.mu.Unlock()
+func (s *VoiceChat) StartVoice(chatID string) error {
+    s.mu.Lock()
+    if s.running {
+        s.mu.Unlock()
+        return nil
+    }
+    
+    // Очищаем канал перед запуском, если он был закрыт ранее
+    s.stopChan = make(chan struct{})
+    s.currentRoomID = chatID
+    s.running = true
+    s.mu.Unlock()
 
-	// Авторизация
-	tmp := "http://"+s.url + ":8081/"
-	req, _ := http.NewRequest("GET", tmp, nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("ошибка авторизации")
-	}
-	defer resp.Body.Close()
-
-	s.mu.Lock()
-	s.stopChan = make(chan struct{})
-	s.running = true
-	s.mu.Unlock()
-
-	go s.startAudioCapture()
-	return nil
+    log.Printf("VoiceChat: Запуск аудио-сессии для чата %s", chatID)
+    go s.startAudioCapture()
+    return nil
 }
 
 func (s *VoiceChat) Disconnect() {
-	s.mu.Lock()
-	if s.running {
-		close(s.stopChan)
-		s.running = false
-	}
-	s.mu.Unlock()
+    s.mu.Lock()
+    if !s.running {
+        s.mu.Unlock()
+        return
+    }
+    
+    log.Println("VoiceChat: Завершение звонка...")
+    
+    // Закрываем канал, чтобы остановить горутины захвата и чтения
+    if s.stopChan != nil {
+        close(s.stopChan)
+    }
+    s.running = false
+    s.mu.Unlock()
 }
+
 
 func (s *VoiceChat) startAudioCapture() {
 	var (
@@ -280,4 +282,42 @@ func (s *VoiceChat) startAudioCapture() {
 
 	<-s.stopChan
 	conn.Write([]byte("BYE"))
+}
+
+func (s *VoiceChat) Connect() error {
+    s.mu.Lock()
+    if s.running {
+        s.mu.Unlock()
+        return fmt.Errorf("звонок уже активен")
+    }
+    token := s.userToken
+    s.mu.Unlock()
+
+    // 1. Предварительная проверка авторизации на сервере
+    // Это гарантирует, что у пользователя есть права на звонки
+    authURL := fmt.Sprintf("http://%s:8081/", s.url)
+    req, _ := http.NewRequest("GET", authURL, nil)
+    req.Header.Set("Authorization", "Bearer "+token)
+    
+    client := &http.Client{Timeout: 5 * time.Second}
+    resp, err := client.Do(req)
+    
+    if err != nil {
+        return fmt.Errorf("сервер недоступен: %v", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("отказано в доступе (статус %d)", resp.StatusCode)
+    }
+
+    // 2. Инициализация каналов управления
+    s.mu.Lock()
+    s.stopChan = make(chan struct{})
+    // Мы не ставим running = true здесь, 
+    // чтобы захват микрофона не начался ДО подтверждения CALL_ACCEPT
+    s.mu.Unlock()
+
+    log.Println("VoiceChat: Подключено и готово к началу захвата")
+    return nil
 }

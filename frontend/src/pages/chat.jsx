@@ -4,7 +4,7 @@ import { Events } from '@wailsio/runtime';
 // ИСПРАВЛЕНИЕ: В v3 биндинги лежат по новому пути. 
 // Замени 'postly' на имя своего проекта из go.mod, если оно отличается.
 import { GetMessages, GetUserChats } from '@bindings/client/pages/chat';
-import { SendWSMessage, SetToken, Connect } from '@bindings/client/pages/chatws';
+import { SendWSMessage, SetToken } from '@bindings/client/pages/chatws';
 
 function Chat({ chatId }) {
     const myId = localStorage.getItem("id");
@@ -12,34 +12,32 @@ function Chat({ chatId }) {
     const [inputText, setInputText] = useState("");
     const messagesEndRef = useRef(null);
     const isInitialMount = useRef(true);
-    console.log("CHAT RENDER CHECK: ", chatId);
+
+    // 1. Очистка чата при смене ID
+    useEffect(() => {
+        setMessages([]);
+        isInitialMount.current = true;
+    }, [chatId]);
+
     useEffect(() => {
         if (!chatId) return;
 
+        // Слушаем события, которые приходят из ЕДИНОГО сокета
         const unsubscribe = Events.On("server_message", (event) => {
-            // В v3 объект события содержит поле data
-            const msg = event.data; 
-
-            console.log("Получен объект из события:", msg);
-
-            // Проверяем, что объект не пустой
-            if (msg && msg.type === "NEW_MESSAGE") {
-                // Если chat_id все еще пустой из-за бэкенда, 
-                // проверка msg.chat_id === chatId не сработает.
-                // Пока для теста можно закомментировать проверку ID:
-                if (msg.chat_id === chatId || msg.chat_id === "") {
-                    setMessages((prev) => [...prev, {
-                        ...msg,
-                        // Если текст пустой, выведем хоть что-то для теста
-                        text: msg.text || "Тестовое сообщение (пустое в JSON)"
-                    }]);
-                }
+            const msg = event.data;
+            // Просто фильтруем сообщения: если чат совпадает — добавляем в список
+            if (msg && msg.type === "NEW_MESSAGE" && String(msg.chat_id) === String(chatId)) {
+                setMessages((prev) => {
+                    if (prev.some(m => m.id === msg.id)) return prev;
+                    return [...prev, msg];
+                });
             }
         });
 
         return () => unsubscribe();
-    }, [chatId]);
-    // Загрузка истории сообщений (HTTP через Go Bindings)
+    }, [chatId]); // Здесь только подписка на событие, без вызова Connect
+
+    // 3. Загрузка истории
     useEffect(() => {
         if (!chatId) return;
         const token = localStorage.getItem('jwt_token');
@@ -48,42 +46,43 @@ function Chat({ chatId }) {
             .then((result) => {
                 setMessages(result || []);
             })
-            .catch((err) => console.error("Ошибка загрузки истории:", err));
+            .catch(err => console.error(err));
     }, [chatId]);
 
-    const scrollToBottom = (behavior = "auto") => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior });
-        }
-    };
-
+    // 4. Плавный скролл (с защитой от пустых обновлений)
     useLayoutEffect(() => {
-        if (messages.length > 0) {
+        if (messages.length > 0 && messagesEndRef.current) {
             const behavior = isInitialMount.current ? "auto" : "smooth";
-            scrollToBottom(behavior);
+            messagesEndRef.current.scrollIntoView({ behavior });
             isInitialMount.current = false;
         }
     }, [messages]);
 
     const handleSendMessage = async (e) => {
         if (e.key === 'Enter' && inputText.trim() !== "") {
-            const currentToken = localStorage.getItem('jwt_token');
-            
-            // Формируем объект сообщения
-            const messageObj = {
+            const text = inputText.trim();
+            const tempId = Date.now().toString(); // Временный ID
+
+            // 1. Создаем объект сообщения локально
+            const localMsg = {
+                id: tempId, 
                 chat_id: chatId,
                 sender_id: myId,
-                text: inputText.trim(),
+                text: text,
+                type: "NEW_MESSAGE"
             };
+            setInputText("");
 
             try {
-                // ПЕРЕД отправкой сообщения НЕ НУЖНО каждый раз вызывать Connect.
-                // Это должно быть сделано ОДИН РАЗ при загрузке приложения.
-                
-                await SendWSMessage(JSON.stringify(messageObj));
-                setInputText(""); 
+                // 3. Отправляем на сервер
+                await SendWSMessage(JSON.stringify({
+                    chat_id: chatId,
+                    sender_id: myId,
+                    text: text,
+                }));
             } catch (err) {
-                console.error("Ошибка отправки. Соединение живое?", err);
+                console.error("Ошибка отправки:", err);
+                // Тут можно пометить сообщение как "не доставлено"
             } 
         }
     };

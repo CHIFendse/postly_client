@@ -18,6 +18,7 @@ wails.local.json
 postly
 postly_client
 build/bin/
+build/bin/.env
 
 # Инструменты разработки Go
 /vendor/

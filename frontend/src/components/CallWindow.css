@@ -140,3 +140,45 @@
         opacity: 0;
     }
 }
+
+/* Анимация пульсации для аватара при звонке */
+.avatar-pulse:not(.paused) {
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+    70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+.controls {
+    display: flex;
+    gap: 40px;
+    margin-top: 30px;
+}
+
+.accept-call-btn {
+    background-color: #4cd964; /* Зеленый */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.end-call-btn {
+    background-color: #ff3b30; /* Красный */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.accept-call-btn:hover, .end-call-btn:hover {
+    transform: scale(1.1);
+}

@@ -13,6 +13,7 @@ root.render(
         <Routes>
             <Route path="/" element={<App />} />
             <Route path="/call/:chatId/:userName" element={<CallWindow />} />
+            <Route path="/call/:chatId/:userName/:typing" element={<CallWindow />} />
         </Routes>
     </Router>
 );

@@ -7,8 +7,10 @@ import (
 	"os"
 	"sync"
 	"github.com/gorilla/websocket"
-	"github.com/wailsapp/wails/v3/pkg/application"
     "encoding/json"
+    "github.com/wailsapp/wails/v3/pkg/application"
+    
+    
 )
 
 type ChatWS struct {
@@ -19,12 +21,12 @@ type ChatWS struct {
 }
 
 type MessageDTO struct {
-    // Если сервер шлет "id", "chat_id", "text"
     ID       string `json:"id"`
     ChatID   string `json:"chat_id"`
     SenderID string `json:"sender_id"`
     Text     string `json:"text"`
-    Type     string `json:"type"` // Это мы добавим сами
+    Type  string `json:"type"`
+    Name string `json:"name"`
 }
 func (s *ChatWS) ServiceName() string { return "ChatWS" }
 
@@ -66,25 +68,41 @@ func (a *ChatWS) Connect(chatID string) {
     // Запускаем чтение в отдельной рутине
     go a.listenToMessages(c)
 }
-
 func (a *ChatWS) listenToMessages(c *websocket.Conn) {
+    log.Println("WS: Новая горутина чтения запущена")
+    defer func() {
+        c.Close()
+        log.Println("WS: Горутина чтения завершена")
+    }()
+
     for {
         _, message, err := c.ReadMessage()
         if err != nil {
-            return
+            log.Printf("WS Read Error: %v", err)
+            return 
         }
 
         var msg MessageDTO
         if err := json.Unmarshal(message, &msg); err != nil {
-            log.Printf("Ошибка парсинга: %v", err)
+            log.Printf("Ошибка декодирования: %v", err)
             continue
         }
-        application.Get().Event.Emit("server_message", msg)
+        if msg.Type == "" {
+            msg.Type = "NEW_MESSAGE"
+        }
+
+        // В v3 API часто требует вызова метода Events() с большой буквы
+        app := application.Get()
+        if app != nil {
+            app.Event.Emit(
+                "server_message",
+                msg,
+            )
+        }
     }
 }
+
 func (a *ChatWS) SendWSMessage(payload string) {
-	log.Println("Попытка отправки сообщения...")
-    
     a.mu.Lock()
     defer a.mu.Unlock()
     if a.conn == nil {

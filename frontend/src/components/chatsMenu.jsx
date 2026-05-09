@@ -4,7 +4,7 @@ import { Events } from '@wailsio/runtime';
 import { GetUserChats } from '@bindings/client/pages/chat';
 import { CreateChat, GetGroups } from '@bindings/client/components/chats';
 import { getAvatarColor, getFirstLetter } from '../utils/avatarHelper';
-import { SetToken, Connect } from '@bindings/client/pages/voicechat';
+import { SetToken } from '@bindings/client/pages/voicechat';
 
 
 function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, onChatCreated, view }) {
