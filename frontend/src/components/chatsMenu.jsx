@@ -121,7 +121,6 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
             <div className="chats-header">{view === 'groups' ? 'Группы' : 'Чаты'}</div>
             <div className="chats-list">
                 {chats.map((chat) => {
-                    // ВЫЧИСЛЯЕМ ЗДЕСЬ: для каждого чата свой цвет и буква
                     const chatColor = getAvatarColor(chat.name);
                     const chatLetter = getFirstLetter(chat.name);
 
@@ -131,11 +130,13 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
                             key={chat.id} 
                             onClick={() => onSelectChat(chat.id, chat.name)}
                         >
-                            {/* Применяем вычисленные значения */}
                             <div className="avatar" style={{ backgroundColor: chatColor }}>
                                 <span>{chatLetter}</span>
                             </div>
-                            <span className="chat-name-text">{chat.name}</span>
+                            <div className="chat-info">
+                                <span className="chat-name-text">{chat.name}</span>
+                                <span className="last-message">{chat.last_message}</span>
+                            </div>
                         </div>
                     );
                 })}

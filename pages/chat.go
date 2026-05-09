@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 	"os"
+	"io"
 )
 
 // MessageInfo описывает структуру сообщения для фронтенда
@@ -99,7 +100,8 @@ func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("сервер вернул ошибку: %d", resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("сервер вернул ошибку: %d, %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var chats []map[string]interface{}

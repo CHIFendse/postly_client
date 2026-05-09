@@ -38,6 +38,8 @@
     font-weight: 600;
     background-color: #c68325;
     cursor: pointer;
+    color: #3f3f3f;
+    
 }
 
 .chat-item.active{
@@ -48,7 +50,7 @@
     border-radius: 4px; /* Чуть меньше скругление для строгости */
     font-weight: 600;
     background-color: #724c17;
-    color: #ffffff; /* Чтобы текст всегда читался на темном фоне */
+    color: #b0b0b5;
     cursor: pointer;
     border: 1px solid #6c5c3e; 
     
@@ -58,7 +60,7 @@
 
 .chat-item:hover {
     background-color: #724c17;
-    color: white;
+    /* color: white; */
 }
 
 
@@ -86,4 +88,40 @@
     color: #dbdee1;
     font-size: 16px;
     border-radius: 0;
+}
+
+.chat-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    flex: 1; 
+    min-width: 0; 
+    align-items: flex-start;
+}
+
+.chat-name-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    max-width: 100%;
+    
+}
+
+.last-message {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    max-width: 100%;
+}
+ 
+
+.last-message:empty::before {
+    content: "Нет сообщений...";
+    font-style: italic;
+    opacity: 0.5;
 }
