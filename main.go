@@ -48,6 +48,8 @@ func main() {
 		Width:  1024,
 		Height: 768,
 		URL:    "/", // или твой стартовый путь
+		MinWidth: 480,
+		MinHeight: 720,
 	})
 	// Запускаем
 	err = app.Run()

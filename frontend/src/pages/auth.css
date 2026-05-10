@@ -1,29 +1,32 @@
-.container {
+.auth-container {
     height: 100vh;
-    display: flex; /* Добавил недостающее значение */
+    height: 100dvh;
+    display: flex;
     justify-content: center;
     align-items: center;
     color: rgb(0, 0, 0);
+    background-color: #313338;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .form {
     background-color: #deddda;
     padding: 32px;
     border-radius: 8px;
-    width: 400px;
+    width: 100%;
+    max-width: 400px;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-input {
-    padding: 10px;
-    background-color: #aeaeae;
-    
-    border: none;
-    border-radius: 4px;
-    color: rgb(26, 26, 26);
-    outline: none; /* Хорошая практика для таких инпутов */
+.form h2 {
+    color: #1e1f22;
+    text-align: center;
+    margin: 0;
+    font-size: 24px;
 }
 
 .button {
@@ -34,7 +37,7 @@ input {
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    transition: background-color 0.2s; /* Чтобы кнопка плавно реагировала */
+    transition: background-color 0.2s;
 }
 
 .button:hover {
@@ -47,31 +50,61 @@ input {
     cursor: pointer;
     text-align: center;
 }
+
+.switch-text:hover {
+    text-decoration: underline;
+}
+
 .auth-input {
     padding: 10px;
     background-color: #aeaeae;
     border: none;
     border-radius: 4px;
     outline: none;
-    
-    /* Основной цвет текста */
-    color: rgb(26, 26, 26) !important; 
+    color: rgb(26, 26, 26) !important;
 }
 
-/* Цвет текста при фокусе (когда мигает курсор) */
 .auth-input:focus {
     color: rgb(26, 26, 26);
 }
 
-/* Обязательно добавь это, если браузер предлагает автозаполнение */
 .auth-input:-webkit-autofill,
-.auth-input:-webkit-autofill:hover, 
+.auth-input:-webkit-autofill:hover,
 .auth-input:-webkit-autofill:focus {
     -webkit-text-fill-color: rgb(26, 26, 26) !important;
     transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Цвет текста-подсказки (placeholder) */
 .auth-input::placeholder {
-    color: rgba(26, 26, 26, 0.7); /* Тот же цвет, но чуть прозрачнее */
+    color: rgba(26, 26, 26, 0.7);
+}
+
+/* МОБИЛЬНАЯ АДАПТАЦИЯ */
+@media (max-width: 850px) {
+    .auth-container {
+        padding: 15px;
+    }
+    
+    .form {
+        padding: 24px 20px;
+        gap: 12px;
+    }
+    
+    .form h2 {
+        font-size: 20px;
+    }
+    
+    .auth-input {
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    .button {
+        padding: 14px;
+        font-size: 16px;
+    }
+    
+    .switch-text {
+        font-size: 14px;
+    }
 }

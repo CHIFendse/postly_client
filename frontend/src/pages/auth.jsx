@@ -37,7 +37,7 @@ function Auth({ onLogin }) {
     };
 
     return (
-        <div className='container'>
+        <div className='auth-container'>
             <form onSubmit={handleSubmit} className='form'>
                 <h2>{isRegister ? 'Создать аккаунт' : 'Добро пожаловать!'}</h2>
                 {error && <p style={{ color: '#f04747', fontSize: '14px' }}>{error}</p>}

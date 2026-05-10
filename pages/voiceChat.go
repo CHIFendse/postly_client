@@ -53,6 +53,8 @@ func (v *VoiceChat) OpenCallWindow(roomID, nickname, typing string) {
 		Title: "Звонок: " + nickname,
 		URL:         "/#/call/" + roomID + "/" + nickname + "/" + typing,
 		AlwaysOnTop: true,
+		MinWidth: 360,
+		MinHeight: 480,
 	})
 }
 
