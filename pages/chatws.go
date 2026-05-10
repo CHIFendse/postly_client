@@ -27,6 +27,7 @@ type MessageDTO struct {
     Text     string `json:"text"`
     Type  string `json:"type"`
     Name string `json:"name"`
+    SenderName string `json:"username"`
 }
 func (s *ChatWS) ServiceName() string { return "ChatWS" }
 
@@ -90,7 +91,7 @@ func (a *ChatWS) listenToMessages(c *websocket.Conn) {
         if msg.Type == "" {
             msg.Type = "NEW_MESSAGE"
         }
-
+        
         // В v3 API часто требует вызова метода Events() с большой буквы
         app := application.Get()
         if app != nil {

@@ -1,24 +1,21 @@
 import { useState, useEffect } from 'react';
 import './header.css';
-import { StartVoice, Disconnect, SetToken, OpenCallWindow, SetRoomID  } from '@bindings/client/pages/voicechat';
+import { StartVoice, Disconnect, SetToken, OpenCallWindow, SetRoomID } from '@bindings/client/pages/voicechat';
 import { SendWSMessage } from '@bindings/client/pages/chatws';
 import decall from '../assets/images/phone-line.png'
 import callIcon from '../assets/images/phone-fill.png'
 import addUserImg from '../assets/images/user-plus.svg'
 import { Events } from '@wailsio/runtime';
 
-// Добавляем setExternalConnected в деструктуризацию пропсов
-function Header({ token, chatName, chatId }) {
+function Header({ token, chatName, chatId, onMenuToggle }) {
     const [status, setStatus] = useState('');
     const [isConnected, setIsConnected] = useState(false);
     const [timer, setTimer] = useState('00:00');
     const [isMuted, setIsMuted] = useState(false);
-    
 
     useEffect(() => {
         const unsubscribe = Events.On("server_message", async (event) => {
             const msg = event.data;
-            // Используем msg.type или msg.typing в зависимости от твоего протокола
             const msgType = msg.type || msg.typing;
             console.log(event.data);
             if (msgType === "CALL_INVITE") {
@@ -32,14 +29,13 @@ function Header({ token, chatName, chatId }) {
 
             if (msgType === "CALL_REJECT" || msgType === "CALL_HANGUP") {
                 setStatus('Звонок завершен');
-                await Disconnect(); 
+                await Disconnect();
                 setTimeout(() => setStatus(''), 3000);
             }
         });
 
         const subAccept = Events.On("ui_call_accept", async (event) => {
-            // Wails v3 передает данные в event.data
-            const targetId = event.data?.toString(); 
+            const targetId = event.data?.toString();
             
             await SendWSMessage(JSON.stringify({
                 type: "CALL_ACCEPT",
@@ -69,9 +65,8 @@ function Header({ token, chatName, chatId }) {
             subAccept();
             subReject();
         };
-    }, [token, chatId]); // Добавлен chatId для актуальности данных
+    }, [token, chatId]);
 
-    // Вспомогательная функция для старта голоса
     const startVoiceSession = async (cId) => {
         try {
             await SetToken(token);
@@ -94,16 +89,17 @@ function Header({ token, chatName, chatId }) {
         };
         try {
             await SendWSMessage(JSON.stringify(inviteData));
-            // ВАЖНО: передаем 'outgoing', чтобы открылось окно ожидания
-            await OpenCallWindow(chatId.toString(), chatName, "outgoing"); 
+            await OpenCallWindow(chatId.toString(), chatName, "outgoing");
             setStatus('Звоним...');
         } catch (err) {
             console.error("Ошибка при инициации звонка:", err);
         }
     };
-    const addUser = async () => {
 
+    const addUser = async () => {
+        // Логика добавления пользователя
     };
+
     const handleDisconnect = async () => {
         try {
             await Disconnect();
@@ -117,47 +113,101 @@ function Header({ token, chatName, chatId }) {
 
     const toggleMute = () => {
         setIsMuted(!isMuted);
-        // Здесь можно вызвать функцию из Go для выключения микрофона
-        // MuteMicrophone(!isMuted);
     };
+
+    const handleMenuClick = (e) => {
+        e.stopPropagation();
+        console.log('Menu button clicked!'); // Проверь консоль
+        if (onMenuToggle) {
+            onMenuToggle();
+        }
+    };
+
     if (!chatId) {
         return (
-            <header className="header"></header>
-        )
-    };
-    return (
-        <>
             <header className="header">
                 <div className='left-group'>
-                    <nav className="chat-name">{chatName}</nav>
-                </div>
-                <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '15px'}}>
                     <button 
-                        className="adduser-button"
-                        onClick={addUser}
-                        title="Добавить пользователя в чат"
+                        className="menu-toggle-btn" 
+                        onClick={handleMenuClick}
+                        type="button"
                     >
-                        <img 
-                        className="addUserIcon" 
-                        src={addUserImg} 
-                        alt="Add New User"
-                        />
-                    </button>
-                    <button 
-                        className="call-button disconnected"
-                        onClick={handleToggleCall}
-                        title="Позвонить"
-                    >
-                        <img 
-                            src={callIcon} 
-                            alt="Call Icon" 
-                            className="button-icon"
-                        />
+                        ☰
                     </button>
                 </div>
             </header>
+        );
+    }
+
+    return (
+        <header className="header">
+            <div className='left-group'>
+                <button 
+                    className="menu-toggle-btn" 
+                    onClick={handleMenuClick}
+                    type="button"
+                >
+                    ☰
+                </button>
+                <nav className="chat-name">{chatName}</nav>
+            </div>
             
-            </>
+            <div className="header-right">
+                {isConnected && (
+                    <span className="status-text">{status}</span>
+                )}
+                
+                <button 
+                    className="adduser-button"
+                    onClick={addUser}
+                    title="Добавить пользователя в чат"
+                >
+                    <img 
+                        className="addUserIcon" 
+                        src={addUserImg} 
+                        alt="Add New User"
+                    />
+                </button>
+                
+                <button 
+                    className={`call-button ${isConnected ? 'connected' : 'disconnected'}`}
+                    onClick={isConnected ? handleDisconnect : handleToggleCall}
+                    title={isConnected ? 'Завершить звонок' : 'Позвонить'}
+                >
+                    <img 
+                        src={isConnected ? decall : callIcon} 
+                        alt={isConnected ? "Hang Up" : "Call"} 
+                        className="button-icon"
+                    />
+                </button>
+            </div>
+
+            {isConnected && (
+                <div className="call-overlay">
+                    <div className="call-info">
+                        <div className="call-avatar"></div>
+                        <div className="call-details">
+                            <span className="call-nickname">{chatName}</span>
+                            <span className="call-timer">{timer}</span>
+                        </div>
+                    </div>
+                    <div className="call-controls">
+                        <button 
+                            className={`control-btn ${isMuted ? 'muted' : ''}`}
+                            onClick={toggleMute}
+                        >
+                            <span className="control-icon">🎤</span>
+                        </button>
+                        <button 
+                            className="control-btn disconnect-btn"
+                            onClick={handleDisconnect}
+                        >
+                            <span className="control-icon">📞</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+        </header>
     );
 }
 

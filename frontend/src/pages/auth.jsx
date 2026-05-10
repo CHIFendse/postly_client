@@ -15,19 +15,24 @@ function Auth({ onLogin }) {
         try {
             if (isRegister) {
                 await Register(form.user, form.pass, form.email, form.phone);
+                console.log("Вот тут")
                 const data = await Login(form.user, form.pass);
+                console.log("И тут")
                 onLogin(data.token, data.username, data.id); 
                 setIsRegister(false);
                 setForm({ user: '', pass: '', email: '', phone: '' });
+                
+
             } else {
+                console.log("Странно, что тут")
                 // Вызываем метод из Go
                 const data = await Login(form.user, form.pass);
                 // Передаем данные в родительский компонент
                 onLogin(data.token, data.username, data.id); 
             }
         } catch (err) {
-            // Ошибки из Go придут прямо сюда
-            setError("Ошибка:", err.toString());
+            console.log("В ошибке что-то")
+            setError(JSON.parse(err.message).message);
         }
     };
 

@@ -1,5 +1,6 @@
+
 .main-header {
-    height: 60px;
+    height: 30px;
     width: 100%; 
     position: fixed;
     top: 0;
@@ -8,7 +9,7 @@
     z-index: 100;
     display: flex;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 10px;
     box-sizing: border-box;
     border-bottom: 1px solid #1e1f22;
 }
@@ -47,4 +48,10 @@
 
 .btn-exit:hover {
     background-color: #a53737;
+}
+
+@media (max-width: 850px) {
+    .main-header {
+        display: none !important;
+    }
 }

@@ -9,20 +9,16 @@ function MainHeader({handleLogout, username, setChat, setChatName, setView}){
         setView("chats")
     }
     return (
-            <header className="main-header">
-                <button 
+        <header className="main-header">
+            <button 
                 className="preview"
                 title="Вернуться на главную"
                 onClick={toMain}
-                >
-                    <nav>POSTLY</nav>
-                </button>
-                <div className='right-group'>
-                    <nav className='username'>{username}</nav>
-                    <button className='btn-exit' onClick={handleLogout}>Выйти</button>
-                </div>
-            </header>
-        );
+            >
+                <nav>POSTLY</nav>
+            </button>
+        </header>
+    );
 };
 
 export default MainHeader;

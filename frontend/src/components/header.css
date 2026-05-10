@@ -1,16 +1,28 @@
 .header {
-    height: 50px;      /* Может быть чуть ниже основного */
-    width: calc(100% - 312px); /* Оставляем место под меню */
+    height: 60px;
+    width: calc(100% - 432px); /* 72px (menu) + 360px (chats-menu) */
     position: fixed;
-    top: 60px;         /* Смещаем вниз под MainHeader */
-    right: 0;          /* Прижимаем вправо */
+    top: 30px;
+    right: 0;
     background-color: #312f2b;
-    z-index: 70;       /* Ниже меню и MainHeader */
+    z-index: 70;
     display: flex;
     align-items: center;
     padding: 0 20px;
     box-sizing: border-box;
     border-bottom: 1px solid #1e1f22;
+}
+
+/* Кнопка бургер-меню (скрыта на десктопе) */
+.menu-toggle-btn {
+    display: none;
+}
+
+/* Группы кнопок в хедере */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .call-button {
@@ -26,15 +38,14 @@
     justify-content: center;
     transition: background-color 0.2s, transform 0.1s;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    
 }
 
 .call-button.connected {
-    background-color: #ed4245; /* Красный */
+    background-color: #ed4245;
 }
 
 .call-button.disconnected {
-    background-color: #3ba55d; /* Зеленый */
+    background-color: #3ba55d;
 }
 
 .call-button:hover {
@@ -49,33 +60,35 @@
     color: #b5bac1;
     font-size: 14px;
     font-family: sans-serif;
+}
 
-}
 .button-icon {
-    width: 25px;   /* Размер иконки внутри круга */
+    width: 25px;
     height: 25px;
-    object-fit: contain; /* Сохраняет пропорции картинки */
-    pointer-events: none; /* Чтобы картинка не мешала клику по кнопке */
-    /* Если картинка черная, а нужна белая, можно добавить фильтр: */
-    filter: brightness(0) invert(1); 
+    object-fit: contain;
+    pointer-events: none;
+    filter: brightness(0) invert(1);
 }
+
 .left-group {
-    flex: 1;           /* Занимает всё место слева */
+    flex: 1;
     display: flex !important;
     visibility: visible !important;
+    align-items: center;
+    gap: 10px;
 }
 
 .chat-name {
-    color: #FFA500 !important; 
+    color: #FFA500 !important;
     font-size: 20px !important;
 }
 
 /* Контейнер меню звонка */
 .call-overlay {
     position: fixed;
-    top: 80px; /* Сразу под хедером */
+    top: 80px;
     right: 20px;
-    background: #1e1f22; /* Темный фон в стиле Discord */
+    background: #1e1f22;
     border: 1px solid #35373c;
     border-radius: 12px;
     padding: 15px;
@@ -119,7 +132,7 @@
 }
 
 .call-timer {
-    color: #2ecc71; /* Зеленый таймер */
+    color: #2ecc71;
     font-size: 12px;
 }
 
@@ -139,22 +152,22 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background: #4e5058; /* Цвет фона кнопки микрофона */
+    background: #4e5058;
     transition: background 0.2s;
 }
 
 .control-btn.muted {
-    background: #ed4245; /* Красный фон, если звук выключен */
+    background: #ed4245;
 }
 
 .disconnect-btn {
-    background: #ed4245; /* Всегда красный для сброса */
+    background: #ed4245;
 }
 
 .control-icon {
     width: 25px;
     height: 25px;
-   filter: invert(1); /*Белый цвет для кнопок сброса и микрофона*/
+    filter: invert(1);
 }
 
 .control-btn:hover {
@@ -175,11 +188,90 @@
     color: #f2f3f5;
 }
 
-.adduser-button{
+.adduser-button {
     cursor: pointer;
     border: none;
     background: none;
 }
-.addUserIcon{
+
+.addUserIcon {
     filter: invert(75%) sepia(53%) saturate(4447%) hue-rotate(3deg) brightness(103%) contrast(105%);
+}
+
+/* === МОБИЛЬНАЯ АДАПТАЦИЯ (до 850px) === */
+@media (max-width: 850px) {
+    .header {
+        height: 50px;
+        width: 100%;
+        left: 0;
+        right: 0;
+        top: 0;
+        padding: 0 15px;
+        z-index: 90;
+    }
+    
+    /* Показываем кнопку бургер-меню в хедере */
+    .menu-toggle-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: #c68325;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    
+    .chat-name {
+        font-size: 16px !important;
+    }
+    
+    .call-button {
+        width: 34px;
+        height: 34px;
+        margin-right: 5px;
+    }
+    
+    .button-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .status-text {
+        font-size: 12px;
+    }
+    
+    .call-overlay {
+        right: 10px;
+        top: 30px;
+        min-width: 180px;
+        padding: 12px;
+    }
+    
+    .call-nickname {
+        font-size: 12px;
+    }
+    
+    .call-timer {
+        font-size: 10px;
+    }
+    
+    .control-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .control-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .call-controls {
+        gap: 10px;
+    }
 }

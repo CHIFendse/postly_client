@@ -15,15 +15,13 @@ function VoiceChat({ token, handleLogout }) {
   const [activeChatId, setActiveChatId] = useState(localStorage.getItem('lastActiveChatId'));
   const [activeChatName, setActiveChatName] = useState(localStorage.getItem('lastChatName'));
   const [refreshTrigger, setRefreshTrigger] = useState(false);
+  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    // ИСПРАВЛЕНИЕ: В v3 события доступны через глобальный объект window.wails
-    // Если ты сгенерировал bindings, можно импортировать Events оттуда,
-    // но самый надежный способ для v3 сейчас — использовать window.wails.Events
     const unsubscribe = Events.On("friend_added", (data) => {
         triggerRefresh();
     });
-
     return () => unsubscribe(); 
   }, []);
 
@@ -32,8 +30,9 @@ function VoiceChat({ token, handleLogout }) {
     localStorage.setItem("lastActiveChatId", chatId);
     setActiveChatName(name);
     localStorage.setItem("lastChatName", name);
-    console.log("Текущий activeChatId в VoiceChat:", activeChatId);
-    // В v3 функции возвращают Promise, лучше использовать await или .then()
+    
+    setIsMobileMenuOpen(false);
+    
     try {
         await SetToken(token);
         const roomIdInt = chatId;
@@ -45,35 +44,69 @@ function VoiceChat({ token, handleLogout }) {
 
   const triggerRefresh = () => setRefreshTrigger(prev => !prev);
 
+  const toggleMobileMenu = () => {
+    console.log('Toggle menu, current state:', isMobileMenuOpen);
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    console.log('Close menu');
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className="container" >
+    <div className="container">
       <MainHeader 
-                handleLogout={handleLogout} 
-                username={username} 
-                setChat={setActiveChatId} 
-                setChatName={setActiveChatName}
-                setView={setView}
-            />
-      <Menu setView={setView}/>
+        handleLogout={handleLogout} 
+        username={username} 
+        setChat={setActiveChatId} 
+        setChatName={setActiveChatName}
+        setView={setView}
+      />
+      
+      {/* Левое меню с группами */}
+      <Menu 
+        setView={setView} 
+        isOpen={isMobileMenuOpen}
+        onClose={closeMobileMenu}
+        username={username}
+        onLogout={handleLogout}
+      />
+      
+      {/* Меню чатов */}
       <ChatsMenu 
-                currentUserId={myId}
-                onSelectChat={handleChatSelection} 
-                activeChatId={activeChatId}
-                refreshTrigger={refreshTrigger}
-                onChatCreated={triggerRefresh}
-                view={view}
-            />
+        currentUserId={myId}
+        onSelectChat={handleChatSelection} 
+        activeChatId={activeChatId}
+        refreshTrigger={refreshTrigger}
+        onChatCreated={triggerRefresh}
+        view={view}
+        isOpen={isMobileMenuOpen}
+        onClose={closeMobileMenu}
+      />
+      
+      {/* Оверлей для мобильных меню */}
+      {isMobileMenuOpen && (
+        <div className="menu-overlay" onClick={closeMobileMenu} />
+      )}
+      
       <div className="main-content">
+        <Header 
+          token={token} 
+          chatName={activeChatName} 
+          chatId={activeChatId}
+          onMenuToggle={toggleMobileMenu}
+        />
         
-        <Header token={token} chatName={activeChatName} chatId={activeChatId}/>
-                {activeChatId ? (
-                    <Chat chatId={activeChatId}/>
-                ) : (
-                    <div className="chat-placeholder">
-                        <div className="placeholder-content">
-                            <p>Выберите чат, чтобы начать общение</p>
-                        </div>
-                    </div>)}
+        {activeChatId ? (
+          <Chat chatId={activeChatId}/>
+        ) : (
+          <div className="chat-placeholder">
+            <div className="placeholder-content">
+              <p>Выберите чат, чтобы начать общение</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

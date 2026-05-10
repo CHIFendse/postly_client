@@ -48,9 +48,8 @@ func (s *AuthService) Login(username, password string) (*AuthResponse, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(result.Message)
+		return nil, errors.New(result.Message)
 	}
-
 	return &result, nil
 }
 
@@ -70,11 +69,10 @@ func (s *AuthService) Register(username, password, email, phone string) (string,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var errData map[string]error
+		var errData map[string]string
 		json.NewDecoder(resp.Body).Decode(&errData)
-		if errData["error"] != nil{
-			return "", errors.New("Ошибка авторизации")
-		}
+		fmt.Println(errData["message"])
+		return "", errors.New(errData["message"])
 	}
 	return "Авторизация успешна, перелогиньтесь", nil
 }

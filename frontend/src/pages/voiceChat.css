@@ -2,39 +2,70 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    overflow: hidden; /* Убирает скролл всей страницы */
+    overflow: hidden;
 }
 
-/* Контейнер всего экрана приложения */
 .container {
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     display: flex;
     flex-direction: column;
     background-color: #313338;
 }
 
-/* Область под MainHeader, где Меню и Чат стоят в ряд */
-.main-content {
-    margin-left: 312px; /* 72px (Menu) + 240px (FriendsMenu) */
-    margin-top: 60px;   /* Высота MainHeader */
-    
-    width: calc(100% - 312px);
-    height: calc(100vh - 60px);
-    
-    display: flex;
-    flex-direction: column; 
-    align-items: stretch; /* Растягивает чат на всю ширину остатка */
-    
-    background-color: #313338;
-    position: relative;
+.menu-overlay {
+    display: none;
 }
 
-/* Если у тебя есть текстовый статус или заглушка */
+.main-content {
+    margin-left: 432px;
+    margin-top: 30px;
+    width: calc(100% - 432px);
+    height: calc(100vh - 30px);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background-color: #313338;
+    position: relative;
+    overflow: hidden;
+}
+
+.main-content > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 .status {
     font-size: 24px;
     font-weight: 300;
     color: #dbdee1;
     text-align: center;
     margin-top: 50px;
+}
+
+/* МОБИЛЬНАЯ АДАПТАЦИЯ */
+@media (max-width: 850px) {
+    .menu-overlay {
+        display: block;
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 100vw;
+        height: calc(100vh - 50px);
+        height: calc(100dvh - 50px);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(3px);
+        z-index: 85;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        margin-top: 50px;
+        width: 100%;
+        height: calc(100vh - 50px);
+        height: calc(100dvh - 50px);
+    }
 }

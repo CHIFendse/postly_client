@@ -1,30 +1,116 @@
 .menu {
     width: 72px;
-    height: calc(100vh - 60px); /* Высота за вычетом MainHeader */
+    height: calc(100vh - 30px);
     position: fixed;
-    top: 60px;         /* Смещаем вниз */
+    top: 30px;
     left: 0;
-    background-color:  #312f2b;
-    z-index: 80;       /* Ниже, чем MainHeader */
+    background-color: #1e1b17;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-.menu p {
-    color: #b5bac1;
-    font-size: 10px;           /* Маленький текст, так как меню узкое */
-    text-align: center;
-    word-wrap: break-word;     /* Чтобы текст не вылезал за границы */
-    margin: 0;
-    background-color: #707071;
-    height: 30px;
-    align-content: center;
+.menu-top {
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
-.groups-button{
-    height: 60px;
+.menu-button {
+    height: 48px;
+    width: 48px;
     border: none;
     background: none;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
 }
-.groupsIcon{
+
+.menu-button:hover {
+    background-color: #3b3833;
+}
+
+.menu-icon {
+    width: 28px;
+    height: 28px;
     filter: invert(75%) sepia(53%) saturate(4447%) hue-rotate(3deg) brightness(103%) contrast(105%);
+}
+
+/* Нижняя часть - одинаково на всех устройствах */
+.menu-bottom {
+    padding: 12px 8px;
+    border-top: 1px solid #c68325;
+    text-align: center;
+}
+
+.menu-username {
+    color: #FFA500;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    margin-bottom: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.menu-logout-btn {
+    padding: 8px 10px;
+    background-color: #ed4245;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.menu-logout-btn:hover {
+    background-color: #c0392b;
+}
+
+/* МОБИЛЬНАЯ ВЕРСИЯ */
+@media (max-width: 850px) {
+    .menu {
+        top: 50px;
+        height: calc(100vh - 50px);
+        height: calc(100dvh - 50px);
+        width: 72px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 96;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        background-color: #1e1b17;
+    }
+    
+    .menu.open {
+        transform: translateX(0);
+    }
+    
+    .menu-top {
+        padding-top: 15px;
+        gap: 4px;
+    }
+    
+    .menu-button {
+        height: 44px;
+        width: 44px;
+    }
+    
+    .menu-button:hover {
+        background-color: #c68325;
+    }
+    
+    .menu-icon {
+        width: 24px;
+        height: 24px;
+    }
 }

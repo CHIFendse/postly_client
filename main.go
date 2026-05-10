@@ -21,11 +21,12 @@ func main() {
     }
 
 	app := application.New(application.Options{
-        Name: "Postly",
-        Assets: application.AssetOptions{
-            Handler: application.AssetFileServerFS(assets),
-        },
-    })
+		Name: "Postly",
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
+		},
+		
+	})
 
     // 2. Инициализируем сервисы, передавая им app
     voiceService := pages.NewVoiceChat()

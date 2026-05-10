@@ -1,16 +1,15 @@
 import './chatsMenu.css'
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Events } from '@wailsio/runtime';
 import { GetUserChats } from '@bindings/client/pages/chat';
 import { CreateChat, GetGroups } from '@bindings/client/components/chats';
 import { getAvatarColor, getFirstLetter } from '../utils/avatarHelper';
-import { SetToken } from '@bindings/client/pages/voicechat';
 
-
-function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, onChatCreated, view }) {
+function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, onChatCreated, view, isOpen, onClose }) {
     const [chats, setChats] = useState([]);
     const [inputText, setInputText] = useState("");
     const token = localStorage.getItem('jwt_token');
+    const username = localStorage.getItem('username');
 
     const fetchChats = async () => {
         const token = localStorage.getItem('jwt_token');
@@ -23,22 +22,20 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
             const msg = event.data;
             if (msg?.type === "NEW_MESSAGE") {
                 setChats((prevChats) => {
-                    // 1. Находим чат, в который пришло сообщение
                     const chatIndex = prevChats.findIndex(c => c.id === msg.chat_id);
                     
                     if (chatIndex !== -1) {
                         const updatedChats = [...prevChats];
-                        // 2. Обновляем текст последнего сообщения и время
                         updatedChats[chatIndex] = {
                             ...updatedChats[chatIndex],
                             last_message: msg.text,
-                            updated_at: new Date().toISOString() // или время с сервера
+                            sender_id: msg.sender_id,
+                            username: msg.username,
+                            updated_at: msg.updated_at || Math.floor(Date.now() / 1000)
                         };
-                        // 3. Перемещаем его в начало списка (сортировка)
                         const [movedChat] = updatedChats.splice(chatIndex, 1);
                         return [movedChat, ...updatedChats];
                     } else {
-                        // Если чата нет в списке (например, новый чат), лучше перекачать список
                         fetchChats();
                         return prevChats;
                     }
@@ -54,8 +51,6 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
                 const rawData = event.data || event;
                 const messageData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
                 
-                console.log("Событие в меню:", messageData.type);
-
                 if (messageData.type === 'NEW_CHAT') {
                     if (onChatCreated) onChatCreated(); 
                 }
@@ -67,10 +62,8 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
         return () => unsubscribe && unsubscribe();
     }, [onChatCreated]);
 
-
-     useEffect(() => {
+    useEffect(() => {
         if (currentUserId) {
-            // В v3 функции возвращают Promise, логика вызова через .then сохраняется
             const fetchMethod = view === 'groups' ? GetGroups : GetUserChats;
 
             fetchMethod(currentUserId, token)
@@ -79,13 +72,12 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
                 })
                 .catch((err) => {
                     console.error("Ошибка загрузки данных:", err);
-                    setChats([])
+                    setChats([]);
                 });
         }
     }, [currentUserId, refreshTrigger, view]);
 
-
-   const handleSendMessage = async (e) => {
+    const handleSendMessage = async (e) => {
         if (e.key === 'Enter' && inputText.trim() !== "") {
             const targetUsername = inputText.trim();
             const userId = localStorage.getItem('id');
@@ -95,11 +87,10 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
                 const result = await CreateChat(String(userId), targetUsername, token);
                 const actualChatId = result.id;
 
-                // 2. Уведомляем систему, что список чатов надо обновить
                 if (onChatCreated) onChatCreated();
-
-                // 3. Переходим в чат
                 onSelectChat(actualChatId, targetUsername);
+                
+                if (onClose) onClose();
                 
                 setInputText("");
             } catch (err) {
@@ -108,16 +99,23 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
         }
     };
 
+    const handleSelectChat = (id, name) => {
+        onSelectChat(id, name);
+        if (window.innerWidth <= 850 && onClose) {
+            onClose();
+        }
+    };
+
     return (
-        <div className="chats-menu">
+        <div className={`chats-menu ${isOpen ? 'open' : ''}`}>
             <input
-                    type="text"
-                    placeholder="Найти друга..."
-                    className="search-chat"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={handleSendMessage}
-                />
+                type="text"
+                placeholder="Найти друга..."
+                className="search-chat"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleSendMessage}
+            />
             <div className="chats-header">{view === 'groups' ? 'Группы' : 'Чаты'}</div>
             <div className="chats-list">
                 {chats.map((chat) => {
@@ -128,14 +126,39 @@ function ChatsMenu({ currentUserId, activeChatId, onSelectChat, refreshTrigger, 
                         <div
                             className={`chat-item ${chat.id === activeChatId ? 'active' : ''}`}
                             key={chat.id} 
-                            onClick={() => onSelectChat(chat.id, chat.name)}
+                            onClick={() => handleSelectChat(chat.id, chat.name)}
                         >
                             <div className="avatar" style={{ backgroundColor: chatColor }}>
                                 <span>{chatLetter}</span>
                             </div>
-                            <div className="chat-info">
-                                <span className="chat-name-text">{chat.name}</span>
-                                <span className="last-message">{chat.last_message}</span>
+                            
+                            <div className="chat-content">
+                                <div className="chat-row">
+                                    <span className="chat-name-text">{chat.name}</span>
+                                    
+                                    {chat.last_message && chat.last_message.trim() !== "" && (
+                                        <span className="chat-time">
+                                            {chat.updated_at > 0 && 
+                                                new Date(chat.updated_at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                            }
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="last-message-info">
+                                    {chat.last_message && chat.last_message.trim() !== "" ? (
+                                        <>
+                                            {chat.username == username ? (
+                                                <span className="last-message-sender">Вы: </span>
+                                            ) : (
+                                                <span className="last-message-sender">{chat.username}: </span>
+                                            )}
+                                            <span className="last-message">{chat.last_message}</span>
+                                        </>
+                                    ) : (
+                                        <span className="no-messages">Нет сообщений...</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     );
