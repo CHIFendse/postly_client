@@ -30,6 +30,12 @@ jobs:
             libgtk-3-dev libwebkit2gtk-4.1-dev \
             libopus-dev libopusfile-dev
 
+      - name: Установка Wails v3
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Генерация биндингов
+        run: wails3 generate bindings
+
       - name: Сборка фронтенда
         run: |
           cd frontend
@@ -37,7 +43,7 @@ jobs:
           npm run build
 
       - name: Сборка приложения
-        run: go build -tags production -ldflags="-w -s" -o build/bin/postly .
+        run: go build -ldflags="-w -s" -o build/bin/postly .
 
       - name: Скачиваем linuxdeploy
         run: |
