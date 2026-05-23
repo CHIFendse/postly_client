@@ -18,6 +18,7 @@ type MessageInfo struct {
 	ChatId    string    `json:"chat_id"`
 	SenderId  string    `json:"sender_id"`
 	CreatedAt time.Time `json:"created_at"`
+	Username  string	`json:"username"`
 }
 
 type Chat struct {

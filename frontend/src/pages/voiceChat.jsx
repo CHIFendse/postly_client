@@ -11,7 +11,9 @@ import { SetRoomID, SetToken } from '@bindings/client/pages/voicechat';
 function VoiceChat({ token, handleLogout }) {
   const username = localStorage.getItem("username");
   const myId = localStorage.getItem("id");
-  const [view, setView] = useState('chats');
+  const [view, setView] = useState(() => {
+    return localStorage.getItem('lastView') || 'chats';
+  });
   const [activeChatId, setActiveChatId] = useState(localStorage.getItem('lastActiveChatId'));
   const [activeChatName, setActiveChatName] = useState(localStorage.getItem('lastChatName'));
   const [refreshTrigger, setRefreshTrigger] = useState(false);

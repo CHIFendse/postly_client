@@ -48,6 +48,7 @@ export class MessageInfo {
     "chat_id": string;
     "sender_id": string;
     "created_at": time$0.Time;
+    "username": string;
 
     /** Creates a new MessageInfo instance. */
     constructor($$source: Partial<MessageInfo> = {}) {
@@ -65,6 +66,9 @@ export class MessageInfo {
         }
         if (!("created_at" in $$source)) {
             this["created_at"] = null;
+        }
+        if (!("username" in $$source)) {
+            this["username"] = "";
         }
 
         Object.assign(this, $$source);

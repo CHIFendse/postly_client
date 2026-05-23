@@ -1,0 +1,368 @@
+.create-group-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.create-group-modal {
+    background-color: #312f2b;
+    border: 1px solid #c68325;
+    border-radius: 16px;
+    padding: 0;
+    width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.create-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+}
+
+.create-group-title {
+    color: #FFA500;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.create-group-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    color: #949ba4;
+    cursor: pointer;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.create-group-close:hover {
+    background-color: #3b3833;
+    color: #dcddde;
+}
+
+/* Аватарка */
+.avatar-section {
+    padding: 0 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.group-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    color: white;
+    font-weight: 600;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    transition: background-color 0.3s;
+    cursor: pointer;
+    position: relative;
+}
+
+.group-avatar:hover {
+    filter: brightness(0.85);
+}
+
+.avatar-hint {
+    color: rgba(148, 155, 164, 0.6);
+    font-size: 11px;
+    font-family: sans-serif;
+}
+
+/* Название группы */
+.group-name-section {
+    padding: 0 24px 20px;
+}
+
+.section-label {
+    color: #b5bac1;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: block;
+    font-family: sans-serif;
+    text-align: left;
+}
+
+.create-group-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #3b3833;
+    background-color: #1e1b17;
+    color: #dcddde;
+    font-size: 14px;
+    font-family: sans-serif;
+    outline: none;
+    box-sizing: border-box;
+    height: 40px;
+    transition: border-color 0.2s;
+}
+
+.create-group-input:focus {
+    border-color: #c68325;
+}
+
+.create-group-input::placeholder {
+    color: #72767d;
+}
+
+/* Добавление участников */
+.add-users-section {
+    padding: 0 24px 20px;
+}
+
+.add-user-row {
+    display: flex;
+    gap: 8px;
+}
+
+.add-user-input {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #3b3833;
+    background-color: #1e1b17;
+    color: #dcddde;
+    font-size: 13px;
+    font-family: sans-serif;
+    outline: none;
+    height: 40px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.add-user-input:focus {
+    border-color: #c68325;
+}
+
+.add-user-input::placeholder {
+    color: #72767d;
+}
+
+.add-user-btn {
+    padding: 0 16px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    background-color: #c68325;
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+    box-sizing: border-box;
+    transition: background-color 0.2s;
+}
+
+.add-user-btn:hover {
+    background-color: #a86d1f;
+}
+
+.selected-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.selected-user-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #3b3833;
+    color: #dcddde;
+    padding: 6px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-family: sans-serif;
+}
+
+.remove-user-btn {
+    width: 16px;
+    height: 16px;
+    border: none;
+    background: none;
+    color: #949ba4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    transition: all 0.15s;
+}
+
+.remove-user-btn:hover {
+    color: #ed4245;
+    background-color: rgba(237, 66, 69, 0.15);
+}
+
+/* Кнопки действий */
+.create-group-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #3b3833;
+}
+
+.create-group-cancel {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #4e5058;
+    color: #dcddde;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.create-group-cancel:hover {
+    background-color: #5d5f67;
+}
+
+.create-group-submit {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: #c68325;
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.create-group-submit:hover {
+    background-color: #a86d1f;
+}
+
+.create-group-submit:disabled {
+    background-color: #4e5058;
+    color: #72767d;
+    cursor: not-allowed;
+}
+
+.group-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    color: white;
+    font-weight: 600;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    transition: filter 0.2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.group-avatar:hover {
+    filter: brightness(0.85);
+}
+
+.group-avatar:hover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+}
+/* Приватность */
+.privacy-section {
+    padding: 0 24px 20px;
+}
+
+.privacy-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.privacy-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #3b3833;
+    background-color: #1e1b17;
+    color: #949ba4;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    width: 100%;
+}
+
+.privacy-option:hover {
+    border-color: #5d5f67;
+    background-color: #2a2722;
+}
+
+.privacy-option.active {
+    border-color: #c68325;
+    background-color: #2a2722;
+    color: #dcddde;
+}
+
+.privacy-option.active .privacy-label {
+    color: #FFA500;
+}
+
+.privacy-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.privacy-label {
+    font-size: 14px;
+    font-weight: 600;
+    font-family: sans-serif;
+}
+
+.privacy-desc {
+    font-size: 11px;
+    color: #72767d;
+    font-family: sans-serif;
+}
+
+.privacy-option.active .privacy-desc {
+    color: #949ba4;
+}
+
+.search-error {
+    color: #ed4245;
+    font-size: 11px;
+    margin-top: 4px;
+    padding-left: 4px;
+}

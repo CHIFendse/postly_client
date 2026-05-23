@@ -1,10 +1,7 @@
 import './chat.css'
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
-import { Events } from '@wailsio/runtime';
-// ИСПРАВЛЕНИЕ: В v3 биндинги лежат по новому пути. 
-// Замени 'postly' на имя своего проекта из go.mod, если оно отличается.
-import { GetMessages, GetUserChats } from '@bindings/client/pages/chat';
-import { SendWSMessage, SetToken } from '@bindings/client/pages/chatws';
+import { GetMessages } from '@bindings/client/pages/chat';
+import { SendWSMessage } from '@bindings/client/pages/chatws';
 
 function Chat({ chatId }) {
     const myId = localStorage.getItem("id");
@@ -14,41 +11,30 @@ function Chat({ chatId }) {
     const messagesEndRef = useRef(null);
     const isInitialMount = useRef(true);
     const [isLoading, setIsLoading] = useState(false);
-    // 1. Очистка чата при смене ID
-    useEffect(() => {
-    setMessages([]);
-    setIsLoading(true);
-    isInitialMount.current = true;
-}, [chatId]);
 
+    // Очистка при смене чата
     useEffect(() => {
-    if (!chatId) return;
-    const token = localStorage.getItem('jwt_token');
-    
-    setIsLoading(true); // На всякий случай подтверждаем загрузку
-    GetMessages(chatId, token)
-        .then((result) => {
-            setMessages(result || []);
-        })
-        .catch(err => console.error(err))
-        .finally(() => {
-            setIsLoading(false); 
-        });
-}, [chatId]);
+        setMessages([]);
+        setIsLoading(true);
+        isInitialMount.current = true;
+    }, [chatId]);
 
-    // 3. Загрузка истории
+    // Загрузка сообщений
     useEffect(() => {
         if (!chatId) return;
         const token = localStorage.getItem('jwt_token');
         
+        setIsLoading(true);
         GetMessages(chatId, token)
             .then((result) => {
+                console.log('Загружены сообщения:', result);
                 setMessages(result || []);
             })
-            .catch(err => console.error(err));
+            .catch(err => console.error('Ошибка загрузки:', err))
+            .finally(() => setIsLoading(false));
     }, [chatId]);
 
-    // 4. Плавный скролл (с защитой от пустых обновлений)
+    // Скролл
     useLayoutEffect(() => {
         if (messages.length > 0 && messagesEndRef.current) {
             const behavior = isInitialMount.current ? "auto" : "smooth";
@@ -60,24 +46,22 @@ function Chat({ chatId }) {
     const handleSendMessage = async (e) => {
         if (e.key === 'Enter' && inputText.trim() !== "") {
             const text = inputText.trim();
-            const tempId = Date.now().toString(); // Временный ID
+            const tempId = Date.now().toString();
 
-            // 1. Создаем объект сообщения локально
+            console.log('Sending message to chat_id:', chatId);
+
             const localMsg = {
-                id: tempId, 
+                id: tempId,
                 chat_id: chatId,
                 sender_id: myId,
                 username: username,
                 text: text,
                 type: "NEW_MESSAGE",
-
             };
             setMessages((prev) => [...prev, localMsg]);
             setInputText("");
-            Events.Emit("server_message", localMsg);
 
             try {
-                // 3. Отправляем на сервер
                 await SendWSMessage(JSON.stringify({
                     chat_id: chatId,
                     sender_id: myId,
@@ -86,9 +70,14 @@ function Chat({ chatId }) {
                 }));
             } catch (err) {
                 console.error("Ошибка отправки:", err);
-                // Тут можно пометить сообщение как "не доставлено"
-            } 
+            }
         }
+    };
+
+    // Функция получения имени отправителя
+    const getSenderName = async (senderId) => {
+        if (senderId === myId) return 'Вы';
+        return senderId.substring(0, 8); // Временно показываем часть ID
     };
 
     if (!chatId) {
@@ -109,7 +98,11 @@ function Chat({ chatId }) {
                         key={msg.id || index}
                         className={`message-bubble ${msg.sender_id === myId ? 'sent' : 'received'}`}
                     >
-                        {msg.text}
+                        {msg.sender_id !== myId && (
+                            
+                            <div className="message-sender">{msg.username}</div>
+                        )}
+                        <div className="message-text">{msg.text}</div>
                     </div>
                 ))}
 
@@ -120,7 +113,6 @@ function Chat({ chatId }) {
                     </div>
                 )}
 
-                {/* Если загрузка закончилась и сообщений реально 0 — показываем текст */}
                 {!isLoading && messages.length === 0 && (
                     <div className="no-messages-empty">
                         Сообщений пока нет...

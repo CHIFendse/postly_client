@@ -1,0 +1,24 @@
+FROM golang:1.25-bookworm
+
+# Устанавливаем системные зависимости, необходимые для сборки GUI
+RUN apt-get update && apt-get install -y \
+    build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev \
+    libopus-dev libopusfile-dev nodejs npm
+
+WORKDIR /app
+
+# Скачиваем зависимости Go
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Копируем исходники
+COPY . .
+
+# Собираем фронтенд (если есть папка frontend)
+RUN cd frontend && npm install && npm run build
+
+# Собираем сам бинарник напрямую через go build
+# Тег 'production' обязателен для Wails
+RUN go build -tags production -ldflags="-w -s" -o postly .
+
+# В результате у тебя в контейнере в /app будет готовый файл 'postly'

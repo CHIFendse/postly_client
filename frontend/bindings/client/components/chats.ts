@@ -5,6 +5,10 @@
 // @ts-ignore: Unused imports
 import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
 /**
  * CreateChat создает новый чат между текущим пользователем и выбранным собеседником
  */
@@ -14,9 +18,9 @@ export function CreateChat(userId: string, targetUsername: string, token: string
     });
 }
 
-export function GetGroups(userId: string, token: string): $CancellablePromise<{ [_ in string]?: any }[]> {
+export function GetGroups(userId: string, token: string): $CancellablePromise<$models.Groups[]> {
     return $Call.ByID(997376016, userId, token).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType2($result);
     });
 }
 
@@ -25,7 +29,7 @@ export function GetGroups(userId: string, token: string): $CancellablePromise<{ 
  */
 export function SearchUsers(query: string, token: string): $CancellablePromise<{ [_ in string]?: any }[]> {
     return $Call.ByID(1992414232, query, token).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType3($result);
     });
 }
 
@@ -38,4 +42,6 @@ export function SetContext(): $CancellablePromise<void> {
 
 // Private type creation functions
 const $$createType0 = $Create.Map($Create.Any, $Create.Any);
-const $$createType1 = $Create.Array($$createType0);
+const $$createType1 = $models.Groups.createFrom;
+const $$createType2 = $Create.Array($$createType1);
+const $$createType3 = $Create.Array($$createType0);

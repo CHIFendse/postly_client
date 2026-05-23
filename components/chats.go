@@ -9,6 +9,7 @@ import (
 	"time"
 	"os"
 	"io"
+	"log"
 )
 
 type Chats struct {
@@ -104,33 +105,68 @@ func (f *Chats) SearchUsers(query string, token string) ([]map[string]interface{
 	return users, nil
 }
 
-func (f *Chats) GetGroups(userId, token string) ([]map[string]interface{}, error) {
-	data := map[string]string{"id": userId}
-	jsonData, _ := json.Marshal(data)
-	url := f.url+"getGroups"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	// Добавляем токен
-	req.Header.Set("Authorization", "Bearer "+token)
+func (f *Chats) GetGroups(userId, token string) ([]Groups, error) {
+    data := map[string]string{"id": userId}
+    jsonData, err := json.Marshal(data)
+    if err != nil {
+        return nil, err
+    }
+    
+    url := f.url + "getGroups"
+    
+    log.Printf("GetGroups request: url=%s, userId=%s, token=%s...", url, userId, token[:min(20, len(token))])
+    
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+    if err != nil {
+        return nil, err
+    }
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+    client := &http.Client{Timeout: 10 * time.Second}
+    resp, err := client.Do(req)
+    if err != nil {
+        log.Printf("GetGroups network error: %v", err)
+        return nil, err
+    }
+    defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("сервер вернул ошибку: %d", resp.StatusCode)
-	}
+    log.Printf("GetGroups response status: %d", resp.StatusCode)
 
-	var chats []map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&chats); err != nil {
-		return nil, err
-	}
+    if resp.StatusCode != http.StatusOK {
+        bodyBytes, _ := io.ReadAll(resp.Body)
+        log.Printf("GetGroups error body: %s", string(bodyBytes))
+        
+        var errResp map[string]string
+        if err := json.Unmarshal(bodyBytes, &errResp); err == nil {
+            if msg, ok := errResp["error"]; ok {
+                return nil, fmt.Errorf(msg)
+            }
+            if msg, ok := errResp["message"]; ok {
+                return nil, fmt.Errorf(msg)
+            }
+        }
+        return nil, fmt.Errorf("сервер вернул ошибку: %d, тело: %s", resp.StatusCode, string(bodyBytes))
+    }
 
-	return chats, nil
+    var groups []Groups
+    if err := json.NewDecoder(resp.Body).Decode(&groups); err != nil {
+        return nil, err
+    }
+
+    if groups == nil {
+        groups = []Groups{}
+    }
+
+    log.Printf("GetGroups success: %d groups", len(groups))
+    return groups, nil
+}
+
+type Groups struct {
+    Id            string `json:"id"`
+    Name          string `json:"name"`
+    CreatedAt     string `json:"created_at"`
+    LastMsg       string `json:"last_message"`
+    LastMsgSender string `json:"username"`
+    UpdatedAt     int    `json:"updated_at"`
 }

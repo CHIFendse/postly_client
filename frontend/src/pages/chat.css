@@ -211,3 +211,29 @@
         padding: 12px 20px;
     }
 }
+
+.message-sender {
+    font-size: 11px;
+    color: #c68325;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.message-text {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.message-bubble.received {
+    align-self: flex-start;
+    background-color: #3b3833;
+    padding: 6px 10px;
+    border-radius: 12px 12px 12px 4px;
+}
+
+.message-bubble.sent {
+    align-self: flex-end;
+    background-color: #c68325;
+    padding: 6px 10px;
+    border-radius: 12px 12px 4px 12px;
+}

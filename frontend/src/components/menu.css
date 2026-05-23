@@ -12,11 +12,29 @@
 }
 
 .menu-top {
-    padding-top: 10px;
+    padding: 16px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 20px;
+}
+
+.menu-middle {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    border-top: 1px solid #3b3833;
+    border-bottom: 1px solid #3b3833;
+}
+
+.menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
 }
 
 .menu-button {
@@ -26,10 +44,12 @@
     background: none;
     cursor: pointer;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    border-radius: 50%;
+    padding-bottom: 2px;
+    border-radius: 12px;
     transition: background-color 0.2s;
+    box-sizing: border-box;
 }
 
 .menu-button:hover {
@@ -37,14 +57,25 @@
 }
 
 .menu-icon {
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     filter: invert(75%) sepia(53%) saturate(4447%) hue-rotate(3deg) brightness(103%) contrast(105%);
+    display: block;
 }
 
-/* Нижняя часть - одинаково на всех устройствах */
+.menu-label {
+    color: #FFA500;
+    font-size: 9px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    text-align: center;
+    line-height: 1;
+    max-width: 64px;
+    word-wrap: break-word;
+    font-weight: 600;
+}
+
 .menu-bottom {
-    padding: 12px 8px;
+    padding: 16px 8px;
     border-top: 1px solid #c68325;
     text-align: center;
 }
@@ -60,6 +91,7 @@
     text-overflow: ellipsis;
     max-width: 100%;
 }
+
 .menu-logout-btn {
     padding: 8px 10px;
     background-color: #ed4245;
@@ -96,21 +128,36 @@
     }
     
     .menu-top {
-        padding-top: 15px;
-        gap: 4px;
+        padding: 20px 0;
+        gap: 16px;
+    }
+    
+    .menu-middle {
+        padding: 14px 0;
     }
     
     .menu-button {
         height: 44px;
         width: 44px;
+        padding-bottom: 1px;
+        border-radius: 10px;
     }
     
     .menu-button:hover {
-        background-color: #c68325;
+        background-color: #3b3833;
     }
     
     .menu-icon {
-        width: 24px;
-        height: 24px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .menu-label {
+        font-size: 8px;
+        max-width: 56px;
+    }
+    
+    .menu-bottom {
+        padding: 14px 8px;
     }
 }

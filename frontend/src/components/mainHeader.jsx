@@ -7,6 +7,7 @@ function MainHeader({handleLogout, username, setChat, setChatName, setView}){
         setChat("");
         setChatName("");
         setView("chats")
+        localStorage.setItem("lastView", "chats");
     }
     return (
         <header className="main-header">

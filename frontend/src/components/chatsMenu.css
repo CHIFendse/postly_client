@@ -12,20 +12,8 @@
     z-index: 100;
 }
 
-.search-chat {
-    padding: 12px 15px;
-    margin: 10px;
-    background-color: #1e1b17;
-    color: #dbdee1;
-    font-size: 14px;
-    border: 1px solid #1e1f22;
-    border-radius: 4px;
-    outline: none;
-}
 
-.search-chat:focus {
-    border-color: #c68325;
-}
+
 
 .chats-header {
     padding: 10px 15px;
@@ -148,4 +136,84 @@
     .chats-menu.open {
         transform: translateX(72px); /* Сдвигаем на ширину menu */
     }
+}
+.search-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 10px 12px;
+}
+
+.search-row .search-chat:only-child {
+    border-right: 1px solid #3b3833;
+    border-radius: 8px; 
+}
+
+.search-row:hover .search-chat,
+.search-row:focus-within .search-chat {
+    border-color: #c68325;
+}
+
+.search-row:hover .create-group-btn,
+.search-row:focus-within .create-group-btn {
+    border-color: #c68325;
+    background-color: #2a2722;
+}
+
+.search-chat {
+    flex-grow: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border-radius: 8px 0 0 8px;
+    border: 1px solid #3b3833;
+    border-right: none;
+    background-color: #1e1b17;
+    color: #dcddde;
+    font-size: 13px;
+    font-family: sans-serif;
+    outline: none;
+    height: 36px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.search-chat:focus {
+    border-color: #c68325;
+}
+
+.search-chat::placeholder {
+    color: #72767d;
+}
+
+.create-group-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border: 1px solid #3b3833;
+    border-left: none;
+    background-color: #1e1b17;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 8px 8px 0;
+    transition: border-color 0.2s, background-color 0.2s;
+    padding: 0;
+}
+
+.create-group-btn:hover {
+    background-color: #2a2722;
+}
+
+.create-group-btn:hover svg path {
+    stroke: #FFA500;
+}
+
+.create-group-btn.active {
+    background-color: #3b3833;
+    border-color: #c68325;
+}
+
+.create-group-btn.active svg path {
+    stroke: #FFA500;
 }

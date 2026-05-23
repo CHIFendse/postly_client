@@ -28,26 +28,25 @@ func main() {
 		
 	})
 
-    // 2. Инициализируем сервисы, передавая им app
     voiceService := pages.NewVoiceChat()
     chatWSService := &pages.ChatWS{}
     chatService := pages.GetChat()
     chatsComponent := components.NewChats()
 	authService := pages.NewAuthService()
+	getVersion := &components.CurrentVersion{}
 
-    // 3. Регистрируем каждый сервис через метод, который мы видим на скриншоте
     app.RegisterService(application.NewService(voiceService))
 	app.RegisterService(application.NewService(chatWSService))
 	app.RegisterService(application.NewService(chatService))
 	app.RegisterService(application.NewService(chatsComponent))
 	app.RegisterService(application.NewService(authService))
+	app.RegisterService(application.NewService(getVersion))
 
-	// 3. Описываем главное окно
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "Postly",
 		Width:  1024,
 		Height: 768,
-		URL:    "/", // или твой стартовый путь
+		URL:    "/",
 		MinWidth: 480,
 		MinHeight: 720,
 	})

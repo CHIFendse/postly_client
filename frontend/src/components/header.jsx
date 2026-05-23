@@ -4,7 +4,6 @@ import { StartVoice, Disconnect, SetToken, OpenCallWindow, SetRoomID } from '@bi
 import { SendWSMessage } from '@bindings/client/pages/chatws';
 import decall from '../assets/images/phone-line.png'
 import callIcon from '../assets/images/phone-fill.png'
-import addUserImg from '../assets/images/user-plus.svg'
 import { Events } from '@wailsio/runtime';
 
 function Header({ token, chatName, chatId, onMenuToggle }) {
@@ -157,17 +156,6 @@ function Header({ token, chatName, chatId, onMenuToggle }) {
                     <span className="status-text">{status}</span>
                 )}
                 
-                <button 
-                    className="adduser-button"
-                    onClick={addUser}
-                    title="Добавить пользователя в чат"
-                >
-                    <img 
-                        className="addUserIcon" 
-                        src={addUserImg} 
-                        alt="Add New User"
-                    />
-                </button>
                 
                 <button 
                     className={`call-button ${isConnected ? 'connected' : 'disconnected'}`}
