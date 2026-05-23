@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-	"os"
 	"io"
 	"log"
 )
@@ -19,7 +18,7 @@ type Chats struct {
 
 // NewChats инициализирует компонент
 func NewChats() *Chats {
-	url := "http://"+os.Getenv("API_BASE_URL")+":8081/"
+	url := "http://84.22.132.243:8081/"
 	return &Chats{
 		url: url,
 	}

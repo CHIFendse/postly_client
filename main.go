@@ -8,17 +8,12 @@ import (
 	"client/pages"
 	
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/joho/godotenv"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
-	err := godotenv.Load()
-    if err != nil {
-        println("Предупреждение: .env файл не найден, используются системные переменные")
-    }
 
 	app := application.New(application.Options{
 		Name: "Postly",
@@ -51,7 +46,7 @@ func main() {
 		MinHeight: 720,
 	})
 	// Запускаем
-	err = app.Run()
+	err := app.Run()
 
 	if err != nil {
 		log.Println("Предупреждение: .env файл не найден, используются системные переменные")

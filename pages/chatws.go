@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 	"github.com/gorilla/websocket"
     "encoding/json"
@@ -49,7 +48,7 @@ func (a *ChatWS) Connect(chatID string) {
         a.conn.Close()
     }
 
-    url := "ws://" + os.Getenv("API_BASE_URL") + ":8081/ws"
+    url := "ws://84.22.132.243:8081/ws"
     // Если нужно подключаться к конкретному чату
     if chatID != "" {
         url = fmt.Sprintf("%s?chat_id=%s", url, chatID)

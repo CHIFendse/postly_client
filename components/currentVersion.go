@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 	"time"
 	"fmt"
 )
@@ -18,7 +17,7 @@ type VersionResponse struct {
 
 
 func (v *CurrentVersion) GetCurrentVersion() (*VersionResponse, error) {
-	url := "http://"+os.Getenv("API_BASE_URL")+":8081/getVersion"
+	url := "http://84.22.132.243:8081/getVersion"
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {

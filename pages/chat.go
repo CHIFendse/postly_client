@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	"os"
 	"io"
 )
 
@@ -30,7 +29,7 @@ type Chat struct {
 
 // GetChat инициализирует компонент
 func GetChat() *Chat {
-	url := "http://"+os.Getenv("API_BASE_URL")+":8081"
+	url := "http://84.22.132.243:8081"
 	return &Chat{
 		url: url,
 		stopChan: make(chan struct{}),

@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 	"net/http"
-	"os"
 	"log"
 	"github.com/gen2brain/malgo"
 	"github.com/hraban/opus"
@@ -39,7 +38,7 @@ type CallEventDTO struct {
 }
 
 func NewVoiceChat() *VoiceChat {
-	url := os.Getenv("API_BASE_URL")
+	url := "84.22.132.243"
 	return &VoiceChat{stopChan: make(chan struct{}), url: url}
 }
 

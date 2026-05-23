@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 )
 
 type AuthService struct {
@@ -16,7 +15,7 @@ type AuthService struct {
 
 func NewAuthService() *AuthService {
 	return &AuthService{
-		apiBaseURL: "http://"+os.Getenv("API_BASE_URL")+":8081",
+		apiBaseURL: "http://84.22.132.243:8081",
 	}
 }
 func (s *AuthService) ServiceName() string {
