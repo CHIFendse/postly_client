@@ -30,6 +30,12 @@ jobs:
             libgtk-3-dev libwebkit2gtk-4.1-dev \
             libopus-dev libopusfile-dev
 
+      - name: Сборка фронтенда
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
       - name: Сборка приложения
         run: go build -tags production -ldflags="-w -s" -o build/bin/postly .
 
