@@ -76,8 +76,10 @@ tasks:
       # Установка: pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-opus mingw-w64-x86_64-libopusfile mingw-w64-x86_64-pkg-config
       PKG_CONFIG_PATH: "C:/msys64/mingw64/lib/pkgconfig"
       CGO_CFLAGS: "-IC:/msys64/mingw64/include"
-      # lopusfile зависит от lopus и logg — все линкуем статически
-      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
+      # lopusfile зависит от lopus и logg — все линкуем статически.
+      # --stack,67108864 (64 МБ): CGO (mingw-w64) устанавливает резерв стека 1 МБ по умолчанию,
+      # что вызывает STATUS_STACK_OVERFLOW (0xc00000fd) при старте из-за miniaudio/malgo.
+      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc -Wl,--stack,67108864"
 
   package:win:
     summary: "Собирает NSIS-установщик postly-amd64-installer.exe (требует NSIS)"
