@@ -2,6 +2,11 @@
 # ============================================================
 # Entrypoint сборочного Docker-образа Postly.
 # Запускается внутри контейнера, проект примонтирован в /src.
+# Требования к репозиторию:
+#   - frontend/bindings/ — актуальны (сгенерированы wails3 generate bindings)
+#   - build/linux/nfpm/nfpm.yaml — конфиг пакетов
+#   - build/linux/postly.desktop — .desktop файл
+#   - build/appicon.png — иконка
 # ============================================================
 set -euo pipefail
 
@@ -17,20 +22,20 @@ step() { echo -e "\n${BOLD}${CYAN}▶ $1${NC}"; }
 ok()   { echo -e "${GREEN}✓ $1${NC}"; }
 fail() { echo -e "${RED}✗ $1${NC}"; exit 1; }
 
-mkdir -p build/bin
+mkdir -p build/bin build/linux/appimage
 
-# ── 1. Wails bindings ───────────────────────────────────────
-step "Generating Wails bindings"
-wails3 generate bindings
-ok "Bindings generated"
-
-# ── 2. Frontend ─────────────────────────────────────────────
+# ── 1. Frontend ─────────────────────────────────────────────
 step "Building frontend (npm)"
 cd frontend
 npm install --silent --no-fund --no-audit
 npm run build --silent
 cd ..
 ok "Frontend built"
+
+# ── 2. Go зависимости ───────────────────────────────────────
+step "Tidying Go modules"
+go mod tidy
+ok "Go modules up to date"
 
 # ── 3. Linux binary (статический opus) ──────────────────────
 step "Building Linux binary (static opus)"
@@ -48,32 +53,26 @@ ok "Linux binary: build/bin/postly ($(du -sh build/bin/postly | cut -f1))"
 
 # ── 4. DEB — Debian / Ubuntu / Linux Mint ───────────────────
 step "Packaging .deb (Debian/Ubuntu)"
-GOARCH=amd64 GIT_COMMITTER_NAME="Postly" GIT_COMMITTER_EMAIL="build@postly.app" \
-wails3 tool package \
-    -name postly \
-    -format deb \
-    -config ./build/linux/nfpm/nfpm.yaml \
-    -out ./build/bin || fail ".deb packaging failed"
+GOARCH=amd64 nfpm package \
+    --config ./build/linux/nfpm/nfpm.yaml \
+    --packager deb \
+    --target ./build/bin/ || fail ".deb packaging failed"
 ok "DEB ready"
 
 # ── 5. RPM — Fedora / RHEL / AlmaLinux / openSUSE ──────────
 step "Packaging .rpm (Fedora/RHEL)"
-GOARCH=amd64 GIT_COMMITTER_NAME="Postly" GIT_COMMITTER_EMAIL="build@postly.app" \
-wails3 tool package \
-    -name postly \
-    -format rpm \
-    -config ./build/linux/nfpm/nfpm.yaml \
-    -out ./build/bin || fail ".rpm packaging failed"
+GOARCH=amd64 nfpm package \
+    --config ./build/linux/nfpm/nfpm.yaml \
+    --packager rpm \
+    --target ./build/bin/ || fail ".rpm packaging failed"
 ok "RPM ready"
 
 # ── 6. PKG.TAR.ZST — Arch Linux / Manjaro / EndeavourOS ─────
 step "Packaging .pkg.tar.zst (Arch Linux)"
-GOARCH=amd64 GIT_COMMITTER_NAME="Postly" GIT_COMMITTER_EMAIL="build@postly.app" \
-wails3 tool package \
-    -name postly \
-    -format archlinux \
-    -config ./build/linux/nfpm/nfpm.yaml \
-    -out ./build/bin || fail "Arch packaging failed"
+GOARCH=amd64 nfpm package \
+    --config ./build/linux/nfpm/nfpm.yaml \
+    --packager archlinux \
+    --target ./build/bin/ || fail "Arch packaging failed"
 ok "PKG.TAR.ZST ready"
 
 # ── 7. Windows EXE (кросс-компиляция с mingw-w64) ───────────
@@ -92,7 +91,7 @@ go build \
     -ldflags="-w -s -H windowsgui" \
     -o build/bin/postly.exe \
     . || fail "Windows build failed"
-ok "Windows EXE built"
+ok "Windows EXE built ($(du -sh build/bin/postly.exe | cut -f1))"
 
 # ── 8. Фикс стека Windows EXE ───────────────────────────────
 step "Fixing Windows stack size (StackReserve=128MB)"
@@ -101,9 +100,9 @@ GOOS=linux go run ./build/windows/setstack/main.go \
 ok "Stack fixed"
 
 # ── Итог ────────────────────────────────────────────────────
-echo -e "\n${BOLD}${GREEN}═══════════════════════════════════════${NC}"
-echo -e "${BOLD}${GREEN}  Сборка завершена! build/bin/:${NC}"
-echo -e "${BOLD}${GREEN}═══════════════════════════════════════${NC}"
+echo -e "\n${BOLD}${GREEN}═══════════════════════════════════════════════${NC}"
+echo -e "${BOLD}${GREEN}  Готово! Файлы в build/bin/:${NC}"
+echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════${NC}"
 ls -lh build/bin/ | grep -v '^total'
 echo ""
 echo -e "${BOLD}Расширения и для каких ОС:${NC}"
@@ -112,7 +111,8 @@ echo "  .rpm         → Fedora, RHEL, AlmaLinux, Rocky, openSUSE"
 echo "  .pkg.tar.zst → Arch Linux, Manjaro, EndeavourOS, Garuda"
 echo "  .exe         → Windows 10/11 (x64)"
 echo ""
-echo "Установка .deb:         sudo apt install ./postly*.deb"
-echo "Установка .rpm:         sudo dnf install ./postly*.rpm"
-echo "Установка .pkg.tar.zst: sudo pacman -U ./postly*.pkg.tar.zst"
-echo "Запуск .exe:            просто запустить на Windows"
+echo -e "${BOLD}Установка:${NC}"
+echo "  sudo apt install ./postly*.deb"
+echo "  sudo dnf install ./postly*.rpm"
+echo "  sudo pacman -U ./postly*.pkg.tar.zst"
+echo "  (Windows) запустить postly.exe напрямую"
