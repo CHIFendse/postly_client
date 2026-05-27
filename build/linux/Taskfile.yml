@@ -59,6 +59,9 @@ tasks:
       GOOS: linux
       CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
+      # Статическая линковка opus/opusfile/ogg — пользователям не нужно их устанавливать.
+      # webkit2gtk статически не линкуется (системная зависимость, есть на любом Linux с GUI).
+      CGO_LDFLAGS: "-Wl,-Bstatic -lopusfile -logg -lopus -Wl,-Bdynamic"
 
   build:docker:
     summary: Builds for Linux using Docker (for non-Linux hosts or when no C compiler available)
