@@ -1,4 +1,4 @@
-//go:build !noaudio
+//go:build !noaudio && !nomalgo
 
 package pages
 
