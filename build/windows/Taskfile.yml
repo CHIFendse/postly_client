@@ -41,11 +41,18 @@ tasks:
             ref: .DEV
       - task: common:generate:icons
     cmds:
+      # Удаляем ВСЕ старые .syso до генерации новых — иначе линкер падает с
+      # ".rsrc merge failure: multiple non-default manifests / duplicate leaf"
+      - cmd: powershell -NoProfile -Command "Get-ChildItem -Path '*.syso' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
+        platforms: [windows]
+      - cmd: rm -f *.syso
+        platforms: [linux, darwin]
       - task: generate:syso
         vars:
           ARCH: '{{.ARCH}}'
       - go build {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}.exe"
-      - cmd: powershell Remove-item *.syso
+      # Убираем .syso после сборки
+      - cmd: powershell -NoProfile -Command "Get-ChildItem -Path '*.syso' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
         platforms: [windows]
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
