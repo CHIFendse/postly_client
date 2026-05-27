@@ -83,7 +83,7 @@ tasks:
     cmds:
       - task: build:win
       - wails3 generate webview2bootstrapper -dir build/windows/nsis
-      - cmd: powershell -NoProfile -ExecutionPolicy Bypass -File build\windows\build-installer.ps1
+      - cmd: powershell -NoProfile -ExecutionPolicy Bypass -File build/windows/build-installer.ps1
         platforms: [windows]
       - cmd: |
           root=$(pwd)
