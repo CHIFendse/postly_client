@@ -5,7 +5,7 @@ import Header from '../components/header';
 import MainHeader from '../components/mainHeader';
 import ChatsMenu from '../components/chatsMenu';
 import Chat from './chat';
-import SettingsModal from '../components/SettingsModal';
+import Settings from './Settings';
 import { Events } from '@wailsio/runtime';
 import { SetRoomID, SetToken } from '@bindings/client/pages/voicechat';
 
@@ -20,7 +20,6 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   const [activeChatName, setActiveChatName] = useState(localStorage.getItem('lastChatName'));
   const [refreshTrigger, setRefreshTrigger] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const unsubscribe = Events.On("friend_added", () => triggerRefresh());
@@ -64,7 +63,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
           onClose={closeMobileMenu}
           username={username}
           onLogout={handleLogout}
-          onSettingsClick={() => setShowSettings(true)}
+          onSettingsClick={() => setView('settings')}
           currentView={view}
         />
 
@@ -84,36 +83,38 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
           <div className="menu-overlay" onClick={closeMobileMenu} />
         )}
 
-        {/* ── Основная область чата ── */}
+        {/* ── Основная область ── */}
         <div className="main-content">
-          <Header
-            token={token}
-            chatName={activeChatName}
-            chatId={activeChatId}
-            onMenuToggle={toggleMobileMenu}
-          />
-
-          {activeChatId ? (
-            <Chat chatId={activeChatId} />
+          {view === 'settings' ? (
+            <Settings
+              onBack={() => setView('chats')}
+              currentVersion={currentVersion}
+            />
           ) : (
-            <div className="chat-placeholder">
-              <div className="placeholder-content">
-                <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <p>Выберите чат, чтобы начать общение</p>
-              </div>
-            </div>
+            <>
+              <Header
+                token={token}
+                chatName={activeChatName}
+                chatId={activeChatId}
+                onMenuToggle={toggleMobileMenu}
+              />
+
+              {activeChatId ? (
+                <Chat chatId={activeChatId} />
+              ) : (
+                <div className="chat-placeholder">
+                  <div className="placeholder-content">
+                    <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <p>Выберите чат, чтобы начать общение</p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
-
-      {/* Модалка настроек */}
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        currentVersion={currentVersion}
-      />
     </div>
   );
 }

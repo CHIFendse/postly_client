@@ -9,8 +9,6 @@ import { Events } from '@wailsio/runtime';
 function Header({ token, chatName, chatId, onMenuToggle }) {
     const [status, setStatus] = useState('');
     const [isConnected, setIsConnected] = useState(false);
-    const [timer, setTimer] = useState('00:00');
-    const [isMuted, setIsMuted] = useState(false);
 
     useEffect(() => {
         const unsubscribe = Events.On("server_message", async (event) => {
@@ -110,10 +108,6 @@ function Header({ token, chatName, chatId, onMenuToggle }) {
         }
     };
 
-    const toggleMute = () => {
-        setIsMuted(!isMuted);
-    };
-
     const handleMenuClick = (e) => {
         e.stopPropagation();
         console.log('Menu button clicked!'); // Проверь консоль
@@ -170,31 +164,6 @@ function Header({ token, chatName, chatId, onMenuToggle }) {
                 </button>
             </div>
 
-            {isConnected && (
-                <div className="call-overlay">
-                    <div className="call-info">
-                        <div className="call-avatar"></div>
-                        <div className="call-details">
-                            <span className="call-nickname">{chatName}</span>
-                            <span className="call-timer">{timer}</span>
-                        </div>
-                    </div>
-                    <div className="call-controls">
-                        <button 
-                            className={`control-btn ${isMuted ? 'muted' : ''}`}
-                            onClick={toggleMute}
-                        >
-                            <span className="control-icon">🎤</span>
-                        </button>
-                        <button 
-                            className="control-btn disconnect-btn"
-                            onClick={handleDisconnect}
-                        >
-                            <span className="control-icon">📞</span>
-                        </button>
-                    </div>
-                </div>
-            )}
         </header>
     );
 }
