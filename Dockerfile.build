@@ -64,6 +64,7 @@ RUN curl -fsSL https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz | tar 
     && ./configure --host=x86_64-w64-mingw32 \
         --enable-static --disable-shared --prefix=${WIN_OPUS} \
         --disable-extra-programs --disable-doc --quiet \
+        CFLAGS="-O2 -D_FORTIFY_SOURCE=0" \
     && make -j$(nproc) install \
     && cd .. && rm -rf opus-1.5.2
 
@@ -72,7 +73,8 @@ RUN curl -fsSL https://downloads.xiph.org/releases/opus/opusfile-0.12.tar.gz | t
     && PKG_CONFIG_PATH=${WIN_OPUS}/lib/pkgconfig \
        ./configure --host=x86_64-w64-mingw32 \
            --enable-static --disable-shared --prefix=${WIN_OPUS} \
-           --disable-http --quiet \
+           --disable-http --disable-examples --quiet \
+           CFLAGS="-O2 -D_FORTIFY_SOURCE=0" \
     && make -j$(nproc) install \
     && cd .. && rm -rf opusfile-0.12
 
