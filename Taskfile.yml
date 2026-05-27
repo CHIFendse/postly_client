@@ -69,10 +69,11 @@ tasks:
       # generate syso убран: конфликт ресурсов с webview2 (duplicate manifest/icons)
       # Иконка в установщике берётся из NSIS, не из .syso
       - mkdir -p {{.BIN_DIR}}
-      # -extldflags=-Wl,--stack,67108864 ДОЛЖЕН стоять ВНУТРИ -ldflags, а не в CGO_LDFLAGS:
-      # Go добавляет свой --stack ПОСЛЕ CGO_LDFLAGS, поэтому CGO_LDFLAGS не помогает.
-      # -extldflags применяются последними и гарантированно перекрывают Go-шный stack.
-      - go build -tags production -trimpath -ldflags="-w -s -H windowsgui -extldflags=-Wl,--stack,67108864" -o {{.BIN_DIR}}/postly.exe .
+      - go build -tags production -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly.exe .
+      # Go перезаписывает PE StackReserve своим значением (обычно 1–2 МБ) уже ПОСЛЕ GCC,
+      # поэтому CGO_LDFLAGS/extldflags не помогают. Патчим заголовок напрямую:
+      # 128 МБ reserve + 4 МБ commit — достаточно для miniaudio/malgo init на Windows.
+      - go run ./build/windows/setstack/main.go {{.BIN_DIR}}/postly.exe 134217728 4194304
     env:
       CGO_ENABLED: "1"
       # MSYS2 MINGW64 — единственный надёжный источник opus + opusfile на Windows
