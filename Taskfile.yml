@@ -58,3 +58,43 @@ tasks:
     summary: Builds and runs the Docker image
     cmds:
       - task: common:run:docker
+
+  # ── Windows-сборка (обход бага с вложенными includes) ──────────────────────
+
+  build:win:
+    summary: "Собирает postly.exe для Windows (требует MSYS2 + opus)"
+    cmds:
+      - wails3 generate bindings
+      - cmd: cd frontend && npm install && npm run build
+      - cmd: cd build && wails3 generate syso -arch amd64 -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_amd64.syso
+      - go build -tags production -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly.exe .
+      - cmd: powershell -Command "Remove-Item wails_windows_amd64.syso -ErrorAction SilentlyContinue"
+        platforms: [windows]
+      - cmd: rm -f wails_windows_amd64.syso
+        platforms: [linux, darwin]
+    env:
+      CGO_ENABLED: "1"
+      PKG_CONFIG_PATH: 'C:\msys64\mingw64\lib\pkgconfig'
+      CGO_CFLAGS: "-IC:/msys64/mingw64/include"
+      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopus -Wl,-Bdynamic -static-libgcc"
+
+  package:win:
+    summary: "Собирает NSIS-установщик postly-amd64-installer.exe (требует NSIS)"
+    cmds:
+      - task: build:win
+      - wails3 generate webview2bootstrapper -dir build/windows/nsis
+      - cmd: >-
+          powershell -Command "
+          Set-Location 'build\windows\nsis';
+          & 'makensis.exe' \"/DARG_WAILS_AMD64_BINARY=$env:ROOT_DIR\build\bin\postly.exe\" project.nsi
+          "
+        platforms: [windows]
+      - cmd: |
+          cd build/windows/nsis
+          makensis -DARG_WAILS_AMD64_BINARY="$(pwd)/../../../build/bin/postly.exe" project.nsi
+        platforms: [linux, darwin]
+    vars:
+      ROOT_DIR:
+        sh: pwd
+    env:
+      ROOT_DIR: '{{.ROOT_DIR}}'
