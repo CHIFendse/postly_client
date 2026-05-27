@@ -38,6 +38,18 @@ html, body {
 }
 
 /* ============================
+   НАСТРОЙКИ — полный оверлей
+   ============================ */
+.settings-fullscreen {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-chat);
+}
+
+/* ============================
    МОБИЛЬНЫЙ ОВЕРЛЕЙ
    ============================ */
 .menu-overlay {
