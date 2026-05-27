@@ -91,14 +91,15 @@ tasks:
       CGO_ENABLED: "0"
 
   build:win:nomalgo:
-    summary: "Тест с opus но без malgo — изолируем виновника"
+    summary: "Тест с opus (динамическая линковка) без malgo"
     cmds:
       - go build -tags "production nomalgo" -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly-nomalgo.exe .
     env:
       CGO_ENABLED: "1"
       PKG_CONFIG_PATH: "C:/msys64/mingw64/lib/pkgconfig"
       CGO_CFLAGS: "-IC:/msys64/mingw64/include"
-      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
+      # Динамическая линковка — тест: если запустится, статические либы имеют C-конструктор с огромным стеком
+      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -lopusfile -lopus -logg"
 
   package:win:
     summary: "Собирает NSIS-установщик postly-amd64-installer.exe (требует NSIS)"
