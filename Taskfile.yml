@@ -66,15 +66,13 @@ tasks:
     cmds:
       - wails3 generate bindings
       - cmd: cd frontend && npm install && npm run build
-      - cmd: cd build && wails3 generate syso -arch amd64 -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_amd64.syso
+      # generate syso убран: конфликт ресурсов с webview2 (duplicate manifest/icons)
+      # Иконка в установщике берётся из NSIS, не из .syso
+      - mkdir -p {{.BIN_DIR}}
       - go build -tags production -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly.exe .
-      - cmd: powershell -Command "Remove-Item wails_windows_amd64.syso -ErrorAction SilentlyContinue"
-        platforms: [windows]
-      - cmd: rm -f wails_windows_amd64.syso
-        platforms: [linux, darwin]
     env:
       CGO_ENABLED: "1"
-      PKG_CONFIG_PATH: 'C:\msys64\mingw64\lib\pkgconfig'
+      PKG_CONFIG_PATH: "C:/msys64/mingw64/lib/pkgconfig"
       CGO_CFLAGS: "-IC:/msys64/mingw64/include"
       CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopus -Wl,-Bdynamic -static-libgcc"
 
