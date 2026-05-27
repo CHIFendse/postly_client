@@ -1,10 +1,12 @@
 [Desktop Entry]
 Type=Application
-Name=postly
+Name=Postly
+GenericName=Мессенджер
+Comment=Мессенджер с голосовым чатом
 Exec=postly
 Icon=postly
-Categories=Development;
+Categories=Network;Chat;InstantMessaging;
 Terminal=false
-Keywords=wails
-Version=1.0
-StartupNotify=false
+Keywords=chat;messenger;voice;postly;
+StartupNotify=true
+StartupWMClass=postly

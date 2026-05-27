@@ -30,31 +30,22 @@ contents:
   - src: "./build/linux/postly.desktop"
     dst: "/usr/share/applications/postly.desktop"
 
-# ── Зависимости для DEB (Ubuntu 24.04+ / Debian Trixie+) ─────────────────────
-# apt автоматически установит их при инсталляции пакета командой:
-#   sudo apt install ./postly_0.1.0_amd64.deb
+# ── Зависимости для DEB (Ubuntu 22.04+ / Debian Bookworm+) ──────────────────
+# opus статически вшит в бинарник — отдельный пакет не нужен.
 depends:
-  - libgtk-4-1          # GTK4 runtime
-  - libwebkitgtk-6.0-4  # WebKitGTK-6.0 runtime (требует Wails v3 на Linux)
-  - libopus0            # Opus codec (голосовой чат)
-  - libopusfile0        # OpusFile
+  - libgtk-3-0
+  - libwebkit2gtk-4.1-0
 
-# ── Переопределения зависимостей для конкретных форматов ─────────────────────
 overrides:
-  # RPM — Fedora 40+ / RHEL 9+ / AlmaLinux 9+
   rpm:
     depends:
-      - gtk4             # GTK4 runtime
-      - webkitgtk6.0     # WebKitGTK-6.0 runtime
-      - opus             # Opus codec
+      - gtk3
+      - webkit2gtk4.1
 
-  # Arch Linux (rolling release)
   archlinux:
     depends:
-      - gtk4             # GTK4 runtime
-      - webkitgtk-6.0    # WebKitGTK-6.0 runtime
-      - opus             # Opus codec
+      - gtk3
+      - webkit2gtk-4.1
 
-# ── Скрипты после установки ───────────────────────────────────────────────────
 scripts:
   postinstall: "./build/linux/nfpm/scripts/postinstall.sh"

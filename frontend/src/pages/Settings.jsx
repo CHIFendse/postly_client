@@ -66,8 +66,8 @@ function AboutSection({ currentVersion }) {
       <div className="settings-section-title">О приложении</div>
       <div className="about-card">
         <div className="about-logo">✦ Postly</div>
-        <div className="about-version">Версия {currentVersion || '0.0.1'}</div>
-        <div className="about-desc">Современный мессенджер с голосовыми вызовами</div>
+        <div className="about-version">Версия {currentVersion}</div>
+        <div className="about-desc">Производительный мессенджер с открытым исходным кодом.</div>
       </div>
     </div>
   );
