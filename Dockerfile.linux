@@ -1,24 +1,64 @@
-FROM golang:1.25-bookworm
+# Dockerfile для локальной сборки Linux-бинарника через Docker.
+# Использование:
+#   docker build -f Dockerfile.linux -t postly-linux-builder .
+#   docker run --rm postly-linux-builder cat /app/postly > postly
+#   chmod +x postly
 
-# Устанавливаем системные зависимости, необходимые для сборки GUI
-RUN apt-get update && apt-get install -y \
-    build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev \
-    libopus-dev libopusfile-dev nodejs npm
+# Ubuntu 24.04 обязателен: в Debian Bookworm/Ubuntu 22.04 нет libwebkitgtk-6.0-dev
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ── Системные зависимости ────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    build-essential \
+    pkg-config \
+    # GTK4 + WebKitGTK-6.0 (требует Wails v3 на Linux)
+    libgtk-4-dev \
+    libwebkitgtk-6.0-dev \
+    # Opus — нативная библиотека для голосового чата
+    libopus-dev \
+    libopusfile-dev \
+    # Node.js — для сборки фронтенда
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Go ───────────────────────────────────────────────────────────────────────
+# Ставим Go вручную, т.к. официальный golang-образ базируется на Debian Bookworm
+# (где нет libwebkitgtk-6.0-dev)
+ENV GO_VERSION=1.24.4
+RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" \
+    | tar -C /usr/local -xz
+ENV PATH="/usr/local/go/bin:$PATH"
+ENV GOPATH="/root/go"
+ENV PATH="${GOPATH}/bin:$PATH"
+
+# ── Wails v3 ─────────────────────────────────────────────────────────────────
+RUN go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
 WORKDIR /app
 
-# Скачиваем зависимости Go
+# ── Зависимости Go (кэшируются отдельно) ─────────────────────────────────────
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Копируем исходники
+# ── Исходники ────────────────────────────────────────────────────────────────
 COPY . .
 
-# Собираем фронтенд (если есть папка frontend)
+# ── Генерация биндингов ──────────────────────────────────────────────────────
+RUN wails3 generate bindings
+
+# ── Фронтенд ─────────────────────────────────────────────────────────────────
 RUN cd frontend && npm install && npm run build
 
-# Собираем сам бинарник напрямую через go build
-# Тег 'production' обязателен для Wails
-RUN go build -tags production -ldflags="-w -s" -o postly .
+# ── Сборка бинарника ─────────────────────────────────────────────────────────
+RUN CGO_ENABLED=1 go build \
+    -tags production \
+    -trimpath \
+    -ldflags="-w -s" \
+    -o postly .
 
-# В результате у тебя в контейнере в /app будет готовый файл 'postly'
+# Бинарник находится в /app/postly

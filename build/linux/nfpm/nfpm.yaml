@@ -1,67 +1,60 @@
-# Feel free to remove those if you don't want/need to use them.
-# Make sure to check the documentation at https://nfpm.goreleaser.com
-#
-# The lines below are called `modelines`. See `:help modeline`
+# nfpm.yaml — конфиг для создания DEB / RPM / Arch-пакетов через nfpm.
+# Документация: https://nfpm.goreleaser.com
+# Использование:
+#   task linux:create:deb   → .deb (Debian/Ubuntu)
+#   task linux:create:rpm   → .rpm (Fedora/RHEL/AlmaLinux)
+#   task linux:create:aur   → пакет для Arch Linux
 
-name: "postly_temp"
+name: "postly"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.1.0"
-section: "default"
-priority: "extra"
+section: "net"
+priority: "optional"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "A postly_temp application"
-vendor: "My Company"
-homepage: "https://wails.io"
+description: "Postly — мессенджер с голосовым чатом"
+vendor: "Postly"
+homepage: "https://github.com/CHIFendse/postly"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/postly_temp"
-    dst: "/usr/local/bin/postly_temp"
+  - src: "./build/bin/postly"
+    dst: "/usr/local/bin/postly"
+    file_info:
+      mode: 0755
+
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/postly_temp.png"
-  - src: "./build/linux/postly_temp.desktop"
-    dst: "/usr/share/applications/postly_temp.desktop"
+    dst: "/usr/share/icons/hicolor/256x256/apps/postly.png"
 
-# Default dependencies for Debian 12/Ubuntu 22.04+ with WebKit 4.1
+  - src: "./build/linux/postly.desktop"
+    dst: "/usr/share/applications/postly.desktop"
+
+# ── Зависимости для DEB (Ubuntu 24.04+ / Debian Trixie+) ─────────────────────
+# apt автоматически установит их при инсталляции пакета командой:
+#   sudo apt install ./postly_0.1.0_amd64.deb
 depends:
-  - libgtk-3-0
-  - libwebkit2gtk-4.1-0
+  - libgtk-4-1          # GTK4 runtime
+  - libwebkitgtk-6.0-4  # WebKitGTK-6.0 runtime (требует Wails v3 на Linux)
+  - libopus0            # Opus codec (голосовой чат)
+  - libopusfile0        # OpusFile
 
-# Distribution-specific overrides for different package formats and WebKit versions
+# ── Переопределения зависимостей для конкретных форматов ─────────────────────
 overrides:
-  # RPM packages for RHEL/CentOS/AlmaLinux/Rocky Linux (WebKit 4.0)
+  # RPM — Fedora 40+ / RHEL 9+ / AlmaLinux 9+
   rpm:
     depends:
-      - gtk3
-      - webkit2gtk4.1
-  
-  # Arch Linux packages (WebKit 4.1)  
+      - gtk4             # GTK4 runtime
+      - webkitgtk6.0     # WebKitGTK-6.0 runtime
+      - opus             # Opus codec
+
+  # Arch Linux (rolling release)
   archlinux:
     depends:
-      - gtk3
-      - webkit2gtk-4.1
+      - gtk4             # GTK4 runtime
+      - webkitgtk-6.0    # WebKitGTK-6.0 runtime
+      - opus             # Opus codec
 
-# scripts section to ensure desktop database is updated after install
+# ── Скрипты после установки ───────────────────────────────────────────────────
 scripts:
   postinstall: "./build/linux/nfpm/scripts/postinstall.sh"
-  # You can also add preremove, postremove if needed
-  # preremove: "./build/linux/nfpm/scripts/preremove.sh"
-  # postremove: "./build/linux/nfpm/scripts/postremove.sh"
-
-# replaces:
-#   - foobar
-# provides:
-#   - bar
-# depends:
-#   - gtk3
-#   - libwebkit2gtk
-# recommends:
-#   - whatever
-# suggests:
-#   - something-else
-# conflicts:
-#   - not-foo
-#   - not-bar
-# changelog: "changelog.yaml"

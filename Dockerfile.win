@@ -1,25 +1,76 @@
-FROM golang:latest AS builder
+# Dockerfile для кросс-компиляции Windows-бинарника из Linux через Docker.
+# Использование:
+#   docker build -f Dockerfile.win -t postly-win-builder .
+#   docker run --rm postly-win-builder cat /app/postly.exe > postly.exe
+#
+# Требования: Docker Desktop или Docker Engine + buildx (для multi-layer кэша)
 
-# Устанавливаем кросс-компилятор для Windows
-RUN apt-get update && apt-get install -y \
-    build-essential gcc-mingw-w64-x86-64 nodejs npm
+FROM golang:1.24-bookworm AS builder
 
-# Установка Wails (для подготовки инструментов)
-RUN go install github.com/go-task/task/v3/cmd/task@latest &&
+# ── Кросс-компилятор + системные утилиты ────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    # MinGW — кросс-компилятор C для Windows x86-64
+    gcc-mingw-w64-x86_64 \
+    binutils-mingw-w64-x86_64 \
+    # autotools нужны для сборки libopus из исходников
+    autoconf \
+    automake \
+    libtool \
+    # Node.js для фронтенда
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/wailsapp/wails /tmp/wails && \
-    cd /tmp/wails/v3 && \
-    go build -o /usr/local/bin/wails ./cmd/wails && \
-    rm -rf /tmp/wails
+# ── Wails v3 ─────────────────────────────────────────────────────────────────
+RUN go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+# ── Компиляция libopus для Windows (mingw target, статическая библиотека) ───
+# apt не предоставляет libopus для mingw, поэтому собираем из исходников.
+# Результат: /usr/x86_64-w64-mingw32/lib/libopus.a (статическая линковка)
+RUN git clone --depth=1 https://gitlab.xiph.org/xiph/opus.git /tmp/opus \
+    && cd /tmp/opus \
+    && ./autogen.sh \
+    && ./configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix=/usr/x86_64-w64-mingw32 \
+        --enable-static \
+        --disable-shared \
+        --disable-doc \
+        --disable-extra-programs \
+    && make -j"$(nproc)" install \
+    && rm -rf /tmp/opus
 
 WORKDIR /app
+
+# ── Зависимости Go (кэшируются отдельно) ─────────────────────────────────────
+COPY go.mod go.sum ./
+RUN go mod download
+
+# ── Исходники ────────────────────────────────────────────────────────────────
 COPY . .
 
-# Сборка под Windows (CGO обязателен для Wails)
-ENV CGO_ENABLED=1
+# ── Генерация биндингов ──────────────────────────────────────────────────────
+RUN wails3 generate bindings
+
+# ── Фронтенд ─────────────────────────────────────────────────────────────────
+RUN cd frontend && npm install && npm run build
+
+# ── Кросс-компиляция под Windows x86-64 ──────────────────────────────────────
 ENV GOOS=windows
 ENV GOARCH=amd64
+ENV CGO_ENABLED=1
 ENV CC=x86_64-w64-mingw32-gcc
+ENV CXX=x86_64-w64-mingw32-g++
+# Флаги для нахождения статической libopus (собранной выше)
+ENV CGO_CFLAGS="-I/usr/x86_64-w64-mingw32/include"
+ENV CGO_LDFLAGS="-L/usr/x86_64-w64-mingw32/lib -Wl,-Bstatic -lopus -Wl,-Bdynamic -static-libgcc"
 
-# Запускаем сборку
-RUN task build
+RUN go build \
+    -tags production \
+    -trimpath \
+    -ldflags="-w -s -H windowsgui" \
+    -o postly.exe .
+
+# Бинарник находится в /app/postly.exe

@@ -1,13 +1,17 @@
-name: Build AppImage
+name: Build Releases
 
 on:
   push:
     tags:
-      - "v*"   # запускается когда ты делаешь git tag v1.0.0
+      - "v*"   # Запускается при git tag v1.0.0 и пуше тега
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04   # важно: именно 22.04, не новее
+  # ─────────────────────────────────────────────────────────────────────────
+  # LINUX — AppImage (все нужные .so зашиты внутрь через linuxdeploy)
+  # ─────────────────────────────────────────────────────────────────────────
+  build-linux:
+    name: Linux AppImage
+    runs-on: ubuntu-24.04   # 24.04 обязателен: в 22.04 нет libwebkitgtk-6.0-dev
 
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +19,7 @@ jobs:
       - name: Установка Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "stable"
 
       - name: Установка Node.js
         uses: actions/setup-node@v4
@@ -28,7 +32,8 @@ jobs:
           sudo apt-get install -y \
             build-essential pkg-config \
             libgtk-4-dev libwebkitgtk-6.0-dev \
-            libopus-dev libopusfile-dev
+            libopus-dev libopusfile-dev \
+            libglib2.0-bin file
 
       - name: Установка Wails v3
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
@@ -42,36 +47,169 @@ jobs:
           npm install
           npm run build
 
-      - name: Сборка приложения
-        run: go build -ldflags="-w -s" -o build/bin/postly .
-
-      - name: Скачиваем linuxdeploy
+      - name: Сборка бинарника
+        env:
+          CGO_ENABLED: "1"
         run: |
-          curl -Lo linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          chmod +x linuxdeploy
+          go build -tags production -trimpath \
+            -ldflags="-w -s" \
+            -o build/bin/postly .
 
-      - name: Упаковка в AppImage
+      # ── Упаковка в AppImage ────────────────────────────────────────────
+      - name: Подготовка AppDir
         run: |
           mkdir -p AppDir/usr/bin
           mkdir -p AppDir/usr/share/applications
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
-          cp build/bin/postly AppDir/usr/bin/
+          cp build/bin/postly               AppDir/usr/bin/postly
+          cp build/appicon.png              AppDir/usr/share/icons/hicolor/256x256/apps/postly.png
+          cp build/appicon.png              AppDir/postly.png
 
-          cat > AppDir/usr/share/applications/postly.desktop << EOF
+          # .desktop без отступов — обязателен для linuxdeploy
+          cat > AppDir/usr/share/applications/postly.desktop << 'EOF'
           [Desktop Entry]
+          Type=Application
           Name=Postly
           Exec=postly
           Icon=postly
-          Type=Application
-          Categories=Utility;
+          Categories=Network;Chat;
+          Terminal=false
+          StartupNotify=true
           EOF
+          # убираем лишние отступы (heredoc с пробелами)
+          sed -i 's/^[[:space:]]*//' AppDir/usr/share/applications/postly.desktop
+          cp AppDir/usr/share/applications/postly.desktop AppDir/postly.desktop
 
-          cp build/appicon.png AppDir/usr/share/icons/hicolor/256x256/apps/postly.png
+      - name: Скачиваем linuxdeploy + плагин GTK
+        run: |
+          curl -fsSL -o linuxdeploy \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -fsSL -o /usr/local/bin/linuxdeploy-plugin-gtk \
+            https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh
+          chmod +x linuxdeploy /usr/local/bin/linuxdeploy-plugin-gtk
 
-          ./linuxdeploy --appdir AppDir --output appimage
+      - name: Сборка AppImage (все .so зашиты внутрь)
+        env:
+          # APPIMAGE_EXTRACT_AND_RUN: обход отсутствия FUSE в GitHub Actions
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          # GTK4 — говорим плагину копировать темы и схемы GTK4
+          DEPLOY_GTK_VERSION: "4"
+        run: |
+          ./linuxdeploy \
+            --appdir AppDir \
+            --plugin gtk \
+            --desktop-file AppDir/postly.desktop \
+            --icon-file AppDir/postly.png \
+            --output appimage
+
+          # linuxdeploy называет файл по Name= из .desktop + архитектура
+          mv Postly*.AppImage postly-linux-x86_64.AppImage 2>/dev/null || \
+          mv *.AppImage postly-linux-x86_64.AppImage
 
       - name: Публикация релиза
         uses: softprops/action-gh-release@v2
         with:
-          files: "*.AppImage"
+          files: postly-linux-x86_64.AppImage
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # WINDOWS — NSIS-установщик (включает WebView2 Runtime bootstrapper)
+  # ─────────────────────────────────────────────────────────────────────────
+  build-windows:
+    name: Windows Installer
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # MSYS2 нужен для CGO: hraban/opus и gen2brain/malgo требуют C-компилятор
+      - name: Установка MSYS2 + MinGW + libopus
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          # gcc — C-компилятор для CGO; opus — нативная библиотека для голоса;
+          # pkg-config — автоматическое определение флагов компиляции
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-opus
+            mingw-w64-x86_64-pkg-config
+          # Добавляем MSYS2/MinGW в системный PATH для всех последующих шагов
+          path-type: inherit
+
+      - name: Установка Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Установка Wails v3
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Генерация биндингов
+        shell: bash
+        run: wails3 generate bindings
+
+      - name: Сборка фронтенда
+        shell: bash
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Генерация Windows-ресурсов (.syso — иконка + версия)
+        shell: bash
+        run: |
+          cd build
+          wails3 generate syso \
+            -arch amd64 \
+            -icon windows/icon.ico \
+            -manifest windows/wails.exe.manifest \
+            -info windows/info.json \
+            -out ../wails_windows_amd64.syso
+
+      - name: Сборка Windows-бинарника (CGO + статическая libopus)
+        shell: bash
+        env:
+          CGO_ENABLED: "1"
+          # pkg-config найдёт opus через MSYS2
+          PKG_CONFIG_PATH: "C:/msys64/mingw64/lib/pkgconfig"
+          CGO_CFLAGS: "-I/c/msys64/mingw64/include"
+          # -Bstatic/-Bdynamic: libopus линкуем статически, остальное динамически
+          # -static-libgcc: runtime GCC тоже статически — не нужен libgcc_s.dll
+          CGO_LDFLAGS: "-L/c/msys64/mingw64/lib -Wl,-Bstatic -lopus -Wl,-Bdynamic -static-libgcc"
+        run: |
+          go build -tags production -trimpath \
+            -ldflags="-w -s -H windowsgui" \
+            -o build/bin/postly.exe .
+          # Чистим временный ресурс-файл
+          rm -f wails_windows_amd64.syso
+
+      - name: Скачиваем WebView2 Runtime bootstrapper
+        shell: bash
+        run: |
+          # wails3 сам скачивает официальный бутстраппер и обновляет wails_tools.nsh
+          wails3 generate webview2bootstrapper \
+            -dir "$(pwd)/build/windows/nsis"
+
+      - name: Установка NSIS
+        run: choco install nsis --no-progress -y
+
+      - name: Сборка NSIS-установщика
+        shell: pwsh
+        run: |
+          $binary = "${{ github.workspace }}\build\bin\postly.exe"
+          Set-Location "build\windows\nsis"
+          & "C:\Program Files (x86)\NSIS\makensis.exe" `
+            "/DARG_WAILS_AMD64_BINARY=$binary" `
+            project.nsi
+
+      - name: Публикация релиза
+        uses: softprops/action-gh-release@v2
+        with:
+          # NSIS кладёт установщик в bin/ корня проекта (OutFile ..\..\..\bin\...)
+          files: "bin/postly-amd64-installer.exe"
