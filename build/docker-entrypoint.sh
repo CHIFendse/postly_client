@@ -99,6 +99,36 @@ GOOS=linux go run ./build/windows/setstack/main.go \
     build/bin/postly.exe 134217728 4194304 || fail "setstack failed"
 ok "Stack fixed"
 
+# ── 9. NSIS установщик Windows ──────────────────────────────
+step "Building NSIS installer"
+
+# Скачиваем WebView2 bootstrapper (нужен NSIS-скрипту, ~1.5MB)
+BOOTSTRAPPER="build/windows/nsis/MicrosoftEdgeWebview2Setup.exe"
+if [ ! -f "$BOOTSTRAPPER" ]; then
+    curl -fsSL -o "$BOOTSTRAPPER" \
+        "https://go.microsoft.com/fwlink/p/?LinkId=2124703" \
+        || fail "Failed to download WebView2 bootstrapper"
+fi
+ok "WebView2 bootstrapper ready"
+
+# makensis работает из директории nsis (пути в .nsi относительные)
+# OutFile в project.nsi: ../../../bin/postly-amd64-installer.exe
+# = <root>/bin/ — создаём и потом перемещаем в build/bin/
+mkdir -p bin
+cd build/windows/nsis
+makensis \
+    -DARG_WAILS_AMD64_BINARY="$(pwd)/../../../build/bin/postly.exe" \
+    project.nsi || fail "makensis failed"
+cd ../../..
+
+# Перемещаем в build/bin/
+mv bin/postly-amd64-installer.exe build/bin/postly-amd64-installer.exe
+rmdir bin 2>/dev/null || true
+
+# Убираем промежуточный .exe — пользователю нужен только установщик
+rm -f build/bin/postly.exe
+ok "NSIS installer ready ($(du -sh build/bin/postly-amd64-installer.exe | cut -f1))"
+
 # ── Итог ────────────────────────────────────────────────────
 echo -e "\n${BOLD}${GREEN}═══════════════════════════════════════════════${NC}"
 echo -e "${BOLD}${GREEN}  Готово! Файлы в build/bin/:${NC}"
@@ -106,13 +136,13 @@ echo -e "${BOLD}${GREEN}══════════════════�
 ls -lh build/bin/ | grep -v '^total'
 echo ""
 echo -e "${BOLD}Расширения и для каких ОС:${NC}"
-echo "  .deb         → Debian, Ubuntu, Linux Mint, Pop!_OS"
-echo "  .rpm         → Fedora, RHEL, AlmaLinux, Rocky, openSUSE"
-echo "  .pkg.tar.zst → Arch Linux, Manjaro, EndeavourOS, Garuda"
-echo "  .exe         → Windows 10/11 (x64)"
+echo "  .deb                  → Debian, Ubuntu, Linux Mint, Pop!_OS"
+echo "  .rpm                  → Fedora, RHEL, AlmaLinux, Rocky, openSUSE"
+echo "  .pkg.tar.zst          → Arch Linux, Manjaro, EndeavourOS, Garuda"
+echo "  -amd64-installer.exe  → Windows 10/11 (x64), установщик NSIS"
 echo ""
 echo -e "${BOLD}Установка:${NC}"
 echo "  sudo apt install ./postly*.deb"
 echo "  sudo dnf install ./postly*.rpm"
 echo "  sudo pacman -U ./postly*.pkg.tar.zst"
-echo "  (Windows) запустить postly.exe напрямую"
+echo "  (Windows) запустить postly-amd64-installer.exe"

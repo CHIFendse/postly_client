@@ -24,6 +24,8 @@ ENV GOTOOLCHAIN=auto
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Базовые инструменты
     gcc g++ make pkg-config cmake git curl ca-certificates \
+    # Сборка Windows-установщика
+    nsis \
     # Linux: статическая линковка opus
     libopus-dev libopusfile-dev libogg-dev \
     # Linux: заголовки GTK3 + WebKitGTK 4.1 нужны для CGO-компиляции
