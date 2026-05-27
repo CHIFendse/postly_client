@@ -1,3 +1,5 @@
+//go:build !noaudio
+
 package pages
 
 import (

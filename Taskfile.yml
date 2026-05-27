@@ -83,6 +83,13 @@ tasks:
       # lopusfile зависит от lopus и logg — все линкуем статически.
       CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
 
+  build:win:noaudio:
+    summary: "Тест без malgo/opus — диагностика STATUS_STACK_OVERFLOW"
+    cmds:
+      - go build -tags "production noaudio" -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly-noaudio.exe .
+    env:
+      CGO_ENABLED: "0"
+
   package:win:
     summary: "Собирает NSIS-установщик postly-amd64-installer.exe (требует NSIS)"
     cmds:
