@@ -38,7 +38,18 @@ html, body {
 }
 
 /* ============================
-   НАСТРОЙКИ — полный оверлей
+   ПРАВАЯ ЧАСТЬ (chats + main)
+   ============================ */
+.app-right {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+/* ============================
+   НАСТРОЙКИ — перекрывает только app-right
    ============================ */
 .settings-fullscreen {
   position: absolute;
