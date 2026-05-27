@@ -2,6 +2,21 @@ import React, { useState } from 'react';
 import './auth.css';
 import { Login, Register } from '@bindings/client/pages/authservice';
 
+/* Парсим ошибку из Go-биндинга (может быть JSON, строка или объект) */
+function parseGoError(err) {
+    try {
+        // Go-биндинги бросают строки; внутри может быть JSON
+        const raw = typeof err === 'string' ? err : (err?.message ?? String(err));
+        const parsed = JSON.parse(raw);
+        return parsed.message || parsed.error || parsed.detail || raw;
+    } catch {
+        // Не JSON — возвращаем как есть
+        const raw = typeof err === 'string' ? err : (err?.message ?? String(err));
+        if (raw && raw !== 'undefined') return raw;
+        return 'Произошла ошибка. Попробуйте снова.';
+    }
+}
+
 function Auth({ onLogin }) {
     const [isRegister, setIsRegister] = useState(false);
     const [error, setError] = useState('');
@@ -23,20 +38,19 @@ function Auth({ onLogin }) {
                 onLogin(data.token, data.username, data.id);
             }
         } catch (err) {
-            try {
-                setError(JSON.parse(err.message).message);
-            } catch {
-                setError('Ошибка входа. Попробуйте снова.');
-            }
+            setError(parseGoError(err));
         }
     };
 
-    return (
-        <div className='auth-container'>
-            <form onSubmit={handleSubmit} className='form'>
-                {/* Лого */}
-                <div className="form-logo">✦ Postly</div>
+    const switchMode = () => {
+        setIsRegister(v => !v);
+        setError('');
+    };
 
+    return (
+        <div className="auth-container">
+            <form onSubmit={handleSubmit} className="form">
+                <div className="form-logo">✦ Postly</div>
                 <h2>{isRegister ? 'Создать аккаунт' : 'Добро пожаловать!'}</h2>
 
                 {error && <p className="auth-error">{error}</p>}
@@ -46,9 +60,9 @@ function Auth({ onLogin }) {
                     placeholder="Логин"
                     value={form.user}
                     className="auth-input"
-                    onChange={e => setForm({...form, user: e.target.value})}
-                    required
+                    onChange={e => setForm({ ...form, user: e.target.value })}
                     autoComplete="username"
+                    required
                 />
 
                 <input
@@ -56,9 +70,9 @@ function Auth({ onLogin }) {
                     placeholder="Пароль"
                     value={form.pass}
                     className="auth-input"
-                    onChange={e => setForm({...form, pass: e.target.value})}
-                    required
+                    onChange={e => setForm({ ...form, pass: e.target.value })}
                     autoComplete={isRegister ? 'new-password' : 'current-password'}
+                    required
                 />
 
                 {isRegister && (
@@ -68,25 +82,25 @@ function Auth({ onLogin }) {
                             placeholder="Email"
                             value={form.email}
                             className="auth-input"
-                            onChange={e => setForm({...form, email: e.target.value})}
+                            onChange={e => setForm({ ...form, email: e.target.value })}
                             autoComplete="email"
                         />
                         <input
                             type="tel"
-                            placeholder="Телефон"
+                            placeholder="Телефон (+7...)"
                             value={form.phone}
                             className="auth-input"
-                            onChange={e => setForm({...form, phone: e.target.value})}
+                            onChange={e => setForm({ ...form, phone: e.target.value })}
                             autoComplete="tel"
                         />
                     </>
                 )}
 
-                <button type="submit" className='button'>
+                <button type="submit" className="button">
                     {isRegister ? 'Зарегистрироваться' : 'Войти'}
                 </button>
 
-                <p onClick={() => { setIsRegister(!isRegister); setError(''); }} className='switch-text'>
+                <p onClick={switchMode} className="switch-text">
                     {isRegister
                         ? <>Уже есть аккаунт? <span>Войти</span></>
                         : <>Нужен аккаунт? <span>Зарегистрироваться</span></>

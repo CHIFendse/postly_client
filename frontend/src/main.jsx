@@ -23,7 +23,7 @@ async function initApp() {
     root.render(
         <Router>
             <Routes>
-                <Route path="/" element={<App />} />
+                <Route path="/" element={<App currentVersion={lastVersion} />} />
                 <Route path="/call/:chatId/:userName" element={<CallWindow />} />
                 <Route path="/call/:chatId/:userName/:typing" element={<CallWindow />} />
             </Routes>

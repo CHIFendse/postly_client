@@ -1,7 +1,7 @@
 import './SettingsModal.css';
 import { useTheme } from '../context/ThemeContext';
 
-function SettingsModal({ isOpen, onClose }) {
+function SettingsModal({ isOpen, onClose, currentVersion }) {
   const { themeId, themes, setTheme } = useTheme();
 
   if (!isOpen) return null;
@@ -71,7 +71,7 @@ function SettingsModal({ isOpen, onClose }) {
 
           {/* Информация о версии */}
           <div className="settings-section settings-footer-info">
-            <span className="settings-version">Postly — версия 1.0</span>
+            <span className="settings-version">Postly — версия 0.0.1</span>
           </div>
         </div>
 

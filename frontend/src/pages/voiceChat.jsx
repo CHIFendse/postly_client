@@ -9,9 +9,9 @@ import SettingsModal from '../components/SettingsModal';
 import { Events } from '@wailsio/runtime';
 import { SetRoomID, SetToken } from '@bindings/client/pages/voicechat';
 
-function VoiceChat({ token, handleLogout }) {
-  const username  = localStorage.getItem("username");
-  const myId      = localStorage.getItem("id");
+function VoiceChat({ token, handleLogout, currentVersion }) {
+  const username = localStorage.getItem("username");
+  const myId     = localStorage.getItem("id");
 
   const [view, setView] = useState(() =>
     localStorage.getItem('lastView') || 'chats'
@@ -23,9 +23,7 @@ function VoiceChat({ token, handleLogout }) {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = Events.On("friend_added", () => {
-      triggerRefresh();
-    });
+    const unsubscribe = Events.On("friend_added", () => triggerRefresh());
     return () => unsubscribe();
   }, []);
 
@@ -35,7 +33,6 @@ function VoiceChat({ token, handleLogout }) {
     setActiveChatName(name);
     localStorage.setItem("lastChatName", name);
     setIsMobileMenuOpen(false);
-
     try {
       await SetToken(token);
       await SetRoomID(chatId);
@@ -45,13 +42,12 @@ function VoiceChat({ token, handleLogout }) {
   };
 
   const triggerRefresh = () => setRefreshTrigger(prev => !prev);
-
   const toggleMobileMenu = () => setIsMobileMenuOpen(v => !v);
   const closeMobileMenu  = () => setIsMobileMenuOpen(false);
 
   return (
     <div className="container">
-      {/* Фирменная шапка (только десктоп) */}
+      {/* ── Брендовая шапка (только десктоп) ── */}
       <MainHeader
         handleLogout={handleLogout}
         username={username}
@@ -60,59 +56,61 @@ function VoiceChat({ token, handleLogout }) {
         setView={setView}
       />
 
-      {/* Левое меню-навигация */}
-      <Menu
-        setView={setView}
-        isOpen={isMobileMenuOpen}
-        onClose={closeMobileMenu}
-        username={username}
-        onLogout={handleLogout}
-        onSettingsClick={() => setShowSettings(true)}
-        currentView={view}
-      />
-
-      {/* Список чатов/групп */}
-      <ChatsMenu
-        currentUserId={myId}
-        onSelectChat={handleChatSelection}
-        activeChatId={activeChatId}
-        refreshTrigger={refreshTrigger}
-        onChatCreated={triggerRefresh}
-        view={view}
-        isOpen={isMobileMenuOpen}
-        onClose={closeMobileMenu}
-      />
-
-      {/* Оверлей мобильных меню */}
-      {isMobileMenuOpen && (
-        <div className="menu-overlay" onClick={closeMobileMenu} />
-      )}
-
-      {/* Основная область */}
-      <div className="main-content">
-        <Header
-          token={token}
-          chatName={activeChatName}
-          chatId={activeChatId}
-          onMenuToggle={toggleMobileMenu}
+      {/* ── Тело: sidebar + chats + main ── */}
+      <div className="app-body">
+        <Menu
+          setView={setView}
+          isOpen={isMobileMenuOpen}
+          onClose={closeMobileMenu}
+          username={username}
+          onLogout={handleLogout}
+          onSettingsClick={() => setShowSettings(true)}
+          currentView={view}
         />
 
-        {activeChatId ? (
-          <Chat chatId={activeChatId} />
-        ) : (
-          <div className="chat-placeholder">
-            <div className="placeholder-content">
-              <div className="placeholder-icon">💬</div>
-              <p>Выберите чат, чтобы начать общение</p>
-            </div>
-          </div>
+        <ChatsMenu
+          currentUserId={myId}
+          onSelectChat={handleChatSelection}
+          activeChatId={activeChatId}
+          refreshTrigger={refreshTrigger}
+          onChatCreated={triggerRefresh}
+          view={view}
+          isOpen={isMobileMenuOpen}
+          onClose={closeMobileMenu}
+        />
+
+        {/* Оверлей для мобильного меню */}
+        {isMobileMenuOpen && (
+          <div className="menu-overlay" onClick={closeMobileMenu} />
         )}
+
+        {/* ── Основная область чата ── */}
+        <div className="main-content">
+          <Header
+            token={token}
+            chatName={activeChatName}
+            chatId={activeChatId}
+            onMenuToggle={toggleMobileMenu}
+          />
+
+          {activeChatId ? (
+            <Chat chatId={activeChatId} />
+          ) : (
+            <div className="chat-placeholder">
+              <div className="placeholder-content">
+                <div className="placeholder-icon">💬</div>
+                <p>Выберите чат, чтобы начать общение</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Модалка настроек */}
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
+        currentVersion={currentVersion}
       />
     </div>
   );

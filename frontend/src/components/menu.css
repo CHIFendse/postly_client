@@ -1,29 +1,27 @@
 /* ============================
-   ЛЕВЫЙ NAV-MENU (72px)
+   ЛЕВЫЙ NAV (sidebar)
+   НЕ position:fixed — flex-child в app-body
    ============================ */
 .menu {
-  width: 72px;
-  height: calc(100vh - 30px);
-  height: calc(100dvh - 30px);
-  position: fixed;
-  top: 30px;
-  left: 0;
+  width: var(--sidebar-w, 72px);
+  flex-shrink: 0;
+  height: 100%;
   background-color: var(--bg-sidebar);
-  z-index: 80;
+  border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-right: 1px solid var(--border-subtle);
   transition: background-color 0.25s;
+  overflow: hidden;
 }
 
-/* ---- Верх: чаты + группы ---- */
+/* ---- Верх ---- */
 .menu-top {
-  padding: 18px 0 12px;
+  padding: 16px 0 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 /* ---- Середина: настройки ---- */
@@ -32,33 +30,32 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 14px 0;
+  padding: 12px 0;
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
 }
 
-/* ---- Элемент: кнопка + подпись ---- */
+/* ---- Элемент nav ---- */
 .menu-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   width: 100%;
   padding: 4px 0;
 }
 
 .menu-button {
-  height: 46px;
-  width: 46px;
+  height: 44px;
+  width: 44px;
   border: none;
   background: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 12px;
   transition: background-color 0.18s, transform 0.12s;
-  position: relative;
 }
 
 .menu-button:hover {
@@ -67,49 +64,37 @@
 }
 
 .menu-button:active {
-  transform: scale(0.95);
+  transform: scale(0.94);
 }
 
-/* активная кнопка (когда view совпадает) */
 .menu-button.menu-btn-active {
   background-color: var(--clr-primary-dim);
 }
 
-.menu-button.menu-btn-active .menu-icon {
-  filter: none;
-  opacity: 1;
-}
-
+/* ---- PNG иконки ---- */
 .menu-icon {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   display: block;
-  filter: invert(60%) sepia(0%) saturate(0%) brightness(90%);
+  filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
   opacity: 0.65;
   transition: filter 0.18s, opacity 0.18s;
 }
 
-.menu-button:hover .menu-icon {
-  filter: invert(75%) sepia(60%) saturate(4000%) hue-rotate(3deg) brightness(110%) contrast(105%);
-  opacity: 1;
-}
-
-/* тематические иконки в активном состоянии */
-.menu-button.menu-btn-active .menu-icon,
-.menu-button:hover .menu-icon {
+.menu-button:hover .menu-icon,
+.menu-button.menu-btn-active .menu-icon {
   filter: var(--icon-filter, invert(75%) sepia(60%) saturate(4000%) hue-rotate(3deg) brightness(110%) contrast(105%));
   opacity: 1;
 }
 
-/* ---- SVG-иконка (шестерёнка настроек) ---- */
+/* ---- SVG иконка шестерёнки ---- */
 .menu-icon-svg {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   color: var(--txt-secondary);
   opacity: 0.55;
   transition: color 0.18s, opacity 0.18s;
-  flex-shrink: 0;
 }
 
 .menu-button:hover .menu-icon-svg,
@@ -118,6 +103,7 @@
   opacity: 1;
 }
 
+/* ---- Подпись ---- */
 .menu-label {
   color: var(--txt-muted);
   font-size: 9px;
@@ -130,44 +116,33 @@
   transition: color 0.18s;
 }
 
-.menu-button:hover + .menu-label,
-.menu-button.menu-btn-active + .menu-label {
-  color: var(--txt-accent);
-}
-
-/* Но label идёт вне button, нужен другой подход */
 .menu-item:hover .menu-label {
   color: var(--txt-accent);
 }
 
-.menu-item .menu-button.menu-btn-active ~ .menu-label {
-  color: var(--txt-accent);
-}
-
-/* ---- Низ: пользователь + выход ---- */
+/* ---- Низ: имя + выход ---- */
 .menu-bottom {
-  padding: 14px 8px;
+  padding: 12px 8px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .menu-username {
   color: var(--txt-accent);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 60px;
-  line-height: 1.2;
 }
 
 .menu-logout-btn {
-  padding: 7px 8px;
+  padding: 6px 8px;
   background-color: var(--clr-danger);
   color: white;
   border: none;
@@ -177,7 +152,6 @@
   width: 100%;
   font-weight: 700;
   transition: background-color 0.18s, transform 0.12s;
-  letter-spacing: 0.2px;
 }
 
 .menu-logout-btn:hover {
@@ -185,52 +159,22 @@
   transform: scale(1.04);
 }
 
-.menu-logout-btn:active {
-  transform: scale(0.96);
-}
-
 /* ============================
-   МОБИЛЬНАЯ ВЕРСИЯ (≤ 850px)
+   МОБИЛКИ: абсолютный слайд
    ============================ */
 @media (max-width: 850px) {
   .menu {
-    top: 50px;
-    height: calc(100vh - 50px);
-    height: calc(100dvh - 50px);
-    width: 72px;
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    height: 100%;
+    z-index: 96;
     transform: translateX(-100%);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 96;
     box-shadow: none;
   }
 
   .menu.open {
     transform: translateX(0);
     box-shadow: 4px 0 20px var(--shadow);
-  }
-
-  .menu-top {
-    padding: 20px 0 12px;
-    gap: 6px;
-  }
-
-  .menu-button {
-    height: 42px;
-    width: 42px;
-    border-radius: 12px;
-  }
-
-  .menu-icon {
-    width: 26px;
-    height: 26px;
-  }
-
-  .menu-label {
-    font-size: 8px;
-    max-width: 56px;
-  }
-
-  .menu-bottom {
-    padding: 12px 8px;
   }
 }

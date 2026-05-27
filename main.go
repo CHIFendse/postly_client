@@ -71,8 +71,8 @@ func main() {
 		Width:    1024,
 		Height:   768,
 		URL:      "/",
-		MinWidth: 480,
-		MinHeight: 720,
+		MinWidth:  380,
+		MinHeight: 540,
 	})
 
 	log.Println("Running app...")

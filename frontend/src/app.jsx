@@ -53,7 +53,7 @@ function LoadingSpinner() {
 /* ──────────────────────────────────────────────
    App
    ────────────────────────────────────────────── */
-function App() {
+function App(currentVersion) {
     const [token, setToken] = useState(localStorage.getItem('jwt_token'));
     const [isLoading, setIsLoading] = useState(true);
     const [isNetworkError, setIsNetworkError] = useState(false);
@@ -140,7 +140,7 @@ function App() {
 
     if (token === null) return <Auth onLogin={handleLogin} />;
 
-    return <VoiceChat token={token} handleLogout={handleLogout} />;
+    return <VoiceChat token={token} handleLogout={handleLogout} currentVersion={currentVersion} />;
 }
 
 /* ──────────────────────────────────────────────

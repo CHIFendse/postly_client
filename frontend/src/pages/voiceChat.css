@@ -1,83 +1,63 @@
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
+  margin: 0; padding: 0; height: 100%; overflow: hidden;
 }
 
 /* ============================
-   КОРНЕВОЙ КОНТЕЙНЕР
+   КОРНЕВОЙ КОНТЕЙНЕР — flex-column
    ============================ */
 .container {
   height: 100vh;
   height: 100dvh;
-  width: 100vw;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-app);
+  background: var(--bg-app);
+  overflow: hidden;
 }
 
 /* ============================
-   ОВЕРЛЕЙ МОБИЛЬНОГО МЕНЮ
+   ТЕЛО: sidebar + chats + main — flex-row
+   ============================ */
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative; /* для мобильных абсолютных панелей */
+  min-height: 0;
+}
+
+/* ============================
+   ОСНОВНАЯ ОБЛАСТЬ ЧАТА
+   ============================ */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--bg-chat);
+}
+
+/* ============================
+   МОБИЛЬНЫЙ ОВЕРЛЕЙ
    ============================ */
 .menu-overlay {
   display: none;
 }
 
-/* ============================
-   ОСНОВНАЯ ОБЛАСТЬ КОНТЕНТА
-   (правее sidebar + chatsMenu)
-   ============================ */
-.main-content {
-  margin-left: 432px; /* 72 sidebar + 360 chatsMenu */
-  margin-top: 30px;   /* высота mainHeader */
-  width: calc(100% - 432px);
-  height: calc(100vh - 30px);
-  height: calc(100dvh - 30px);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  background-color: var(--bg-chat);
-  position: relative;
-  overflow: hidden;
-}
-
-.main-content > div {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ============================
-   МОБИЛЬНАЯ АДАПТАЦИЯ (≤ 850px)
-   ============================ */
 @media (max-width: 850px) {
   .menu-overlay {
     display: block;
-    position: fixed;
-    top: 50px;
-    left: 0;
-    width: 100vw;
-    height: calc(100vh - 50px);
-    height: calc(100dvh - 50px);
+    position: absolute;
+    inset: 0;
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     z-index: 85;
-    animation: overlayFadeIn 0.22s ease;
+    animation: overlayIn 0.2s ease;
   }
 
-  @keyframes overlayFadeIn {
+  @keyframes overlayIn {
     from { opacity: 0; }
     to   { opacity: 1; }
-  }
-
-  .main-content {
-    margin-left: 0;
-    margin-top: 50px;
-    width: 100%;
-    height: calc(100vh - 50px);
-    height: calc(100dvh - 50px);
   }
 }
