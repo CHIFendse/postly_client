@@ -83,11 +83,7 @@ tasks:
     cmds:
       - task: build:win
       - wails3 generate webview2bootstrapper -dir build/windows/nsis
-      - cmd: |
-          cd build/windows/nsis
-          makensis "-DARG_WAILS_AMD64_BINARY={{.ROOT_DIR}}/build/bin/postly.exe" project.nsi
+      - cmd: makensis "-DARG_WAILS_AMD64_BINARY={{.ROOT_DIR}}/build/bin/postly.exe" "{{.ROOT_DIR}}/build/windows/nsis/project.nsi"
         platforms: [windows]
-      - cmd: |
-          cd build/windows/nsis
-          makensis "-DARG_WAILS_AMD64_BINARY={{.ROOT_DIR}}/build/bin/postly.exe" project.nsi
+      - cmd: makensis "-DARG_WAILS_AMD64_BINARY={{.ROOT_DIR}}/build/bin/postly.exe" "{{.ROOT_DIR}}/build/windows/nsis/project.nsi"
         platforms: [linux, darwin]
