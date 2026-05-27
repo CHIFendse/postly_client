@@ -181,8 +181,10 @@
 }
 
 .placeholder-icon {
-  font-size: 52px;
-  line-height: 1;
+  width: 52px;
+  height: 52px;
+  color: var(--clr-primary);
+  opacity: 0.6;
 }
 
 .placeholder-content p {
