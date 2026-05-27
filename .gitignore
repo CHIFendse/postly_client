@@ -42,8 +42,9 @@ yarn-error.log*
 .eslintcache
 
 
-# Временные файлы сборки
-build/
+# Временные файлы сборки (только бинарники и артефакты, не исходники build/)
+build/bin/
+build/linux/appimage/
 bin/
 
 # === Системный мусор ===
