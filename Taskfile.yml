@@ -84,11 +84,21 @@ tasks:
       CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
 
   build:win:noaudio:
-    summary: "Тест без malgo/opus — диагностика STATUS_STACK_OVERFLOW"
+    summary: "Тест без malgo/opus (CGO_ENABLED=0)"
     cmds:
       - go build -tags "production noaudio" -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly-noaudio.exe .
     env:
       CGO_ENABLED: "0"
+
+  build:win:nomalgo:
+    summary: "Тест с opus но без malgo — изолируем виновника"
+    cmds:
+      - go build -tags "production nomalgo" -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly-nomalgo.exe .
+    env:
+      CGO_ENABLED: "1"
+      PKG_CONFIG_PATH: "C:/msys64/mingw64/lib/pkgconfig"
+      CGO_CFLAGS: "-IC:/msys64/mingw64/include"
+      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
 
   package:win:
     summary: "Собирает NSIS-установщик postly-amd64-installer.exe (требует NSIS)"

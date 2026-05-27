@@ -1,9 +1,10 @@
-//go:build noaudio
+//go:build noaudio || nomalgo
 
 package pages
 
-// Stub-реализация VoiceChat без malgo/opus — только для диагностики.
-// Собирать: go build -tags noaudio
+// Stub-реализация VoiceChat без malgo (и без opus при noaudio).
+// noaudio  — CGO_ENABLED=0, без обоих
+// nomalgo  — CGO_ENABLED=1, только opus загружается (тест изоляции)
 
 type VoiceChat struct {
 	running       bool
