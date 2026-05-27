@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <title>Postly — Скачать</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glow { box-shadow: 0 0 40px rgba(234,88,12,0.15); }
+        .btn-win:hover  { box-shadow: 0 0 24px rgba(234,88,12,0.4); }
+        .btn-deb:hover  { box-shadow: 0 0 24px rgba(220,38,38,0.35); }
+        .btn-rpm:hover  { box-shadow: 0 0 24px rgba(59,130,246,0.35); }
+        .btn-arch:hover { box-shadow: 0 0 24px rgba(20,184,166,0.35); }
+        .btn-img:hover  { box-shadow: 0 0 24px rgba(168,85,247,0.35); }
+    </style>
+</head>
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col items-center justify-center selection:bg-orange-500/30 py-16">
+
+    <!-- Фоновые градиенты -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] bg-orange-900/15 rounded-full blur-[140px]"></div>
+        <div class="absolute top-[30%] -right-[10%] w-[500px] h-[500px] bg-red-900/15 rounded-full blur-[120px]"></div>
+        <div class="absolute -bottom-[10%] left-[30%] w-[400px] h-[400px] bg-orange-800/10 rounded-full blur-[100px]"></div>
+    </div>
+
+    <main class="relative z-10 w-full max-w-xl px-6">
+
+        <!-- Логотип -->
+        <div class="text-center mb-12">
+            <div class="text-orange-500 text-sm font-semibold tracking-[0.3em] uppercase mb-4">✦ Мессенджер</div>
+            <h1 class="text-7xl font-black tracking-tighter mb-4 text-white">Postly</h1>
+            <p class="text-slate-400 text-lg font-light leading-relaxed">
+                Быстрый мессенджер с голосовыми звонками.<br>Открытый исходный код.
+            </p>
+        </div>
+
+        <!-- Карточка загрузок -->
+        <div class="backdrop-blur-xl bg-white/[0.04] border border-white/[0.08] rounded-3xl p-8 glow">
+
+            <p class="text-xs text-slate-500 uppercase tracking-widest text-center mb-6 font-medium">Выберите вашу платформу</p>
+
+            <div class="flex flex-col gap-3">
+
+                <!-- Windows -->
+                <a href="/postly-amd64-installer.exe"
+                   class="btn-win group flex items-center gap-4 px-5 py-4 bg-orange-600/90 hover:bg-orange-500 rounded-2xl transition-all duration-200 active:scale-[0.98]">
+                    <svg class="w-8 h-8 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 5.557L10.43 4.5v7.22H3V5.557zM11.43 4.357L21 3v8.72h-9.57V4.357zM3 12.28h7.43V19.5L3 18.443V12.28zM11.43 12.28H21v8.72l-9.57-1.357V12.28z"/>
+                    </svg>
+                    <div class="flex-1 text-left">
+                        <div class="font-semibold text-white text-[15px]">Windows 10 / 11</div>
+                        <div class="text-orange-200/70 text-xs mt-0.5">postly-amd64-installer.exe · NSIS установщик</div>
+                    </div>
+                    <svg class="w-4 h-4 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+                </a>
+
+                <div class="border-t border-white/[0.06] my-1"></div>
+                <p class="text-xs text-slate-600 uppercase tracking-widest text-center font-medium">Linux</p>
+
+                <!-- Debian / Ubuntu -->
+                <a href="/postly_0.1.0_amd64.deb"
+                   class="btn-deb group flex items-center gap-4 px-5 py-4 bg-white/[0.06] hover:bg-red-900/30 border border-white/[0.07] hover:border-red-500/30 rounded-2xl transition-all duration-200 active:scale-[0.98]">
+                    <svg class="w-8 h-8 shrink-0 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 .5C5.649.5.5 5.649.5 12S5.649 23.5 12 23.5 23.5 18.351 23.5 12 18.351.5 12 .5zm0 2c2.57 0 4.922.952 6.717 2.512A9.45 9.45 0 0 0 12 7.8c-1.695 0-3.313.442-4.694 1.21A9.45 9.45 0 0 1 12 2.5zm-7.5 9.5c0-1.162.21-2.273.591-3.3A7.465 7.465 0 0 1 12 9.8a7.465 7.465 0 0 1 6.909 4.6c-.5 3.5-3.5 6.2-7 6.2A7.5 7.5 0 0 1 4.5 12z"/>
+                    </svg>
+                    <div class="flex-1 text-left">
+                        <div class="font-semibold text-white text-[15px]">Debian / Ubuntu / Mint</div>
+                        <div class="text-slate-400 text-xs mt-0.5">postly_0.1.0_amd64.deb · APT пакет</div>
+                    </div>
+                    <svg class="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+                </a>
+
+                <!-- Fedora / RHEL -->
+                <a href="/postly-0.1.0.x86_64.rpm"
+                   class="btn-rpm group flex items-center gap-4 px-5 py-4 bg-white/[0.06] hover:bg-blue-900/30 border border-white/[0.07] hover:border-blue-500/30 rounded-2xl transition-all duration-200 active:scale-[0.98]">
+                    <svg class="w-8 h-8 shrink-0 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 2c1.74 0 3.36.56 4.68 1.5L5.5 16.68A7.96 7.96 0 0 1 4 12c0-4.41 3.59-8 8-8zm0 16c-1.74 0-3.36-.56-4.68-1.5l11.18-11.18A7.96 7.96 0 0 1 20 12c0 4.41-3.59 8-8 8z"/>
+                    </svg>
+                    <div class="flex-1 text-left">
+                        <div class="font-semibold text-white text-[15px]">Fedora / RHEL / AlmaLinux</div>
+                        <div class="text-slate-400 text-xs mt-0.5">postly-0.1.0.x86_64.rpm · DNF пакет</div>
+                    </div>
+                    <svg class="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+                </a>
+
+                <!-- Arch Linux -->
+                <a href="/postly-0.1.0-1-x86_64.pkg.tar.zst"
+                   class="btn-arch group flex items-center gap-4 px-5 py-4 bg-white/[0.06] hover:bg-teal-900/30 border border-white/[0.07] hover:border-teal-500/30 rounded-2xl transition-all duration-200 active:scale-[0.98]">
+                    <svg class="w-8 h-8 shrink-0 text-teal-400" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.5 2 19.5h3.84l1.92-4h8.48l1.92 4H22L12 2.5zm0 5.04 2.88 6.46H9.12L12 7.54z"/>
+                    </svg>
+                    <div class="flex-1 text-left">
+                        <div class="font-semibold text-white text-[15px]">Arch Linux / Manjaro</div>
+                        <div class="text-slate-400 text-xs mt-0.5">postly-0.1.0-1-x86_64.pkg.tar.zst · Pacman пакет</div>
+                    </div>
+                    <svg class="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+                </a>
+
+                <!-- AppImage -->
+                <a href="/postly-x86_64.AppImage"
+                   class="btn-img group flex items-center gap-4 px-5 py-4 bg-white/[0.06] hover:bg-purple-900/30 border border-white/[0.07] hover:border-purple-500/30 rounded-2xl transition-all duration-200 active:scale-[0.98]">
+                    <svg class="w-8 h-8 shrink-0 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                        <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" stroke-linecap="round"/>
+                        <path d="M8 12h8M12 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="flex-1 text-left">
+                        <div class="font-semibold text-white text-[15px]">Любой Linux</div>
+                        <div class="text-slate-400 text-xs mt-0.5">postly-x86_64.AppImage · без установки</div>
+                    </div>
+                    <svg class="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+                </a>
+
+            </div>
+
+            <!-- Версия и мета -->
+            <div class="mt-8 pt-6 border-t border-white/[0.06] flex justify-center gap-6 text-xs text-slate-600 uppercase tracking-widest">
+                <span>Go + Wails</span>
+                <span>·</span>
+                <span>Open Source</span>
+                <span>·</span>
+                <span>v0.1.0</span>
+            </div>
+        </div>
+
+        <!-- Требования -->
+        <p class="text-center text-slate-600 text-xs mt-6">
+            Linux требует <code class="text-slate-500">libwebkit2gtk-4.1</code> — обычно уже установлен в системах с GUI
+        </p>
+
+    </main>
+</body>
+</html>
