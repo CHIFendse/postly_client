@@ -11,7 +11,7 @@ platform: "linux"
 version: "0.1.0"
 section: "net"
 priority: "optional"
-maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
+maintainer: ${GIT_COMMITTER_NAME:-Postly} <${GIT_COMMITTER_EMAIL:-build@postly.app}>
 description: "Postly — мессенджер с голосовым чатом"
 vendor: "Postly"
 homepage: "https://github.com/CHIFendse/postly"

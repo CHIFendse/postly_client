@@ -1,0 +1,83 @@
+# ============================================================
+# Postly — сборочный образ
+# Собирает все релизные пакеты за один запуск:
+#   Linux:   .deb  .rpm  .pkg.tar.zst  (нативный, opus статически вшит)
+#   Windows: .exe  (кросс-компиляция с mingw-w64, opus статически вшит)
+#
+# Использование:
+#   docker build -f Dockerfile.build -t postly-builder .
+#   docker run --rm -v "$(pwd):/src" postly-builder
+#
+# Результаты → build/bin/
+# ============================================================
+
+FROM debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV GOPATH=/root/go
+ENV PATH=$PATH:/usr/local/go/bin:/root/go/bin
+# Разрешить скачивание нужного тулчейна если go.mod требует новее
+ENV GOTOOLCHAIN=auto
+
+# ── 1. Системные пакеты ─────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Базовые инструменты
+    gcc g++ make pkg-config cmake git curl ca-certificates \
+    # Linux: нативные зависимости opus (для статической линковки)
+    libopus-dev libopusfile-dev libogg-dev \
+    # Linux: GTK3 + WebKitGTK 4.1 (необходимы для сборки Wails)
+    libgtk-3-dev libwebkit2gtk-4.1-dev \
+    # Windows: кросс-компилятор mingw-w64
+    gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── 2. Node.js 20 LTS ───────────────────────────────────────
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── 3. Go (последний стабильный) ────────────────────────────
+RUN curl -fsSL https://dl.google.com/go/go1.24.4.linux-amd64.tar.gz \
+    | tar -xz -C /usr/local
+
+# ── 4. Wails3 + go-task ─────────────────────────────────────
+RUN go install github.com/wailsapp/wails/v3/cmd/wails3@latest \
+    && go install github.com/go-task/task/v3/cmd/task@latest
+
+# ── 5. Сборка opus/ogg/opusfile для Windows (статика, mingw) ─
+#    Нужен только один раз — слой кешируется в Docker.
+ENV WIN_OPUS=/win-opus
+RUN mkdir -p ${WIN_OPUS}
+
+# libogg
+RUN curl -fsSL https://downloads.xiph.org/releases/ogg/libogg-1.3.5.tar.gz | tar -xz \
+    && cd libogg-1.3.5 \
+    && ./configure --host=x86_64-w64-mingw32 \
+        --enable-static --disable-shared --prefix=${WIN_OPUS} --quiet \
+    && make -j$(nproc) install \
+    && cd .. && rm -rf libogg-1.3.5
+
+# libopus
+RUN curl -fsSL https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz | tar -xz \
+    && cd opus-1.5.2 \
+    && ./configure --host=x86_64-w64-mingw32 \
+        --enable-static --disable-shared --prefix=${WIN_OPUS} --quiet \
+    && make -j$(nproc) install \
+    && cd .. && rm -rf opus-1.5.2
+
+# libopusfile (--disable-http убирает зависимость от curl)
+RUN curl -fsSL https://downloads.xiph.org/releases/opus/opusfile-0.12.tar.gz | tar -xz \
+    && cd opusfile-0.12 \
+    && PKG_CONFIG_PATH=${WIN_OPUS}/lib/pkgconfig \
+       ./configure --host=x86_64-w64-mingw32 \
+           --enable-static --disable-shared --prefix=${WIN_OPUS} \
+           --disable-http --quiet \
+    && make -j$(nproc) install \
+    && cd .. && rm -rf opusfile-0.12
+
+# ── 6. Entrypoint ───────────────────────────────────────────
+COPY build/docker-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+WORKDIR /src
+ENTRYPOINT ["/entrypoint.sh"]
