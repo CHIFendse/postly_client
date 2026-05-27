@@ -72,12 +72,12 @@ tasks:
       - go build -tags production -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly.exe .
     env:
       CGO_ENABLED: "1"
-      # Статически линкуем все C-зависимости голосового чата:
-      # - lopusfile: hraban/opus содержит opusfile.go
-      # - lopus:     кодек Opus
-      # - logg:      libopusfile зависит от libogg
-      # Без явного -L пусть gcc ищет в своих дефолтных путях (работает с Scoop и MSYS2)
-      CGO_LDFLAGS: "-Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
+      # MSYS2 MINGW64 — единственный надёжный источник opus + opusfile на Windows
+      # Установка: pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-opus mingw-w64-x86_64-libopusfile mingw-w64-x86_64-pkg-config
+      PKG_CONFIG_PATH: "C:/msys64/mingw64/lib/pkgconfig"
+      CGO_CFLAGS: "-IC:/msys64/mingw64/include"
+      # lopusfile зависит от lopus и logg — все линкуем статически
+      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
 
   package:win:
     summary: "Собирает NSIS-установщик postly-amd64-installer.exe (требует NSIS)"
