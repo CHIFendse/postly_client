@@ -83,18 +83,18 @@ tasks:
     cmds:
       - task: build:win
       - wails3 generate webview2bootstrapper -dir build/windows/nsis
-      - cmd: >-
-          powershell -Command "
-          Set-Location 'build\windows\nsis';
-          & 'makensis.exe' \"/DARG_WAILS_AMD64_BINARY=$env:ROOT_DIR\build\bin\postly.exe\" project.nsi
+      - cmd: |
+          powershell -NoProfile -Command "
+            $ErrorActionPreference = 'Stop'
+            $root   = (Get-Location).Path
+            $binary = Join-Path $root 'build\bin\postly.exe'
+            Push-Location 'build\windows\nsis'
+            try   { & makensis \"/DARG_WAILS_AMD64_BINARY=$binary\" project.nsi }
+            finally { Pop-Location }
           "
         platforms: [windows]
       - cmd: |
+          root=$(pwd)
           cd build/windows/nsis
-          makensis -DARG_WAILS_AMD64_BINARY="$(pwd)/../../../build/bin/postly.exe" project.nsi
+          makensis -DARG_WAILS_AMD64_BINARY="$root/build/bin/postly.exe" project.nsi
         platforms: [linux, darwin]
-    vars:
-      ROOT_DIR:
-        sh: pwd
-    env:
-      ROOT_DIR: '{{.ROOT_DIR}}'
