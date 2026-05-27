@@ -4,6 +4,7 @@ import VoiceChat from './pages/voiceChat';
 import { ThemeProvider } from './context/ThemeContext';
 import { SetToken, Connect } from '@bindings/client/pages/chatws';
 import { VerifyToken } from '@bindings/client/pages/authservice';
+import { GetCurrentVersion } from '@bindings/client/components/currentversion';
 
 /* ──────────────────────────────────────────────
    Экран-заглушка (загрузка / ошибка)
@@ -53,10 +54,17 @@ function LoadingSpinner() {
 /* ──────────────────────────────────────────────
    App
    ────────────────────────────────────────────── */
-function App(currentVersion) {
+function App() {
     const [token, setToken] = useState(localStorage.getItem('jwt_token'));
     const [isLoading, setIsLoading] = useState(true);
     const [isNetworkError, setIsNetworkError] = useState(false);
+    const [appVersion, setAppVersion] = useState('0.0.1');
+
+    useEffect(() => {
+        GetCurrentVersion()
+            .then(res => { if (res?.version) setAppVersion(res.version); })
+            .catch(() => {});
+    }, []);
 
     // Проверяем токен при старте
     useEffect(() => {
@@ -140,7 +148,7 @@ function App(currentVersion) {
 
     if (token === null) return <Auth onLogin={handleLogin} />;
 
-    return <VoiceChat token={token} handleLogout={handleLogout} currentVersion={currentVersion} />;
+    return <VoiceChat token={token} handleLogout={handleLogout} currentVersion={appVersion} />;
 }
 
 /* ──────────────────────────────────────────────

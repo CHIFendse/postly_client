@@ -54,7 +54,7 @@ function Menu({ setView, isOpen, onClose, username, onLogout, onSettingsClick, c
                 <div className="menu-item">
                     <button
                         className="menu-button"
-                        onClick={onSettingsClick}
+                        onClick={() => { onSettingsClick(); onClose?.(); }}
                         title="Настройки"
                     >
                         {/* Иконка шестерёнки (SVG встроена, без зависимости от файла) */}
