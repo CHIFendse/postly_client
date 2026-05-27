@@ -69,7 +69,10 @@ tasks:
       # generate syso убран: конфликт ресурсов с webview2 (duplicate manifest/icons)
       # Иконка в установщике берётся из NSIS, не из .syso
       - mkdir -p {{.BIN_DIR}}
-      - go build -tags production -trimpath -ldflags="-w -s -H windowsgui" -o {{.BIN_DIR}}/postly.exe .
+      # -extldflags=-Wl,--stack,67108864 ДОЛЖЕН стоять ВНУТРИ -ldflags, а не в CGO_LDFLAGS:
+      # Go добавляет свой --stack ПОСЛЕ CGO_LDFLAGS, поэтому CGO_LDFLAGS не помогает.
+      # -extldflags применяются последними и гарантированно перекрывают Go-шный stack.
+      - go build -tags production -trimpath -ldflags="-w -s -H windowsgui -extldflags=-Wl,--stack,67108864" -o {{.BIN_DIR}}/postly.exe .
     env:
       CGO_ENABLED: "1"
       # MSYS2 MINGW64 — единственный надёжный источник opus + opusfile на Windows
@@ -77,9 +80,7 @@ tasks:
       PKG_CONFIG_PATH: "C:/msys64/mingw64/lib/pkgconfig"
       CGO_CFLAGS: "-IC:/msys64/mingw64/include"
       # lopusfile зависит от lopus и logg — все линкуем статически.
-      # --stack,67108864 (64 МБ): CGO (mingw-w64) устанавливает резерв стека 1 МБ по умолчанию,
-      # что вызывает STATUS_STACK_OVERFLOW (0xc00000fd) при старте из-за miniaudio/malgo.
-      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc -Wl,--stack,67108864"
+      CGO_LDFLAGS: "-LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc"
 
   package:win:
     summary: "Собирает NSIS-установщик postly-amd64-installer.exe (требует NSIS)"
