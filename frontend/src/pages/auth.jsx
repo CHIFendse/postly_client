@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import './auth.css'
-// Импортируем биндинги (путь может зависеть от твоих настроек wails)
+import './auth.css';
 import { Login, Register } from '@bindings/client/pages/authservice';
 
 function Auth({ onLogin }) {
@@ -15,75 +14,83 @@ function Auth({ onLogin }) {
         try {
             if (isRegister) {
                 await Register(form.user, form.pass, form.email, form.phone);
-                console.log("Вот тут")
                 const data = await Login(form.user, form.pass);
-                console.log("И тут")
-                onLogin(data.token, data.username, data.id); 
+                onLogin(data.token, data.username, data.id);
                 setIsRegister(false);
                 setForm({ user: '', pass: '', email: '', phone: '' });
-                
-
             } else {
-                console.log("Странно, что тут")
-                // Вызываем метод из Go
                 const data = await Login(form.user, form.pass);
-                // Передаем данные в родительский компонент
-                onLogin(data.token, data.username, data.id); 
+                onLogin(data.token, data.username, data.id);
             }
         } catch (err) {
-            console.log("В ошибке что-то")
-            setError(JSON.parse(err.message).message);
+            try {
+                setError(JSON.parse(err.message).message);
+            } catch {
+                setError('Ошибка входа. Попробуйте снова.');
+            }
         }
     };
 
     return (
         <div className='auth-container'>
             <form onSubmit={handleSubmit} className='form'>
-                <h2>{isRegister ? 'Создать аккаунт' : 'Добро пожаловать!'}</h2>
-                {error && <p style={{ color: '#f04747', fontSize: '14px' }}>{error}</p>}
+                {/* Лого */}
+                <div className="form-logo">✦ Postly</div>
 
-                <input 
-                    type="text" 
+                <h2>{isRegister ? 'Создать аккаунт' : 'Добро пожаловать!'}</h2>
+
+                {error && <p className="auth-error">{error}</p>}
+
+                <input
+                    type="text"
                     placeholder="Логин"
                     value={form.user}
                     className="auth-input"
                     onChange={e => setForm({...form, user: e.target.value})}
-                    required 
+                    required
+                    autoComplete="username"
                 />
-                
-                <input 
-                    type="password" 
+
+                <input
+                    type="password"
                     placeholder="Пароль"
                     value={form.pass}
                     className="auth-input"
                     onChange={e => setForm({...form, pass: e.target.value})}
-                    required 
+                    required
+                    autoComplete={isRegister ? 'new-password' : 'current-password'}
                 />
 
                 {isRegister && (
                     <>
-                        <input 
-                            type="email" 
-                            placeholder="Email" 
+                        <input
+                            type="email"
+                            placeholder="Email"
                             value={form.email}
                             className="auth-input"
                             onChange={e => setForm({...form, email: e.target.value})}
+                            autoComplete="email"
                         />
-                        <input 
-                            type="text" 
-                            placeholder="Телефон" 
+                        <input
+                            type="tel"
+                            placeholder="Телефон"
                             value={form.phone}
                             className="auth-input"
                             onChange={e => setForm({...form, phone: e.target.value})}
+                            autoComplete="tel"
                         />
                     </>
                 )}
+
                 <button type="submit" className='button'>
                     {isRegister ? 'Зарегистрироваться' : 'Войти'}
                 </button>
 
-                <p onClick={() => setIsRegister(!isRegister)} className='switch-text'>
-                    {isRegister ? 'Уже есть аккаунт?' : 'Нужен аккаунт?'}
+                <p onClick={() => { setIsRegister(!isRegister); setError(''); }} className='switch-text'>
+                    {isRegister
+                        ? <>Уже есть аккаунт? <span>Войти</span></>
+                        : <>Нужен аккаунт? <span>Зарегистрироваться</span></>
+                    }
                 </p>
             </form>
         </div>

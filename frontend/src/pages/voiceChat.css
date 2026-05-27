@@ -1,71 +1,83 @@
 html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
+/* ============================
+   КОРНЕВОЙ КОНТЕЙНЕР
+   ============================ */
 .container {
-    height: 100vh;
-    height: 100dvh;
-    width: 100vw;
-    display: flex;
-    flex-direction: column;
-    background-color: #313338;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-app);
 }
 
+/* ============================
+   ОВЕРЛЕЙ МОБИЛЬНОГО МЕНЮ
+   ============================ */
 .menu-overlay {
-    display: none;
+  display: none;
 }
 
+/* ============================
+   ОСНОВНАЯ ОБЛАСТЬ КОНТЕНТА
+   (правее sidebar + chatsMenu)
+   ============================ */
 .main-content {
-    margin-left: 432px;
-    margin-top: 30px;
-    width: calc(100% - 432px);
-    height: calc(100vh - 30px);
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    background-color: #313338;
-    position: relative;
-    overflow: hidden;
+  margin-left: 432px; /* 72 sidebar + 360 chatsMenu */
+  margin-top: 30px;   /* высота mainHeader */
+  width: calc(100% - 432px);
+  height: calc(100vh - 30px);
+  height: calc(100dvh - 30px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background-color: var(--bg-chat);
+  position: relative;
+  overflow: hidden;
 }
 
 .main-content > div {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.status {
-    font-size: 24px;
-    font-weight: 300;
-    color: #dbdee1;
-    text-align: center;
-    margin-top: 50px;
-}
-
-/* МОБИЛЬНАЯ АДАПТАЦИЯ */
+/* ============================
+   МОБИЛЬНАЯ АДАПТАЦИЯ (≤ 850px)
+   ============================ */
 @media (max-width: 850px) {
-    .menu-overlay {
-        display: block;
-        position: fixed;
-        top: 50px;
-        left: 0;
-        width: 100vw;
-        height: calc(100vh - 50px);
-        height: calc(100dvh - 50px);
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(3px);
-        z-index: 85;
-    }
-    
-    .main-content {
-        margin-left: 0;
-        margin-top: 50px;
-        width: 100%;
-        height: calc(100vh - 50px);
-        height: calc(100dvh - 50px);
-    }
+  .menu-overlay {
+    display: block;
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - 50px);
+    height: calc(100dvh - 50px);
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 85;
+    animation: overlayFadeIn 0.22s ease;
+  }
+
+  @keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .main-content {
+    margin-left: 0;
+    margin-top: 50px;
+    width: 100%;
+    height: calc(100vh - 50px);
+    height: calc(100dvh - 50px);
+  }
 }

@@ -1,26 +1,107 @@
+/* =============================================
+   CSS CUSTOM PROPERTIES — дефолтная тема: orange
+   Переопределяются через ThemeContext при старте
+   ============================================= */
+:root {
+  --clr-primary:       #FF7A00;
+  --clr-primary-hover: #FF9500;
+  --clr-primary-dim:   rgba(255, 122, 0, 0.14);
+  --clr-danger:        #ef4444;
+  --clr-danger-hover:  #dc2626;
+  --clr-success:       #22c55e;
+
+  --bg-app:      #1a1815;
+  --bg-sidebar:  #1e1b17;
+  --bg-surface:  #231f1b;
+  --bg-elevated: #2a2621;
+  --bg-hover:    #312c27;
+  --bg-active:   #3d3730;
+  --bg-input:    #141210;
+  --bg-chat:     #1f1c18;
+
+  --txt-primary:   #f0ede8;
+  --txt-secondary: #9e9890;
+  --txt-muted:     #665f58;
+  --txt-accent:    #FF7A00;
+
+  --border-subtle: #28241f;
+  --border-medium: #35302a;
+  --border-accent: #c68325;
+
+  --header-bg:  #c68325;
+  --header-txt: #fff7ee;
+
+  --msg-sent-bg: #c68325;
+  --msg-recv-bg: #2a2621;
+
+  --scrollbar-thumb: #35302a;
+  --shadow:          rgba(0, 0, 0, 0.45);
+}
+
+/* =============================================
+   BASE RESET + GLOBAL STYLES
+   ============================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html {
-    background-color: rgba(27, 38, 54, 1);
-    text-align: center;
-    color: white;
+  background-color: var(--bg-app);
+  color: var(--txt-primary);
+  text-align: left;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-    margin: 0;
-    color: white;
-    font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+  margin: 0;
+  padding: 0;
+  color: var(--txt-primary);
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
+  background-color: var(--bg-app);
 }
 
 @font-face {
-    font-family: "Nunito";
-    font-style: normal;
-    font-weight: 400;
-    src: local(""),
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400;
+  src: local(""),
     url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
 }
 
 #app {
-    height: 100vh;
-    text-align: center;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* =============================================
+   ГЛОБАЛЬНЫЙ СКРОЛЛБАР
+   ============================================= */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-accent);
+}
+
+/* =============================================
+   УТИЛИТЫ
+   ============================================= */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
 }

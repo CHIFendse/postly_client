@@ -1,57 +1,52 @@
-
+/* ============================
+   ВЕРХНЯЯ ШАПКА (30px, brand)
+   ============================ */
 .main-header {
-    height: 30px;
-    width: 100%; 
-    position: fixed;
-    top: 0;
-    left: 0;
-    background-color: #c68325;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    box-sizing: border-box;
-    border-bottom: 1px solid #1e1f22;
+  height: 30px;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: var(--header-bg);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  /* тонкая тень вниз */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
-
 
 .preview {
-    font-size: larger;
-    font-weight: 600;
-    display: flex;
-    align-items: center; 
-    justify-content: center;
-    width: auto;
-    min-width: 100px;
-    gap: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-.username {
-    font-size: larger;
-    font-weight: 600;
-}
-.right-group{
-    margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
-.btn-exit {
-    padding: 5px 12px;
-    cursor: pointer;
-    background-color: #f55353;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: 500;
+.preview nav {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: var(--header-txt);
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.15s;
+  user-select: none;
 }
 
-.btn-exit:hover {
-    background-color: #a53737;
+.preview:hover nav {
+  opacity: 0.82;
 }
 
+/* Мобилки: скрываем главную шапку, т.к. там своя */
 @media (max-width: 850px) {
-    .main-header {
-        display: none !important;
-    }
+  .main-header {
+    display: none !important;
+  }
 }
