@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Menu from '../components/menu';
 import Header from '../components/header';
 import MainHeader from '../components/mainHeader';
-import ChatsMenu from '../components/chatsMenu';
-import Chat from './chat';
+import ChatsMenu, { clearChatsCache } from '../components/chatsMenu';
+import Chat, { clearMessagesCache } from './chat';
 import Settings from './Settings';
 import { Events } from '@wailsio/runtime';
 import { SetRoomID, SetToken } from '@bindings/client/pages/voicechat';
@@ -66,6 +66,12 @@ function ChatSearchBar({ value, onChange, onClose, matchCount, matchIdx, onNav }
 function VoiceChat({ token, handleLogout, currentVersion }) {
   const username = localStorage.getItem("username");
   const myId     = localStorage.getItem("id");
+
+  // Чистим кеши предыдущего аккаунта при каждом входе
+  useEffect(() => {
+    clearChatsCache();
+    clearMessagesCache();
+  }, []);
 
   const [view, setView] = useState(() => localStorage.getItem('lastView') || 'chats');
   const [activeChatId,   setActiveChatId]   = useState(getCookie('lastActiveChatId') || localStorage.getItem('lastActiveChatId'));

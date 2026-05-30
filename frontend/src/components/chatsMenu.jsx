@@ -10,6 +10,8 @@ import CreateGroupModal from './createGroupModal';
 const _chatsCache = new Map();
 const CHATS_TTL = 120_000;
 
+export function clearChatsCache() { _chatsCache.clear(); }
+
 const API_BASE = 'https://api.postly-mes.ru:8081';
 
 function formatChatTime(unixSeconds) {
