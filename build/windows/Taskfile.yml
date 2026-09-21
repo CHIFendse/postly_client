@@ -1,0 +1,58 @@
+version: '3'
+
+includes:
+  common: ../Taskfile.yml
+
+tasks:
+  build:
+    summary: Build the Windows application natively
+    cmds:
+      - task: build:native
+        vars:
+          ARCH: '{{.ARCH}}'
+          DEV: '{{.DEV}}'
+          EXTRA_TAGS: '{{.EXTRA_TAGS}}'
+
+  build:native:
+    summary: Build the Windows executable
+    internal: true
+    deps:
+      - task: common:go:mod:tidy
+      - task: common:build:frontend
+        vars:
+          DEV: '{{.DEV}}'
+          BUILD_FLAGS: '{{.BUILD_FLAGS}}'
+      - task: common:generate:icons
+    cmds:
+      - powershell -NoProfile -Command "Get-ChildItem -Path '*.syso' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
+      - task: generate:syso
+        vars:
+          ARCH: '{{.ARCH}}'
+      - mkdir -p {{.BIN_DIR}}
+      - go build {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.EXEC_NAME}}"
+      - powershell -NoProfile -Command "Get-ChildItem -Path '*.syso' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue"
+    vars:
+      BUILD_FLAGS: '{{if eq .DEV "true"}}{{if .EXTRA_TAGS}}-tags {{.EXTRA_TAGS}} {{end}}-buildvcs=false -gcflags=all="-l"{{else}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{end}}'
+      EXEC_NAME: '{{if eq .DEV "true"}}{{.APP_NAME}}-dev.exe{{else}}{{.APP_NAME}}.exe{{end}}'
+    env:
+      GOOS: windows
+      CGO_ENABLED: '1'
+      GOARCH: '{{.ARCH | default ARCH}}'
+      CC: C:/msys64/mingw64/bin/x86_64-w64-mingw32-gcc.exe
+      CXX: C:/msys64/mingw64/bin/x86_64-w64-mingw32-g++.exe
+      PKG_CONFIG_PATH: C:/msys64/mingw64/lib/pkgconfig
+      CGO_CFLAGS: -IC:/msys64/mingw64/include
+      CGO_LDFLAGS: -LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc -static-libstdc++
+
+  generate:syso:
+    summary: Generate Windows resources
+    dir: build
+    cmds:
+      - wails3 generate syso -arch {{.ARCH}} -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_{{.ARCH}}.syso
+    vars:
+      ARCH: '{{.ARCH | default ARCH}}'
+
+  run:
+    summary: Run the Windows executable
+    cmds:
+      - '{{.BIN_DIR}}/{{if eq .DEV "true"}}{{.APP_NAME}}-dev.exe{{else}}{{.APP_NAME}}.exe{{end}}'

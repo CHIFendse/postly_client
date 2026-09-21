@@ -1,0 +1,7 @@
+{
+  "name": "postly",
+  "frontend:dev:serverUrl": "http://localhost:5173",
+  "frontend:dev:server": "npm run dev -- --port 5173 --strictPort",
+  "bindings:languages": "js",
+  "outputname": "postly"
+}

@@ -1,0 +1,54 @@
+version: '3'
+
+includes:
+  common: ../Taskfile.yml
+
+vars:
+  APP_NAME: postly
+  BIN_DIR: build/bin
+
+tasks:
+  build:
+    summary: Build the Linux binary natively
+    deps:
+      - task: common:go:mod:tidy
+      - task: common:build:frontend
+        vars:
+          DEV: 'false'
+      - task: common:generate:icons
+    cmds:
+      - mkdir -p {{.BIN_DIR}}
+      - go build -tags production -trimpath -buildvcs=false -ldflags="-w -s" -o {{.BIN_DIR}}/{{.APP_NAME}} .
+    env:
+      GOOS: linux
+      CGO_ENABLED: '1'
+      CGO_LDFLAGS: -Wl,-Bstatic -lopusfile -logg -lopus -Wl,-Bdynamic
+
+  package:
+    summary: Build Linux distribution packages
+    deps:
+      - task: build
+    cmds:
+      - task: generate:deb
+      - task: generate:rpm
+      - task: generate:aur
+
+  generate:deb:
+    summary: Create a Debian package
+    cmds:
+      - wails3 tool package -name "{{.APP_NAME}}" -format deb -config ./build/linux/nfpm/nfpm.yaml -out ./build/bin
+
+  generate:rpm:
+    summary: Create an RPM package
+    cmds:
+      - wails3 tool package -name "{{.APP_NAME}}" -format rpm -config ./build/linux/nfpm/nfpm.yaml -out ./build/bin
+
+  generate:aur:
+    summary: Create an Arch Linux package
+    cmds:
+      - wails3 tool package -name "{{.APP_NAME}}" -format archlinux -config ./build/linux/nfpm/nfpm.yaml -out ./build/bin
+
+  run:
+    summary: Run the Linux binary
+    cmds:
+      - ./{{.BIN_DIR}}/{{.APP_NAME}}

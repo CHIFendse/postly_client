@@ -1,0 +1,140 @@
+/* ============================
+   ХЕДер ЧАТА
+   НЕ position:fixed — flex-child в main-content
+   ============================ */
+.header {
+  height: 54px;
+  flex-shrink: 0;
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 8px var(--shadow);
+  z-index: 10;
+}
+
+/* ---- Бургер (только мобилки) ---- */
+.menu-toggle-btn {
+  display: none;
+}
+
+/* ---- Левая группа ---- */
+.left-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chat-name {
+  color: var(--txt-primary) !important;
+  font-size: 16px !important;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Правая группа ---- */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.status-text {
+  color: var(--txt-secondary);
+  font-size: 13px;
+}
+
+/* ---- Кнопка звонка ---- */
+.call-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.18s, transform 0.12s;
+  box-shadow: 0 2px 8px var(--shadow);
+  flex-shrink: 0;
+}
+
+.call-button.connected    { background-color: var(--clr-danger); }
+.call-button.disconnected { background-color: var(--clr-success); }
+.call-button:hover  { filter: brightness(1.12); transform: scale(1.06); }
+.call-button:active { transform: scale(0.93); }
+
+.button-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: brightness(0) invert(1);
+}
+
+/* ---- Добавить юзера ---- */
+.adduser-button {
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s;
+  flex-shrink: 0;
+}
+
+.adduser-button:hover { background-color: var(--bg-hover); }
+
+.addUserIcon {
+  width: 26px;
+  height: 26px;
+  filter: var(--icon-filter, invert(75%) sepia(60%) saturate(4000%) hue-rotate(3deg) brightness(110%) contrast(105%));
+}
+
+
+/* ============================
+   МОБИЛКИ (≤ 850px)
+   ============================ */
+@media (max-width: 850px) {
+  .header {
+    height: 50px;
+    padding: 0 12px;
+    /* Заменяет скрытый MainHeader */
+  }
+
+  .menu-toggle-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--header-bg);
+    border: none;
+    border-radius: 8px;
+    color: var(--header-txt);
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+
+  .menu-toggle-btn:hover { opacity: 0.82; }
+
+  .chat-name  { font-size: 15px !important; }
+  .call-button { width: 32px; height: 32px; }
+  .button-icon { width: 17px; height: 17px; }
+  .status-text { font-size: 11px; }
+}

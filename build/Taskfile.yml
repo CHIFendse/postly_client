@@ -1,0 +1,56 @@
+version: '3'
+
+tasks:
+  go:mod:tidy:
+    summary: Run go mod tidy
+    internal: true
+    cmds:
+      - go mod tidy
+
+  install:frontend:deps:
+    summary: Install frontend dependencies
+    dir: frontend
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules
+    cmds:
+      - npm install
+
+  generate:bindings:
+    summary: Generate Wails JavaScript bindings
+    deps:
+      - task: go:mod:tidy
+    cmds:
+      - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts
+
+  build:frontend:
+    label: build:frontend (DEV={{.DEV}})
+    summary: Build the frontend
+    dir: frontend
+    deps:
+      - task: install:frontend:deps
+      - task: generate:bindings
+        vars:
+          BUILD_FLAGS: '{{.BUILD_FLAGS}}'
+    cmds:
+      - npm run {{if eq .DEV "true"}}build:dev{{else}}build{{end}} -q
+    env:
+      PRODUCTION: '{{if eq .DEV "true"}}false{{else}}true{{end}}'
+
+  generate:icons:
+    summary: Generate the Windows icon
+    dir: build
+    sources:
+      - appicon.png
+    generates:
+      - windows/icon.ico
+    cmds:
+      - wails3 generate icons -input appicon.png -windowsfilename windows/icon.ico
+
+  dev:frontend:
+    summary: Run the Vite development server
+    dir: frontend
+    cmds:
+      - npm run dev -- --port 5173 --strictPort

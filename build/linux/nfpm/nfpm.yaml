@@ -1,0 +1,51 @@
+# nfpm.yaml — конфиг для создания DEB / RPM / Arch-пакетов через nfpm.
+# Документация: https://nfpm.goreleaser.com
+# Использование:
+#   task linux:create:deb   → .deb (Debian/Ubuntu)
+#   task linux:create:rpm   → .rpm (Fedora/RHEL/AlmaLinux)
+#   task linux:create:aur   → пакет для Arch Linux
+
+name: "postly"
+arch: ${GOARCH}
+platform: "linux"
+version: "0.1.0"
+section: "net"
+priority: "optional"
+maintainer: ${GIT_COMMITTER_NAME:-Postly} <${GIT_COMMITTER_EMAIL:-build@postly.app}>
+description: "Postly — мессенджер с голосовым чатом"
+vendor: "Postly"
+homepage: "https://github.com/CHIFendse/postly"
+license: "MIT"
+release: "1"
+
+contents:
+  - src: "./build/bin/postly"
+    dst: "/usr/local/bin/postly"
+    file_info:
+      mode: 0755
+
+  - src: "./build/appicon.png"
+    dst: "/usr/share/icons/hicolor/256x256/apps/postly.png"
+
+  - src: "./build/linux/postly.desktop"
+    dst: "/usr/share/applications/postly.desktop"
+
+# ── Зависимости для DEB (Ubuntu 22.04+ / Debian Bookworm+) ──────────────────
+# opus статически вшит в бинарник — отдельный пакет не нужен.
+depends:
+  - libgtk-3-0
+  - libwebkit2gtk-4.1-0
+
+overrides:
+  rpm:
+    depends:
+      - gtk3
+      - webkit2gtk4.1
+
+  archlinux:
+    depends:
+      - gtk3
+      - webkit2gtk-4.1
+
+scripts:
+  postinstall: "./build/linux/nfpm/scripts/postinstall.sh"

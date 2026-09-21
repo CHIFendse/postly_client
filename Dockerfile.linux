@@ -1,0 +1,80 @@
+# Postly Linux release build
+#
+# Требования:
+#   - Docker Desktop запущен
+#   - доступ Docker к Docker Hub (если используется proxy, он должен быть доступен)
+#   - запускать команды из корня проекта
+#
+# Сборка образа:
+#   docker build -f Dockerfile.linux -t postly-linux-builder .
+#
+
+#
+# Извлечение Linux-артефактов:
+#   docker create --name postly-linux postly-linux-builder
+#   docker cp postly-linux:/app/build/bin/postly ./build/bin/postly
+#   docker cp postly-linux:/app/build/bin/postly.deb ./build/bin/postly.deb
+#   docker cp postly-linux:/app/build/bin/postly.rpm ./build/bin/postly.rpm
+#   docker cp postly-linux:/app/build/bin/postly.pkg.tar.zst ./build/bin/postly.pkg.tar.zst
+#   docker rm postly-linux
+#
+# Результаты находятся в build/bin/:
+#   postly             Linux binary
+#   *.deb              Debian/Ubuntu package
+#   *.rpm              Fedora/RHEL package
+#   *.pkg.tar.zst      Arch Linux package
+#
+# Внутри приложения frontend встроен в binary. Opus/Ogg/Opusfile линкуются статически.
+# GTK/WebKit остаются системными зависимостями Linux.
+# AppImage не собирается в обязательном Docker-шаге: Wails скачивает
+# отдельный linuxdeploy-инструмент во время генерации и может упасть без сети.
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
+ENV GOTOOLCHAIN=auto
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential ca-certificates curl file git pkg-config \
+    libgtk-3-dev libgtk-4-dev libogg-dev libopus-dev libopusfile-dev \
+    libwebkit2gtk-4.1-dev libwebkitgtk-6.0-dev nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fL --retry 8 --retry-delay 5 --retry-all-errors \
+        --connect-timeout 30 --max-time 900 \
+        -o /tmp/go.tar.gz \
+        https://go.dev/dl/go1.25.0.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf /tmp/go.tar.gz \
+    && rm -f /tmp/go.tar.gz
+
+ARG WAILS_VERSION=v3.0.0-alpha.86
+RUN git clone --depth 1 --branch "${WAILS_VERSION}" \
+        https://github.com/wailsapp/wails.git /tmp/wails \
+    && cd /tmp/wails/v3 \
+    && go install ./cmd/wails3 \
+    && rm -rf /tmp/wails
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
+RUN wails3 generate bindings \
+    && cd frontend \
+    && npm install --no-fund --no-audit \
+    && npm run build \
+    && cd .. \
+    && mkdir -p build/bin \
+    && CGO_ENABLED=1 CGO_LDFLAGS="-Wl,-Bstatic -lopusfile -logg -lopus -Wl,-Bdynamic" \
+       go build -tags production -trimpath -buildvcs=false \
+       -ldflags="-w -s" -o build/bin/postly .
+
+RUN wails3 tool package -name postly -format deb \
+       -config ./build/linux/nfpm/nfpm.yaml -out ./build/bin \
+    && wails3 tool package -name postly -format rpm \
+       -config ./build/linux/nfpm/nfpm.yaml -out ./build/bin \
+    && wails3 tool package -name postly -format archlinux \
+       -config ./build/linux/nfpm/nfpm.yaml -out ./build/bin
+
+CMD ["sh", "-c", "ls -lh /app/build/bin"]

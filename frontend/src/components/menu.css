@@ -1,0 +1,202 @@
+/* ============================
+   ЛЕВЫЙ NAV (sidebar)
+   НЕ position:fixed — flex-child в app-body
+   ============================ */
+.menu {
+  width: var(--sidebar-w, 72px);
+  flex-shrink: 0;
+  height: 100%;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: background-color 0.25s;
+  overflow: hidden;
+}
+
+.menu-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.menu-button {
+    position: relative; /* если ещё не задан — иначе badge улетит */
+}
+/* ---- Верх ---- */
+.menu-top {
+  padding: 16px 0 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- Середина: настройки ---- */
+.menu-middle {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ---- Элемент nav ---- */
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.menu-button {
+  height: 44px;
+  width: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  transition: background-color 0.18s, transform 0.12s;
+}
+
+.menu-button:hover {
+  background-color: var(--bg-hover);
+  transform: scale(1.06);
+}
+
+.menu-button:active {
+  transform: scale(0.94);
+}
+
+.menu-button.menu-btn-active {
+  background-color: var(--clr-primary-dim);
+}
+
+/* ---- PNG иконки ---- */
+.menu-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+  filter: invert(50%) sepia(0%) saturate(0%) brightness(80%);
+  opacity: 0.65;
+  transition: filter 0.18s, opacity 0.18s;
+}
+
+.menu-button:hover .menu-icon,
+.menu-button.menu-btn-active .menu-icon {
+  filter: var(--icon-filter, invert(75%) sepia(60%) saturate(4000%) hue-rotate(3deg) brightness(110%) contrast(105%));
+  opacity: 1;
+}
+
+/* ---- SVG иконка шестерёнки ---- */
+.menu-icon-svg {
+  width: 24px;
+  height: 24px;
+  color: var(--txt-secondary);
+  opacity: 0.55;
+  transition: color 0.18s, opacity 0.18s;
+}
+
+.menu-button:hover .menu-icon-svg,
+.menu-button.menu-btn-active .menu-icon-svg {
+  color: var(--clr-primary);
+  opacity: 1;
+}
+
+/* ---- Подпись ---- */
+.menu-label {
+  color: var(--txt-muted);
+  font-size: 9px;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  text-align: center;
+  line-height: 1;
+  max-width: 64px;
+  word-wrap: break-word;
+  font-weight: 600;
+  transition: color 0.18s;
+}
+
+.menu-item:hover .menu-label {
+  color: var(--txt-accent);
+}
+
+/* ---- Низ: имя + выход ---- */
+.menu-bottom {
+  padding: 12px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-username {
+  color: var(--txt-accent);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+}
+
+.menu-logout-btn {
+  padding: 6px 8px;
+  background-color: var(--clr-danger);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 10px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: 700;
+  transition: background-color 0.18s, transform 0.12s;
+}
+
+.menu-logout-btn:hover {
+  background-color: var(--clr-danger-hover);
+  transform: scale(1.04);
+}
+
+/* ============================
+   МОБИЛКИ: абсолютный слайд
+   ============================ */
+@media (max-width: 850px) {
+  .menu {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    height: 100%;
+    z-index: 96;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+  }
+
+  .menu.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px var(--shadow);
+  }
+}

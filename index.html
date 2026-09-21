@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <title>Postly — Мессенджер</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glow { box-shadow: 0 0 60px rgba(234,88,12,0.12); }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+        .fade-up-2 { animation: fadeUp 0.7s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
+        .fade-up-3 { animation: fadeUp 0.7s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+    </style>
+</head>
+<body class="bg-[#0a0a0a] text-white min-h-screen flex flex-col items-center justify-center selection:bg-orange-500/30">
+
+    <!-- Фоновые градиенты -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-[20%] -left-[10%] w-[700px] h-[700px] bg-orange-900/15 rounded-full blur-[160px]"></div>
+        <div class="absolute top-[40%] -right-[15%] w-[500px] h-[500px] bg-red-900/10 rounded-full blur-[130px]"></div>
+        <div class="absolute -bottom-[20%] left-[20%] w-[500px] h-[500px] bg-orange-800/10 rounded-full blur-[120px]"></div>
+    </div>
+
+    <main class="relative z-10 w-full max-w-lg px-6 text-center">
+
+        <!-- Бейдж -->
+        <div class="fade-up inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full mb-8">
+            <span class="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse"></span>
+            Open Source
+        </div>
+
+        <!-- Заголовок -->
+        <div class="fade-up-2 mb-6">
+            <h1 class="text-8xl font-black tracking-tighter leading-none mb-5 text-white">
+                Postly
+            </h1>
+            <p class="text-slate-400 text-xl font-light leading-relaxed">
+                Мессенджер с открытым исходным кодом.<br>
+                Чаты, группы и голосовые звонки.
+            </p>
+        </div>
+
+        <!-- Кнопки -->
+        <div class="fade-up-3 flex flex-col gap-3 mt-10">
+
+            <!-- Скачать мессенджер -->
+            <a href="/download"
+               class="group flex items-center justify-center gap-3 w-full py-4 px-8
+                      bg-orange-600 hover:bg-orange-500 text-white font-semibold text-[15px]
+                      rounded-2xl transition-all duration-200 active:scale-[0.98]
+                      shadow-[0_0_30px_rgba(234,88,12,0.3)] hover:shadow-[0_0_40px_rgba(234,88,12,0.5)]">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 15V3m0 12-4-4m4 4 4-4"/>
+                    <path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/>
+                </svg>
+                Скачать мессенджер
+                <svg class="w-4 h-4 opacity-60 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+
+            <!-- Веб-версия (неактивная) -->
+            <button disabled
+                    class="flex items-center justify-center gap-3 w-full py-4 px-8
+                           bg-white/[0.04] border border-white/[0.07]
+                           text-slate-600 font-medium text-[15px]
+                           rounded-2xl cursor-not-allowed select-none">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20"/>
+                    <path d="M2 12h20"/>
+                </svg>
+                Веб-версия
+                <span class="text-xs font-normal text-slate-700 bg-white/5 border border-white/[0.06] px-2 py-0.5 rounded-full">
+                    в разработке
+                </span>
+            </button>
+
+        </div>
+
+        <!-- Фичи -->
+        <div class="fade-up-3 mt-12 grid grid-cols-3 gap-3">
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-2xl px-3 py-4">
+                <div class="text-xs text-slate-400 font-medium">Чаты и группы</div>
+            </div>
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-2xl px-3 py-4">
+                <div class="text-xs text-slate-400 font-medium">Голосовые звонки</div>
+            </div>
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-2xl px-3 py-4">
+                <div class="text-xs text-slate-400 font-medium">Открытый код</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Футер -->
+    <footer class="relative z-10 mt-16 text-xs text-slate-700 text-center">
+        © 2026 Postly · v0.1.0
+    </footer>
+
+</body>
+</html>

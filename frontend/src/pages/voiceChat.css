@@ -1,0 +1,85 @@
+html, body {
+  margin: 0; padding: 0; height: 100%; overflow: hidden;
+}
+
+/* ============================
+   КОРНЕВОЙ КОНТЕЙНЕР — flex-column
+   ============================ */
+.container {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  overflow: hidden;
+}
+
+/* ============================
+   ТЕЛО: sidebar + chats + main — flex-row
+   ============================ */
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative; /* для мобильных абсолютных панелей */
+  min-height: 0;
+}
+
+/* ============================
+   ОСНОВНАЯ ОБЛАСТЬ ЧАТА
+   ============================ */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--bg-chat);
+}
+
+/* ============================
+   ПРАВАЯ ЧАСТЬ (chats + main)
+   ============================ */
+.app-right {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+/* ============================
+   НАСТРОЙКИ — перекрывает только app-right
+   ============================ */
+.settings-fullscreen {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-chat);
+}
+/* ============================
+   МОБИЛЬНЫЙ ОВЕРЛЕЙ
+   ============================ */
+.menu-overlay {
+  display: none;
+}
+
+@media (max-width: 850px) {
+  .menu-overlay {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 85;
+    animation: overlayIn 0.2s ease;
+  }
+
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
