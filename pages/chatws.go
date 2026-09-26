@@ -31,6 +31,10 @@ type MessageDTO struct {
     CreatedAt   string `json:"created_at"`
     UpdatedAt   int64  `json:"updated_at"`
     LastMessage string `json:"last_message"`
+    MessageType string `json:"message_type"`
+    FileURL     string `json:"file_url"`
+    FileName    string `json:"file_name"`
+    FileSize    string `json:"file_size"`
 }
 
 func (s *ChatWS) ServiceName() string { return "ChatWS" }
@@ -41,9 +45,7 @@ func (a *ChatWS) SetToken(token string) {
     a.mu.Unlock()
 }
 
-// Connect открывает единственное WS-соединение.
-// chatID оставлен в сигнатуре для совместимости с chat.jsx, но в URL не идёт —
-// фильтрация по чату делается на клиенте (как в app.js).
+
 func (a *ChatWS) Connect(chatID string) error {
     a.mu.Lock()
 

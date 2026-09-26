@@ -9,10 +9,6 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
-export function AddMessage(chat_id: string, sender_id: string, text: string, token: string): $CancellablePromise<string> {
-    return $Call.ByID(4021144745, chat_id, sender_id, text, token);
-}
-
 export function DeleteMessage(messageId: string, token: string): $CancellablePromise<string> {
     return $Call.ByID(90913635, messageId, token);
 }

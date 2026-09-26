@@ -35,6 +35,11 @@ export class AuthResponse {
     }
 }
 
+/**
+ * FlexInt64 принимает и число, и строку ("12345", ""): сервер хранит file_size строкой
+ */
+export type FlexInt64 = number;
+
 export class MessageInfo {
     "id": string;
     "text": string;
@@ -46,6 +51,10 @@ export class MessageInfo {
      */
     "created_at": number;
     "username": string;
+    "type": string;
+    "file_name": string;
+    "file_size": FlexInt64;
+    "file_url": string;
 
     /** Creates a new MessageInfo instance. */
     constructor($$source: Partial<MessageInfo> = {}) {
@@ -66,6 +75,18 @@ export class MessageInfo {
         }
         if (!("username" in $$source)) {
             this["username"] = "";
+        }
+        if (!("type" in $$source)) {
+            this["type"] = "";
+        }
+        if (!("file_name" in $$source)) {
+            this["file_name"] = "";
+        }
+        if (!("file_size" in $$source)) {
+            this["file_size"] = 0;
+        }
+        if (!("file_url" in $$source)) {
+            this["file_url"] = "";
         }
 
         Object.assign(this, $$source);

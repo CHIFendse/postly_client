@@ -16,3 +16,7 @@ export {
     AuthResponse,
     MessageInfo
 } from "./models.js";
+
+export type {
+    FlexInt64
+} from "./models.js";

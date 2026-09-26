@@ -6,10 +6,30 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 var apiClient = &http.Client{}
+
+// FlexInt64 принимает и число, и строку ("12345", ""): сервер хранит file_size строкой
+type FlexInt64 int64
+
+func (f *FlexInt64) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), `"`)
+	if s == "" || s == "null" {
+		*f = 0
+		return nil
+	}
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return err
+	}
+	*f = FlexInt64(n)
+	return nil
+}
+
 type MessageInfo struct {
 	Id        string `json:"id"`
 	Text      string `json:"text"`
@@ -17,6 +37,10 @@ type MessageInfo struct {
 	SenderId  string `json:"sender_id"`
 	CreatedAt int64  `json:"created_at"` // Unix milliseconds
 	Username  string `json:"username"`
+	Type 	  string `json:"type"`
+	FileName  string `json:"file_name"`
+	FileSize  FlexInt64 `json:"file_size"`
+	FileUrl   string `json:"file_url"`
 }
 
 type Chat struct {
@@ -52,7 +76,8 @@ func (c *Chat) GetMessages(chatId string, token string) ([]MessageInfo, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("сервер вернул ошибку: %d", resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("сервер вернул ошибку: %d, %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var messages []MessageInfo
@@ -87,32 +112,6 @@ func (c *Chat) GetUserChats(userId string, token string) ([]map[string]interface
 		return nil, err
 	}
 	return chats, nil
-}
-
-func (c *Chat) AddMessage(chat_id, sender_id, text, token string) (string, error) {
-	jsonData, _ := json.Marshal(map[string]string{"chat_id": chat_id, "sender_id": sender_id, "text": text})
-	req, err := http.NewRequest("POST", c.url+"/addMessage", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err := apiClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("сервер вернул ошибку: %d", resp.StatusCode)
-	}
-
-	var result map[string]string
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
-	}
-	return result["id"], nil
 }
 
 func (c *Chat) DeleteMessage(messageId, token string) (string, error) {

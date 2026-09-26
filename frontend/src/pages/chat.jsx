@@ -5,8 +5,168 @@ import { useEffect, useState, useRef, useLayoutEffect, useCallback } from 'react
 import { GetMessages, DeleteMessage } from '@bindings/client/pages/chat';
 import { SendWSMessage, Connect, SetToken } from '@bindings/client/pages/chatws';
 import { Events } from '@wailsio/runtime';
-import { _msgsCache, MSGS_TTL, clearMessagesCache } from '../components/messagesCache';
+import {
+    _msgsCache,
+    _fileBlobCache,
+    MSGS_TTL,
+    applyNewMessage,
+    applyNewMessageToCache
+} from '../components/messagesCache';
 import paperclip from '../assets/images/paperclip.png';
+
+const API_BASE = 'https://api.postly-mes.ru:8081';
+// Выдаёт presigned PUT-ссылку в S3 и ключ объекта.
+// Ключ уходит в WS как file_url — сервер сам меняет его на ссылку для скачивания.
+const UPLOAD_URL_ENDPOINT = `${API_BASE}/getUploadUrl`;
+// Сколько ждём NEW_MESSAGE от сервера, прежде чем показать «Не отправлено»
+const CONFIRM_TIMEOUT_MS = 20_000;
+
+async function requestUploadUrl(file, token) {
+    const r = await fetch(UPLOAD_URL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            file_name: file.name,
+            content_type: file.type || 'application/octet-stream'
+        })
+    });
+    if (!r.ok) {
+        const body = await r.text().catch(() => '');
+        throw new Error(`getUploadUrl: сервер вернул ${r.status}${body ? ` — ${body}` : ''}`);
+    }
+    const data = await r.json();
+    const uploadUrl = data.upload_url || data.url;
+    const s3Key = data.s3_key || data.key;
+    if (!uploadUrl || !s3Key) throw new Error('getUploadUrl: в ответе нет upload_url / s3_key');
+    return { uploadUrl, s3Key };
+}
+
+function putFile(url, file, onProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', url);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.upload.onprogress = e => {
+            if (e.lengthComputable) onProgress?.(e.loaded / e.total);
+        };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300
+            ? resolve()
+            : reject(new Error(`S3 PUT: ${xhr.status}`)));
+        xhr.onerror = () => reject(new Error('S3 PUT: ошибка сети'));
+        xhr.send(file);
+    });
+}
+
+async function uploadAttachment(file, token, onProgress) {
+    const { uploadUrl, s3Key } = await requestUploadUrl(file, token);
+    await putFile(uploadUrl, file, onProgress);
+    return s3Key;
+}
+
+// Локальное вложение (ещё не отправлено) или поля file_* с сервера → единый вид
+function getMessageAttachment(msg) {
+    if (msg.attachment) return msg.attachment;
+    let kind = [msg.message_type, msg.type].find(t => t === 'image' || t === 'file');
+    if (!kind && msg.file_url) {
+        kind = /\.(jpe?g|png|gif|webp|bmp|avif)$/i.test(msg.file_name || '') ? 'image' : 'file';
+    }
+    if (!kind) return null;
+    return {
+        kind,
+        url: msg.file_url,
+        name: msg.file_name || (kind === 'image' ? 'Изображение' : 'Файл'),
+        size: Number(msg.file_size) || 0
+    };
+}
+
+// file_url с сервера — относительный путь к /file, требует JWT.
+// Скачиваем с заголовком и отдаём blob:-ссылку.
+async function fetchFileBlob(fileUrl) {
+    const tok = localStorage.getItem('jwt_token');
+    const res = await fetch(API_BASE + fileUrl, {
+        headers: { Authorization: `Bearer ${tok}` }
+    });
+    if (!res.ok) throw new Error(`/file: ${res.status}`);
+    return res.blob();
+}
+
+// Кэш на сессию (_fileBlobCache): картинки не перекачиваются при каждом
+// рендере и смене чата; чистится в clearMessagesCache при выходе
+function loadFileObjectUrl(fileUrl) {
+    if (!_fileBlobCache.has(fileUrl)) {
+        const p = fetchFileBlob(fileUrl).then(blob => URL.createObjectURL(blob));
+        p.catch(() => _fileBlobCache.delete(fileUrl));
+        _fileBlobCache.set(fileUrl, p);
+    }
+    return _fileBlobCache.get(fileUrl);
+}
+
+// blob: и абсолютные ссылки используем как есть — токен на чужой хост не отправляем
+const isDirectUrl = url => /^(blob:|data:|https?:)/.test(url || '');
+
+function useFileObjectUrl(fileUrl) {
+    const [state, setState] = useState({ src: null, error: false });
+
+    useEffect(() => {
+        if (!fileUrl) { setState({ src: null, error: true }); return; }
+        if (isDirectUrl(fileUrl)) { setState({ src: fileUrl, error: false }); return; }
+
+        let cancelled = false;
+        setState({ src: null, error: false });
+        loadFileObjectUrl(fileUrl)
+            .then(src => { if (!cancelled) setState({ src, error: false }); })
+            .catch(err => {
+                console.error('Ошибка загрузки вложения:', err);
+                if (!cancelled) setState({ src: null, error: true });
+            });
+        return () => { cancelled = true; };
+    }, [fileUrl]);
+
+    return state;
+}
+
+async function downloadFile(fileUrl, fileName) {
+    const href = isDirectUrl(fileUrl) ? fileUrl : URL.createObjectURL(await fetchFileBlob(fileUrl));
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = fileName || 'file';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (href !== fileUrl) setTimeout(() => URL.revokeObjectURL(href), 10000);
+}
+
+function MessageImage({ fileUrl, alt, onOpen }) {
+    const { src, error } = useFileObjectUrl(fileUrl);
+    const [failed, setFailed] = useState(false);
+    useEffect(() => setFailed(false), [src]);
+
+    if (error || failed) {
+        return <div className="message-attachment-image-failed">Изображение недоступно</div>;
+    }
+    if (!src) {
+        return (
+            <div className="message-attachment-image-loading">
+                <div className="message-upload-spinner" />
+            </div>
+        );
+    }
+    return (
+        <img
+            className="message-attachment-image"
+            src={src}
+            alt={alt}
+            onError={() => setFailed(true)}
+            onClick={e => {
+                e.stopPropagation();
+                onOpen(src);
+            }}
+        />
+    );
+}
 
 function getDateLabel(dateStr) {
     if (!dateStr) return null;
@@ -86,7 +246,6 @@ function Chat({
     const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
     const [attachmentImageScale, setAttachmentImageScale] = useState(78);
     const [cropRatio, setCropRatio] = useState('original');
-    const [cropZoom, setCropZoom] = useState(1);
     const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 });
     const [cropPan, setCropPan] = useState({ x: 0, y: 0 });
     const [imageAspect, setImageAspect] = useState(16 / 9);
@@ -99,9 +258,14 @@ function Chat({
     const cropResizeRef = useRef(null);
     const [cropStageSize, setCropStageSize] = useState({ width: 0, height: 0 });
     const [cropFrameRect, setCropFrameRect] = useState(null);
-
+    const cropBoxDragRef = useRef(null);
     const messagesEndRef = useRef(null);
     const isInitialMount = useRef(true);
+    const listRef = useRef(null);
+    const stickToBottomRef = useRef(true);
+    const resizeObserverRef = useRef(null);
+    const searchQueryRef = useRef(searchQuery);
+    searchQueryRef.current = searchQuery;
     const typingClearRef = useRef(null);
     const typingSendRef = useRef(null);
     const longPressRef = useRef(null);
@@ -111,11 +275,18 @@ function Chat({
     const fileInputRef = useRef(null);
     const chatIdRef = useRef(chatId);
     const attachmentRef = useRef(null);
+    const inputTextRef = useRef('');
+    const sendingRef = useRef(false);
+    const inFlightRef = useRef(new Set());
+    const handleSendRef = useRef(null);
+    const [isSending, setIsSending] = useState(false);
 
     useEffect(() => { chatIdRef.current = chatId; }, [chatId]);
     useEffect(() => { attachmentRef.current = attachment; }, [attachment]);
 
-    const calculateAndApplyLayout = useCallback((stageWidth, stageHeight, natW, natH, zoom = 1) => {
+    const prevLayoutRef = useRef(null);
+
+    const calculateAndApplyLayout = useCallback((stageWidth, stageHeight, natW, natH) => {
         if (!stageWidth || !stageHeight || !natW || !natH) return null;
 
         const fitScale = Math.min(
@@ -123,8 +294,8 @@ function Chat({
             (stageHeight - 40) / natH
         );
 
-        const renderedW = natW * fitScale * zoom;
-        const renderedH = natH * fitScale * zoom;
+        const renderedW = natW * fitScale;
+        const renderedH = natH * fitScale;
 
         const left = Math.round((stageWidth - renderedW) / 2);
         const top = Math.round((stageHeight - renderedH) / 2);
@@ -133,13 +304,19 @@ function Chat({
 
         const newRect = { left, top, width, height };
         
-        const cropW = Math.max(120, Math.round(renderedW / zoom));
-        const cropH = Math.max(120, Math.round(renderedH / zoom));
-        const cropLeft = Math.round(left + (renderedW - cropW) / 2);
-        const cropTop = Math.round(top + (renderedH - cropH) / 2);
-
         setCropImageScale(width / natW);
-        setCropFrameRect({ left: cropLeft, top: cropTop, width: cropW, height: cropH });
+
+        prevLayoutRef.current = { left, top, renderedW, renderedH };
+
+        setCropFrameRect(prev => {
+            const cropW = Math.max(120, Math.round(renderedW));
+            const cropH = Math.max(120, Math.round(renderedH));
+            const cropLeft = Math.round(left + (renderedW - cropW) / 2);
+            const cropTop = Math.round(top + (renderedH - cropH) / 2);
+
+            return { left: cropLeft, top: cropTop, width: cropW, height: cropH };
+        });
+
         return newRect;
     }, []);
 
@@ -157,7 +334,7 @@ function Chat({
             setCropStageSize({ width, height });
 
             if (imageNaturalSize.width && imageNaturalSize.height) {
-                calculateAndApplyLayout(width, height, imageNaturalSize.width, imageNaturalSize.height, cropZoom);
+                calculateAndApplyLayout(width, height, imageNaturalSize.width, imageNaturalSize.height);
             }
         };
 
@@ -170,7 +347,7 @@ function Chat({
         observer.observe(node);
 
         node._resizeObserver = observer;
-    }, [imageNaturalSize.width, imageNaturalSize.height, cropZoom, calculateAndApplyLayout]);
+    }, [imageNaturalSize.width, imageNaturalSize.height, calculateAndApplyLayout]);
 
     useLayoutEffect(() => {
         const handleResize = () => {
@@ -180,7 +357,7 @@ function Chat({
             if (rect.width && rect.height) {
                 setCropStageSize({ width: Math.round(rect.width), height: Math.round(rect.height) });
                 if (imageNaturalSize.width && imageNaturalSize.height) {
-                    calculateAndApplyLayout(rect.width, rect.height, imageNaturalSize.width, imageNaturalSize.height, cropZoom);
+                    calculateAndApplyLayout(rect.width, rect.height, imageNaturalSize.width, imageNaturalSize.height);
                 }
             }
         };
@@ -192,7 +369,7 @@ function Chat({
             window.removeEventListener('resize', handleResize);
             window.visualViewport?.removeEventListener('resize', handleResize);
         };
-    }, [imageNaturalSize.width, imageNaturalSize.height, cropZoom, calculateAndApplyLayout]);
+    }, [imageNaturalSize.width, imageNaturalSize.height, calculateAndApplyLayout]);
 
     const isMine = id => String(id) === String(myId);
 
@@ -204,7 +381,6 @@ function Chat({
         setPreviewImage(null);
         setAttachmentImageScale(78);
         setCropRatio('original');
-        setCropZoom(1);
         setCropPosition({ x: 0, y: 0 });
         setCropPan({ x: 0, y: 0 });
         setCropFrameRect(null);
@@ -214,6 +390,7 @@ function Chat({
         setIsProfileOpen(false);
         setIsLoading(true);
         isInitialMount.current = true;
+        stickToBottomRef.current = true;
         msgRefs.current = {};
         clearTimeout(typingClearRef.current);
         clearTimeout(typingSendRef.current);
@@ -237,6 +414,15 @@ function Chat({
         if (!attachment && !previewImage) return undefined;
 
         const handleEscape = e => {
+            if (e.key === 'Enter') {
+                // Enter отправляет вложение, где бы ни был фокус (после выбора
+                // файла он остаётся вне окна предпросмотра)
+                if (previewImage || !attachment || e.defaultPrevented) return;
+                if (e.shiftKey || e.isComposing || e.repeat) return;
+                e.preventDefault();
+                handleSendRef.current?.();
+                return;
+            }
             if (e.key !== 'Escape') return;
             if (previewImage) {
                 setPreviewImage(null);
@@ -321,90 +507,71 @@ function Chat({
 
             if (msg.type !== 'NEW_MESSAGE') return;
 
-            const msgId = msg.id || msg.msg_id;
-            const cached = _msgsCache.get(msgChatId);
-
-            if (cached) {
-                const exists = msgId && cached.data.some(m => String(m.id) === String(msgId));
-
-                if (isMine(msg.sender_id)) {
-                    if (msgId) {
-                        const tmpIdx = [...cached.data].reverse().findIndex(
-                            m => String(m.id || '').startsWith('tmp_') && m.text === msg.text
-                        );
-                        if (tmpIdx !== -1) {
-                            const realIdx = cached.data.length - 1 - tmpIdx;
-                            const updated = [...cached.data];
-                            updated[realIdx] = {
-                                ...updated[realIdx],
-                                id: msgId,
-                                created_at: msg.created_at || updated[realIdx].created_at
-                            };
-                            _msgsCache.set(msgChatId, { data: updated, ts: Date.now() });
-                        } else if (!exists) {
-                            _msgsCache.set(msgChatId, {
-                                data: [...cached.data, { ...msg, id: msgId, created_at: msg.created_at || new Date().toISOString() }],
-                                ts: Date.now()
-                            });
-                        }
-                    }
-                } else if (!exists) {
-                    _msgsCache.set(msgChatId, {
-                        data: [...cached.data, { ...msg, id: msgId, created_at: msg.created_at || new Date().toISOString() }],
-                        ts: Date.now()
-                    });
-                }
-            }
+            // Общая с chatsMenu.jsx идемпотентная логика — второй вызов на то же
+            // событие ничего не меняет, поэтому дублей в кэше не бывает
+            const mine = isMine(msg.sender_id);
+            applyNewMessageToCache(msg, mine);
 
             if (!isActive) return;
 
-            if (isMine(msg.sender_id)) {
-                setMessages(prev => {
-                    if (msgId && prev.some(m => String(m.id) === String(msgId))) return prev;
-                    const tmpIdx = [...prev].reverse().findIndex(
-                        m => String(m.id || '').startsWith('tmp_') && m.text === msg.text
-                    );
-                    if (tmpIdx !== -1) {
-                        const realIdx = prev.length - 1 - tmpIdx;
-                        const updated = [...prev];
-                        updated[realIdx] = {
-                            ...updated[realIdx],
-                            id: msgId,
-                            created_at: msg.created_at || updated[realIdx].created_at
-                        };
-                        return updated;
-                    }
-                    return [...prev, { ...msg, id: msgId, created_at: msg.created_at || new Date().toISOString() }];
-                });
-                setTypingUser(null);
-                clearTimeout(typingClearRef.current);
-                onMessageSent?.(msg);
-                return;
-            }
-
             setTypingUser(null);
             clearTimeout(typingClearRef.current);
-            setMessages(prev => {
-                if (msgId && prev.some(m => String(m.id) === String(msgId))) return prev;
-                return [...prev, { ...msg, id: msgId, created_at: msg.created_at || new Date().toISOString() }];
-            });
+            setMessages(prev => applyNewMessage(prev, msg, mine));
+            if (mine) onMessageSent?.(msg);
         });
 
         return () => unsub();
     }, []);
 
+    // Прижатие к низу. Высота сообщений меняется уже после отрисовки
+    // (картинки грузятся через fetch с токеном), поэтому одной прокрутки
+    // при открытии мало — ResizeObserver докручивает, пока пользователь внизу.
+    const scrollToBottom = () => {
+        const list = listRef.current;
+        if (list) list.scrollTop = list.scrollHeight;
+    };
+
+    const handleListScroll = () => {
+        const list = listRef.current;
+        if (!list) return;
+        stickToBottomRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 120;
+    };
+
     useLayoutEffect(() => {
-        if (messages.length > 0 && messagesEndRef.current && !searchQuery) {
-            messagesEndRef.current.scrollIntoView({ behavior: isInitialMount.current ? 'auto' : 'smooth' });
-            isInitialMount.current = false;
+        if (!messages.length || searchQuery) return;
+        const last = messages[messages.length - 1];
+        // Своё сообщение всегда показываем; чужое — только если пользователь внизу
+        if (isInitialMount.current || stickToBottomRef.current || isMine(last?.sender_id)) {
+            stickToBottomRef.current = true;
+            scrollToBottom();
         }
+        isInitialMount.current = false;
     }, [messages, searchQuery]);
 
+    useEffect(() => {
+        const list = listRef.current;
+        if (!list || typeof ResizeObserver === 'undefined') return undefined;
+        if (!resizeObserverRef.current) {
+            resizeObserverRef.current = new ResizeObserver(() => {
+                if (stickToBottomRef.current && !searchQueryRef.current) scrollToBottom();
+            });
+        }
+        // observe() для уже отслеживаемого элемента ничего не делает
+        Array.from(list.children).forEach(el => resizeObserverRef.current.observe(el));
+    }, [messages]);
+
+    useEffect(() => () => resizeObserverRef.current?.disconnect(), []);
+
     const matchIndices = useRef([]);
+    // Родитель передаёт колбэк инлайном — держим его в ref, иначе эффект
+    // срабатывает на каждый рендер родителя и уходит в бесконечный цикл
+    const onMatchesFoundRef = useRef(onMatchesFound);
+    useEffect(() => { onMatchesFoundRef.current = onMatchesFound; }, [onMatchesFound]);
+
     useEffect(() => {
         if (!searchQuery) {
             matchIndices.current = [];
-            onMatchesFound?.(0);
+            onMatchesFoundRef.current?.(0);
             return;
         }
         const q = searchQuery.toLowerCase();
@@ -412,8 +579,8 @@ function Chat({
             .map((m, i) => m.text?.toLowerCase().includes(q) ? i : -1)
             .filter(i => i !== -1);
         matchIndices.current = indices;
-        onMatchesFound?.(indices.length);
-    }, [searchQuery, messages, onMatchesFound]);
+        onMatchesFoundRef.current?.(indices.length);
+    }, [searchQuery, messages]);
 
     useEffect(() => {
         if (!searchQuery || !matchIndices.current.length) return;
@@ -492,7 +659,6 @@ function Chat({
         });
         setAttachmentImageScale(78);
         setCropRatio('original');
-        setCropZoom(1);
         setCropPosition({ x: 0, y: 0 });
         setCropPan({ x: 0, y: 0 });
         setImageNaturalSize({ width: 0, height: 0 });
@@ -512,7 +678,7 @@ function Chat({
                     const rect = stage.getBoundingClientRect();
                     if (rect.width && rect.height) {
                         setCropStageSize({ width: rect.width, height: rect.height });
-                        calculateAndApplyLayout(rect.width, rect.height, w, h, 1);
+                        calculateAndApplyLayout(rect.width, rect.height, w, h);
                     }
                 }
             };
@@ -546,8 +712,8 @@ function Chat({
             (stageH - 40) / naturalH
         );
 
-        const renderedW = naturalW * fitScale * cropZoom;
-        const renderedH = naturalH * fitScale * cropZoom;
+        const renderedW = naturalW * fitScale;
+        const renderedH = naturalH * fitScale;
 
         const scaleX = renderedW / naturalW;
         const scaleY = renderedH / naturalH;
@@ -675,49 +841,53 @@ function Chat({
     };
 
     const handleCropPointerDown = e => {
-        if (!attachment?.type?.startsWith('image/')) return;
-        e.currentTarget.setPointerCapture?.(e.pointerId);
-        cropDragRef.current = { x: e.clientX, y: e.clientY, start: cropPan };
-    };
-
-    const handleCropWheel = e => {
-        if (!attachment?.type?.startsWith('image/')) return;
+        if (!attachment?.type?.startsWith('image/') || !cropFrameRect) return;
+        // Если кликнули по ручкам ресайза, не запускаем перетаскивание всей рамки
+        if (e.target.classList.contains('crop-resize-handle') || e.target.classList.contains('crop-corner')) return;
+        
         e.preventDefault();
-        setCropZoom(prev => {
-            const nextZoom = Math.max(1, Math.min(4, Number((prev - e.deltaY * 0.0018).toFixed(3))));
-            if (nextZoom <= 1.001) {
-                setCropPan({ x: 0, y: 0 });
-            }
-            if (imageNaturalSize.width && imageNaturalSize.height && cropStageSize.width) {
-                calculateAndApplyLayout(cropStageSize.width, cropStageSize.height, imageNaturalSize.width, imageNaturalSize.height, nextZoom);
-            }
-            return nextZoom;
-        });
+        e.stopPropagation();
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+
+        cropBoxDragRef.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            startRect: { ...cropFrameRect }
+        };
     };
 
     const handleCropPointerMove = e => {
-        const drag = cropDragRef.current;
-        if (!drag) return;
+        const drag = cropBoxDragRef.current;
+        if (!drag || !cropFrameRect) return;
+
         const metrics = getActualCropMetrics();
         if (!metrics) return;
 
-        // Если нет приближения (zoom == 1), запрещаем сдвигать панорамирование, фиксируя пивот по центру
-        if (cropZoom <= 1.001) {
-            setCropPan({ x: 0, y: 0 });
-            return;
-        }
+        const dx = e.clientX - drag.startX;
+        const dy = e.clientY - drag.startY;
 
-        const nextX = drag.start.x + (e.clientX - drag.x);
-        const nextY = drag.start.y + (e.clientY - drag.y);
+        const imageLeft = metrics.imageLeft ?? ((cropStageSize.width - metrics.renderedW) / 2 + cropPan.x);
+        const imageTop = metrics.imageTop ?? ((cropStageSize.height - metrics.renderedH) / 2 + cropPan.y);
+        const imageRight = imageLeft + metrics.renderedW;
+        const imageBottom = imageTop + metrics.renderedH;
 
-        setCropPan({
-            x: Math.max(-metrics.maxX, Math.min(metrics.maxX, nextX)),
-            y: Math.max(-metrics.maxY, Math.min(metrics.maxY, nextY))
-        });
+        // Вычисляем новые координаты рамки с учётом её размеров, чтобы она не вылезала за края картинки
+        let newLeft = drag.startRect.left + dx;
+        let newTop = drag.startRect.top + dy;
+
+        newLeft = Math.max(imageLeft, Math.min(imageRight - cropFrameRect.width, newLeft));
+        newTop = Math.max(imageTop, Math.min(imageBottom - cropFrameRect.height, newTop));
+
+        setCropFrameRect(prev => prev ? {
+            ...prev,
+            left: Math.round(newLeft),
+            top: Math.round(newTop)
+        } : null);
     };
 
     const handleCropPointerUp = e => {
-        cropDragRef.current = null;
+        if (!cropBoxDragRef.current) return;
+        cropBoxDragRef.current = null;
         e.currentTarget.releasePointerCapture?.(e.pointerId);
     };
 
@@ -808,21 +978,36 @@ function Chat({
         };
     };
 
+    // Текст и вложение берём из ref: повторный Enter/клик, пришедший до
+    // перерисовки, иначе увидел бы старое состояние и отправил дубль
     const handleSend = async () => {
-        const text = inputText.trim();
-        if ((!text && !attachment) || !chatId) return;
+        if (sendingRef.current) return;
+        const text = inputTextRef.current.trim();
+        const current = attachmentRef.current;
+        const targetChatId = chatId;
+        if ((!text && !current) || !targetChatId) return;
 
-        let attachmentToSend = attachment;
-        if (attachmentToSend?.type?.startsWith('image/')) {
-            try {
-                attachmentToSend = await cropImageForSend(attachmentToSend);
-            } catch (err) {
-                console.error('Ошибка кадрирования изображения:', err);
-                attachmentToSend = attachment;
+        sendingRef.current = true;
+        setIsSending(true);
+        try {
+            let attachmentToSend = current;
+            if (attachmentToSend?.type?.startsWith('image/')) {
+                try {
+                    attachmentToSend = await cropImageForSend(attachmentToSend);
+                } catch (err) {
+                    console.error('Ошибка кадрирования изображения:', err);
+                    attachmentToSend = current;
+                }
             }
+            submitMessage(targetChatId, text, attachmentToSend);
+        } finally {
+            sendingRef.current = false;
+            setIsSending(false);
         }
+    };
 
-        const tempId = `tmp_${Date.now()}`;
+    const submitMessage = (chatId, text, attachmentToSend) => {
+        const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const nowIso = new Date().toISOString();
         clearTimeout(typingSendRef.current);
 
@@ -833,12 +1018,15 @@ function Chat({
             username,
             text,
             created_at: nowIso,
+            status: 'sending',
             attachment: attachmentToSend ? {
                 id: attachmentToSend.id,
+                kind: attachmentToSend.type?.startsWith('image/') ? 'image' : 'file',
                 name: attachmentToSend.name,
                 size: attachmentToSend.size,
                 type: attachmentToSend.type,
-                url: attachmentToSend.url
+                url: attachmentToSend.url,
+                file: attachmentToSend.file
             } : null
         };
 
@@ -847,30 +1035,102 @@ function Chat({
             _msgsCache.set(chatId, { data: next, ts: Date.now() });
             return next;
         });
+        inputTextRef.current = '';
+        attachmentRef.current = null;
         setInputText('');
         setAttachment(null);
-        setCropZoom(1);
         setCropPosition({ x: 0, y: 0 });
         setCropPan({ x: 0, y: 0 });
 
-        SendWSMessage(JSON.stringify({
-            type: 'NEW_MESSAGE',
-            chat_id: chatId,
-            sender_id: myId,
-            text,
-            username
-        })).then(err => {
-            if (err) console.error('Ошибка отправки сообщения:', err);
-        }).catch(sendError => {
-            console.error('Ошибка отправки сообщения:', sendError);
-        });
+        deliverMessage(chatId, localMessage);
     };
 
-    const handleKeyDown = e => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleSend();
+    // Обновляет сообщение и в кэше, и на экране (если чат ещё открыт).
+    // patch — объект или функция от текущего сообщения
+    const patchMessage = (targetChatId, id, patch) => {
+        const apply = list => list.map(m => (
+            m.id === id ? { ...m, ...(typeof patch === 'function' ? patch(m) : patch) } : m
+        ));
+        const cached = _msgsCache.get(targetChatId);
+        if (cached) _msgsCache.set(targetChatId, { data: apply(cached.data), ts: cached.ts });
+        if (String(chatIdRef.current) === String(targetChatId)) setMessages(prev => apply(prev));
+    };
+
+    // Сервер принимает только map[string]string — все значения строками
+    const deliverMessage = async (targetChatId, localMsg) => {
+        // Защита от двойного запуска (двойной клик по «Повторить»)
+        if (inFlightRef.current.has(localMsg.id)) return;
+        inFlightRef.current.add(localMsg.id);
+        try {
+            await deliverMessageOnce(targetChatId, localMsg);
+        } finally {
+            inFlightRef.current.delete(localMsg.id);
         }
+    };
+
+    const deliverMessageOnce = async (targetChatId, localMsg) => {
+        const att = localMsg.attachment;
+        const tok = token || localStorage.getItem('jwt_token');
+        const payload = {
+            type: att ? att.kind : 'text',
+            chat_id: String(targetChatId),
+            sender_id: String(myId),
+            username: username || '',
+            text: localMsg.text || ''
+        };
+
+        if (att) {
+            patchMessage(targetChatId, localMsg.id, { status: 'uploading', progress: 0 });
+            try {
+                let lastPct = 0;
+                const s3Key = await uploadAttachment(att.file, tok, p => {
+                    const pct = Math.round(p * 100);
+                    if (pct === lastPct) return;
+                    lastPct = pct;
+                    patchMessage(targetChatId, localMsg.id, { progress: pct });
+                });
+                payload.file_url = s3Key;
+                payload.file_name = att.name;
+                payload.file_size = String(att.size);
+            } catch (err) {
+                console.error('Ошибка загрузки файла:', err);
+                patchMessage(targetChatId, localMsg.id, { status: 'error', progress: null });
+                return;
+            }
+            patchMessage(targetChatId, localMsg.id, { status: 'sending', progress: null });
+        }
+
+        try {
+            await SendWSMessage(JSON.stringify(payload));
+        } catch (err) {
+            console.error('Ошибка отправки сообщения:', err);
+            patchMessage(targetChatId, localMsg.id, { status: 'error' });
+            return;
+        }
+
+        // Сервер не подтвердил (NEW_MESSAGE не пришёл) — даём повторить.
+        // После подтверждения tmp-id заменён на настоящий, и патч ничего не найдёт.
+        setTimeout(() => {
+            patchMessage(targetChatId, localMsg.id, m => (m.status === 'sending' ? { status: 'error' } : {}));
+        }, CONFIRM_TIMEOUT_MS);
+    };
+
+    const handleRetry = msg => {
+        if (msg.status !== 'error') return;
+        deliverMessage(chatId, msg);
+    };
+
+    const openFile = (url, name) => {
+        if (!url) return;
+        downloadFile(url, name).catch(err => console.error('Ошибка скачивания файла:', err));
+    };
+
+    handleSendRef.current = handleSend;
+
+    const handleKeyDown = e => {
+        if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+        e.preventDefault();
+        if (!e.repeat) handleSend();
     };
 
     const showCtxMenu = (e, msg) => {
@@ -937,7 +1197,20 @@ function Chat({
     const handleDeleteMsg = async () => {
         const id = ctxMenu?.msgId;
         setCtxMenu(null);
-        if (!id || String(id).startsWith('tmp_')) return;
+        if (!id) return;
+
+        // Неотправленное сообщение живёт только локально
+        if (String(id).startsWith('tmp_')) {
+            const local = messages.find(m => m.id === id);
+            if (local?.status !== 'error') return;
+            if (local.attachment?.url) URL.revokeObjectURL(local.attachment.url);
+            setMessages(prev => {
+                const next = prev.filter(m => m.id !== id);
+                _msgsCache.set(chatId, { data: next, ts: Date.now() });
+                return next;
+            });
+            return;
+        }
 
         const tok = localStorage.getItem('jwt_token');
         try {
@@ -974,7 +1247,7 @@ function Chat({
 
             <div className="chat-main">
                 <div className="chat-content">
-                    <div className="messages-list">
+                    <div className="messages-list" ref={listRef} onScroll={handleListScroll}>
                         <div className="messages-spacer" />
 
                         {isLoading && (
@@ -1004,12 +1277,17 @@ function Chat({
                                 const mine = isMine(msg.sender_id);
                                 const isMatch = searchQuery && matchIndices.current.includes(i);
                                 const isActive = isMatch && i === currentMatchMsgIdx;
+                                const att = getMessageAttachment(msg);
+                                const isImage = att?.kind === 'image';
+                                const mediaOnly = isImage && !msg.text;
+                                const uploading = msg.status === 'uploading';
+                                const failed = msg.status === 'error';
 
                                 result.push(
                                     <div
                                         key={msg.id || i}
                                         ref={el => { msgRefs.current[msg.id || i] = el; }}
-                                        className={`message-bubble ${mine ? 'sent' : 'received'}${isActive ? ' msg-search-active' : isMatch ? ' msg-search-match' : ''}`}
+                                        className={`message-bubble ${mine ? 'sent' : 'received'}${isImage ? ' has-image' : ''}${mediaOnly ? ' media-only' : ''}${failed ? ' is-failed' : ''}${isActive ? ' msg-search-active' : isMatch ? ' msg-search-match' : ''}`}
                                         onContextMenu={e => showCtxMenu(e, msg)}
                                         onTouchStart={e => handleLongPressStart(e, msg)}
                                         onTouchMove={handleLongPressMove}
@@ -1018,31 +1296,56 @@ function Chat({
                                     >
                                         {!mine && <div className="message-sender">{msg.username}</div>}
 
-                                        {msg.attachment && (
+                                        {att && (
                                             <div className="message-attachment">
-                                                {msg.attachment.type?.startsWith('image/') ? (
-                                                    <img
-                                                        className="message-attachment-image"
-                                                        src={msg.attachment.url}
-                                                        alt={msg.attachment.name || 'Изображение'}
+                                                {isImage ? (
+                                                    <div className="message-attachment-media">
+                                                        <MessageImage
+                                                            fileUrl={att.url}
+                                                            alt={att.name || 'Изображение'}
+                                                            onOpen={setPreviewImage}
+                                                        />
+                                                        {(uploading || msg.status === 'sending') && (
+                                                            <div className="message-upload-overlay">
+                                                                <div className="message-upload-spinner" />
+                                                                {uploading && <span>{msg.progress || 0}%</span>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        className={`message-attachment-file${att.url ? ' is-ready' : ''}`}
+                                                        type="button"
+                                                        title={att.url ? 'Скачать файл' : att.name}
                                                         onClick={e => {
                                                             e.stopPropagation();
-                                                            setPreviewImage(msg.attachment.url);
+                                                            openFile(att.url, att.name);
                                                         }}
-                                                    />
-                                                ) : (
-                                                    <div className="message-attachment-file">
+                                                    >
                                                         <div className="message-attachment-file-icon">
-                                                            <svg viewBox="0 0 24 24" fill="none" width="21" height="21">
-                                                                <path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                                                                <path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                                                            </svg>
+                                                            {uploading || msg.status === 'sending' ? (
+                                                                <div className="message-upload-spinner" />
+                                                            ) : (
+                                                                <svg viewBox="0 0 24 24" fill="none" width="21" height="21">
+                                                                    <path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                                                                    <path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                                                                </svg>
+                                                            )}
                                                         </div>
                                                         <div className="message-attachment-file-info">
-                                                            <div className="message-attachment-file-name">{msg.attachment.name}</div>
-                                                            <div className="message-attachment-file-size">{formatFileSize(msg.attachment.size)}</div>
+                                                            <div className="message-attachment-file-name">{att.name}</div>
+                                                            <div className="message-attachment-file-size">
+                                                                {uploading
+                                                                    ? `${formatFileSize(att.size * (msg.progress || 0) / 100)} из ${formatFileSize(att.size)}`
+                                                                    : formatFileSize(att.size)}
+                                                            </div>
+                                                            {uploading && (
+                                                                <div className="message-upload-bar">
+                                                                    <div style={{ width: `${msg.progress || 0}%` }} />
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    </div>
+                                                    </button>
                                                 )}
                                             </div>
                                         )}
@@ -1050,7 +1353,22 @@ function Chat({
                                         <div className="message-text">
                                             <HighlightText text={msg.text || ''} query={searchQuery} active={isActive} />
                                         </div>
-                                        {timeStr && <div className="message-time">{timeStr}</div>}
+                                        <div className="message-meta">
+                                            {failed && (
+                                                <button
+                                                    className="message-retry"
+                                                    type="button"
+                                                    title="Отправить ещё раз"
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        handleRetry(msg);
+                                                    }}
+                                                >
+                                                    Не отправлено · Повторить
+                                                </button>
+                                            )}
+                                            {timeStr && <span className="message-time">{timeStr}</span>}
+                                        </div>
                                     </div>
                                 );
                             });
@@ -1080,7 +1398,18 @@ function Chat({
                                     setAttachmentMenuOpen(prev => !prev);
                                 }}
                             >
-                                <img className="chat-attach-icon" src={paperclip} alt="" />
+                                <svg 
+                                    className="chat-attach-icon" 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    strokeWidth="2" 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round"
+                                    >
+                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                                </svg>
                             </button>
 
                             {attachmentMenuOpen && (
@@ -1129,6 +1458,7 @@ function Chat({
                                 className="chat-input"
                                 value={inputText}
                                 onChange={e => {
+                                    inputTextRef.current = e.target.value;
                                     setInputText(e.target.value);
                                     handleTyping();
                                 }}
@@ -1168,12 +1498,6 @@ function Chat({
                     <div
                         className="chat-attachment-preview-panel"
                         onClick={e => e.stopPropagation()}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.target.tagName !== 'INPUT') {
-                                e.preventDefault();
-                                handleSend();
-                            }
-                        }}
                     >
                         <div className="chat-attachment-preview-header">
                             <button
@@ -1211,7 +1535,7 @@ function Chat({
                                                     const rect = stage.getBoundingClientRect();
                                                     if (rect.width && rect.height) {
                                                         setCropStageSize({ width: rect.width, height: rect.height });
-                                                        calculateAndApplyLayout(rect.width, rect.height, w, h, cropZoom);
+                                                        calculateAndApplyLayout(rect.width, rect.height, w, h);
                                                     }
                                                 }
                                             }
@@ -1232,7 +1556,6 @@ function Chat({
                                             onPointerMove={handleCropPointerMove}
                                             onPointerUp={handleCropPointerUp}
                                             onPointerCancel={handleCropPointerUp}
-                                            onWheel={handleCropWheel}
                                             style={{
                                                 '--image-aspect': imageAspect,
                                                 left: `${cropFrameRect.left}px`,
@@ -1262,29 +1585,6 @@ function Chat({
                                 </div>
 
                                 <div className="chat-attachment-toolbar">
-                                    <div className="chat-attachment-zoom">
-                                        <span>−</span>
-                                        <input
-                                            type="range"
-                                            min="1"
-                                            max="4"
-                                            step="0.01"
-                                            value={cropZoom}
-                                            onChange={e => {
-                                                const val = Number(e.target.value);
-                                                setCropZoom(val);
-                                                if (val <= 1.001) {
-                                                    setCropPan({ x: 0, y: 0 });
-                                                }
-                                                if (imageNaturalSize.width && imageNaturalSize.height && cropStageSize.width) {
-                                                    calculateAndApplyLayout(cropStageSize.width, cropStageSize.height, imageNaturalSize.width, imageNaturalSize.height, val);
-                                                }
-                                            }}
-                                            aria-label="Масштаб фото"
-                                        />
-                                        <span>+</span>
-                                    </div>
-
                                     <div className="chat-attachment-caption-row">
                                         <div className="chat-attachment-caption-icon">✎</div>
                                         <div className="chat-attachment-name-row">
@@ -1293,12 +1593,6 @@ function Chat({
                                                 type="text"
                                                 value={getFileBaseName(attachment.name)}
                                                 onChange={handleRenameAttachment}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                                                        e.preventDefault();
-                                                        handleSend();
-                                                    }
-                                                }}
                                                 spellCheck="false"
                                                 aria-label="Имя файла"
                                             />
@@ -1343,10 +1637,19 @@ function Chat({
                             <button className="chat-attachment-cancel" type="button" onClick={handleRemoveAttachment}>
                                 Отмена
                             </button>
-                            <button className="chat-attachment-confirm" type="button" onClick={handleSend}>
-                                <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-                                    <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
+                            <button
+                                className="chat-attachment-confirm"
+                                type="button"
+                                onClick={handleSend}
+                                disabled={isSending}
+                            >
+                                {isSending ? (
+                                    <div className="message-upload-spinner chat-attachment-confirm-spinner" />
+                                ) : (
+                                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                                        <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                )}
                                 Отправить
                             </button>
                         </div>

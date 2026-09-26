@@ -5,11 +5,6 @@
 // @ts-ignore: Unused imports
 import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
-/**
- * Connect открывает единственное WS-соединение.
- * chatID оставлен в сигнатуре для совместимости с chat.jsx, но в URL не идёт —
- * фильтрация по чату делается на клиенте (как в app.js).
- */
 export function Connect(chatID: string): $CancellablePromise<void> {
     return $Call.ByID(244968285, chatID);
 }

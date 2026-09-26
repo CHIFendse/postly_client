@@ -18,7 +18,7 @@ import {
     CreateGroup,
 } from '@bindings/client/components/chatsmenu';
 import { GetUserChats } from '@bindings/client/pages/chat';
-import { _msgsCache } from './messagesCache';
+import { applyNewMessageToCache } from './messagesCache';
 
 function ChatsMenu({
     currentUserId,
@@ -142,7 +142,10 @@ function ChatsMenu({
                         const updated = [...prev];
                         updated[idx] = {
                             ...updated[idx],
-                            last_message: msg.text ?? updated[idx].last_message,
+                            last_message: msg.text
+                                || (msg.message_type === 'image' ? 'Фотография'
+                                    : msg.message_type === 'file' ? `Файл: ${msg.file_name || ''}`.trim()
+                                    : msg.text ?? updated[idx].last_message),
                             username: msg.username || updated[idx].username || '',
                             updated_at: msg.updated_at || Math.floor(Date.now() / 1000),
                         };
@@ -152,20 +155,11 @@ function ChatsMenu({
                     });
 
                     // 2. Обновляем кэш сообщений (чтобы при заходе в чат сразу показать)
-                    const msgChatId = String(msg.chat_id);
-                    const cached = _msgsCache.get(msgChatId);
-                    if (cached) {
-                        const msgId = msg.id || msg.msg_id;
-                        const exists = msgId && cached.data.some(m => String(m.id) === String(msgId));
-                        if (!exists) {
-                            cached.data = [...cached.data, {
-                                ...msg,
-                                id: msgId,
-                                created_at: msg.created_at || new Date().toISOString(),
-                            }];
-                            cached.ts = Date.now();
-                        }
-                    }
+                    // Общая с chat.jsx логика: своё сообщение заменяет tmp, а не дублируется
+                    applyNewMessageToCache(
+                        msg,
+                        String(msg.sender_id) === String(localStorage.getItem('id'))
+                    );
 
                     break;
                 }

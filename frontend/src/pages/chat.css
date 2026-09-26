@@ -175,6 +175,7 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+
 /* ============================
    ДАТА-РАЗДЕЛИТЕЛЬ
    ============================ */
@@ -524,6 +525,9 @@
 /* ============================
    ВЛОЖЕНИЯ
    ============================ */
+/* ============================
+   ВЛОЖЕНИЯ
+   ============================ */
 .chat-attach-wrapper {
   position: relative;
   flex: 0 0 40px;
@@ -536,13 +540,16 @@
   z-index: 20;
 }
 
+/* Кнопка скрепки — рамка и базовый цвет */
 .chat-attach-btn {
   width: 40px;
   height: 40px;
-  border: 1px solid var(--border-medium);
   border-radius: 12px;
   background: var(--bg-elevated);
+  
   color: var(--txt-secondary);
+  border: 1px solid var(--border-medium);
+  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -551,21 +558,35 @@
   transition: transform .16s ease, background-color .16s ease, color .16s ease, border-color .16s ease, box-shadow .16s ease;
 }
 
+/* При наведении на КНОПКУ меняется цвет рамки и передается цвет иконке */
 .chat-attach-btn:hover {
-  color: var(--txt-primary);
+  color: var(--clr-primary) !important;        /* Передается в SVG как currentColor */
+  border-color: var(--clr-primary) !important; /* Цвет рамки кнопки */
   background: var(--bg-hover);
-  border-color: var(--border-medium);
   transform: translateY(-1px);
   box-shadow: 0 5px 16px rgba(0,0,0,.2);
 }
 
-.chat-attach-btn:active { transform: scale(.94); }
+.chat-attach-btn:active { 
+  transform: scale(.94); 
+}
 
+/* Иконка внутри кнопки */
 .chat-attach-icon {
   width: 20px;
   height: 20px;
   display: block;
   opacity: .82;
+  border: none !important;
+  padding: 0 !important;
+  stroke: currentColor !important; /* Наследует color кнопки */
+  fill: none !important;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.chat-attach-btn:hover .chat-attach-icon {
+  opacity: 1;
 }
 
 .chat-file-input { display: none; }
@@ -909,22 +930,6 @@
   color: #fff;
 }
 
-.chat-attachment-zoom {
-  min-width: 120px;
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(255,255,255,.46);
-  font-size: 14px;
-}
-
-.chat-attachment-zoom input[type="range"] {
-  width: 100%;
-  accent-color: #fff;
-  cursor: pointer;
-}
-
 .chat-attachment-caption-row,
 .chat-attachment-file-name-edit {
   min-width: 150px;
@@ -1084,6 +1089,19 @@
 .chat-attachment-confirm:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .chat-attachment-confirm:active { transform: scale(.97); }
 
+.chat-attachment-confirm:disabled {
+  cursor: default;
+  filter: none;
+  transform: none;
+  opacity: .75;
+}
+
+.chat-attachment-confirm-spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
 /* ============================
    ВЛОЖЕНИЕ В ОТПРАВЛЕННОМ СООБЩЕНИИ
    ============================ */
@@ -1104,6 +1122,7 @@
 }
 
 .message-attachment-file {
+  width: 100%;
   max-width: 310px;
   display: flex;
   align-items: center;
@@ -1112,7 +1131,150 @@
   border: 1px solid rgba(255,255,255,.07);
   border-radius: 12px;
   background: rgba(0,0,0,.12);
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: default;
 }
+
+.message-attachment-file.is-ready {
+  cursor: pointer;
+  transition: background-color .12s ease;
+}
+
+.message-attachment-file.is-ready:hover { background: rgba(0,0,0,.2); }
+
+.message-bubble.sent .message-attachment-file-icon {
+  color: #fff;
+  background: rgba(255,255,255,.16);
+}
+
+.message-bubble.sent .message-attachment-file-name { color: rgba(255,255,255,.96); }
+.message-bubble.sent .message-attachment-file-size { color: rgba(255,255,255,.6); }
+
+/* ---- Картинка в пузыре ---- */
+.message-bubble.has-image { min-width: 0; }
+
+.message-bubble.media-only { padding: 4px; }
+.message-bubble.media-only .message-attachment { margin: 0; }
+.message-bubble.media-only .message-sender { padding: 4px 8px 2px; }
+
+/* Время поверх картинки, если подписи нет */
+.message-bubble.media-only { position: relative; }
+.message-bubble.media-only .message-meta {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  margin: 0;
+  padding: 3px 7px;
+  border-radius: 10px;
+  background: rgba(0,0,0,.45);
+}
+.message-bubble.media-only .message-time { color: rgba(255,255,255,.9); opacity: 1; }
+
+.message-attachment-media {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.message-bubble.media-only .message-attachment-image { border-radius: 11px; }
+
+.message-attachment-image-failed {
+  width: min(260px, 100%);
+  padding: 28px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.16);
+  color: var(--txt-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.message-attachment-image-loading {
+  width: min(260px, 100%);
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(0,0,0,.16);
+}
+
+/* ---- Загрузка / отправка ---- */
+.message-upload-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.42);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.message-upload-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: msgUploadSpin .8s linear infinite;
+}
+
+.message-bubble.received .message-attachment-file-icon .message-upload-spinner {
+  border-color: color-mix(in srgb, var(--clr-primary) 30%, transparent);
+  border-top-color: var(--clr-primary);
+}
+
+@keyframes msgUploadSpin { to { transform: rotate(360deg); } }
+
+.message-upload-bar {
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(255,255,255,.18);
+}
+
+.message-upload-bar > div {
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+  transition: width .15s linear;
+}
+
+/* ---- Время + статус ---- */
+.message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.message-meta .message-time { margin-top: 0; }
+
+.message-retry {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: #ffb4b4;
+  cursor: pointer;
+}
+
+.message-bubble.received .message-retry { color: #e74c3c; }
+.message-retry:hover { text-decoration: underline; }
+
+.message-bubble.is-failed { opacity: .85; }
 
 .message-attachment-file-icon {
   flex-basis: 38px;
@@ -1249,11 +1411,6 @@
   .chat-attachment-ratios button {
     flex: 1;
     padding: 0 6px;
-  }
-
-  .chat-attachment-zoom {
-    min-width: 0;
-    flex: 1 1 45%;
   }
 
   .chat-attachment-caption-row {

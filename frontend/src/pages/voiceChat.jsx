@@ -10,6 +10,7 @@ import { Events } from '@wailsio/runtime';
 import { SetRoomID, SetToken as SetVoiceToken } from '@bindings/client/pages/voicechat';
 import { Connect, SetToken as SetChatToken } from '@bindings/client/pages/chatws';
 import { getAvatarColor } from '../utils/avatarHelper';
+import { clearMessagesCache } from '../components/messagesCache';
 
 const setCookie = (name, value, days = 365) => {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -253,6 +254,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
     deleteCookie('lastActiveChatId');
     deleteCookie('lastChatName');
     try { await SetChatToken(''); } catch (_) {}
+    clearMessagesCache();
     handleLogout();
   };
 
