@@ -59,7 +59,25 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [isNetworkError, setIsNetworkError] = useState(false);
     const [appVersion, setAppVersion] = useState('0.0.1');
+        useEffect(() => {
+        const preventZoom = e => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
 
+        window.addEventListener('wheel', preventZoom, {
+            passive: false,
+            capture: true
+        });
+
+        return () => {
+            window.removeEventListener('wheel', preventZoom, {
+                capture: true
+            });
+        };
+    }, []);
     useEffect(() => {
         GetCurrentVersion()
             .then(res => { if (res?.version) setAppVersion(res.version); })

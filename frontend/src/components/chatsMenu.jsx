@@ -32,6 +32,7 @@ function ChatsMenu({
     onFriendRequestsLoaded,
     onChatDeleted,
     onSetView,
+    getAvatarColor
 }) {
     const [inputText, setInputText] = useState('');
     const [chats, setChats] = useState([]);
@@ -346,11 +347,7 @@ function ChatsMenu({
         return d.toLocaleDateString('ru', { day: '2-digit', month: '2-digit' });
     };
 
-    const getAvatarColor = (name) => {
-        const colors = ['#5865f2', '#57f287', '#eb459e', '#ed4245', '#faa81a', '#9b59b6', '#1abc9c', '#e67e22', '#3498db', '#e74c3c'];
-        const idx = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
-        return colors[idx];
-    };
+
     const getFirstLetter = (name) => (name || '?').trim().charAt(0).toUpperCase() || '?';
 
     const q = inputText.toLowerCase().trim();

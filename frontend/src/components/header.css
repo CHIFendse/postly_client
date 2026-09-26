@@ -13,6 +13,7 @@
   box-sizing: border-box;
   box-shadow: 0 1px 8px var(--shadow);
   z-index: 10;
+  position: relative;
 }
 
 /* ---- Бургер (только мобилки) ---- */
@@ -31,14 +32,25 @@
 }
 
 .chat-name {
-  color: var(--txt-primary) !important;
-  font-size: 16px !important;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    font: inherit;
+    color: inherit;
+
+    cursor: pointer;
+
+    padding: 0;
+    margin: 0;
+
+    text-align: left;
 }
 
+.chat-name:hover {
+    opacity: 0.85;
+}
 /* ---- Правая группа ---- */
 .header-right {
   display: flex;
@@ -137,4 +149,260 @@
   .call-button { width: 32px; height: 32px; }
   .button-icon { width: 17px; height: 17px; }
   .status-text { font-size: 11px; }
+}
+
+
+/* =========================================
+   Кнопка ника в Header
+   ========================================= */
+
+.chat-name-button {
+    border: none;
+    background: transparent;
+
+    padding: 8px 12px;
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: 20px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    border-radius: 10px;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.chat-name-button:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.chat-name-button.active {
+    background: rgba(255, 145, 0, 0.12);
+    color: #ff8a00;
+}
+
+.chat-name-button .chat-name {
+    display: block;
+}
+
+
+/* =========================================
+   Панель профиля
+   ========================================= */
+
+.profile-panel {
+    position: absolute;
+
+    top: 100%;
+    right: 0;
+
+    width: 340px;
+    height: calc(100vh - 100%);
+
+    min-height: 500px;
+
+    background: #211e1b;
+
+    border-left: 1px solid #302c28;
+
+    box-shadow:
+        -10px 0 30px rgba(0, 0, 0, 0.25);
+
+    z-index: 1000;
+
+    animation: profileSlideIn 0.18s ease-out;
+
+    overflow: hidden;
+}
+
+
+/* =========================================
+   Верх панели
+   ========================================= */
+
+.profile-panel-header {
+    height: 68px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 20px;
+
+    background: #282522;
+
+    border-bottom: 1px solid #302c28;
+}
+
+.profile-title {
+    color: #ffffff;
+
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.profile-close {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #8f8a84;
+
+    font-size: 28px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.profile-close:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+}
+
+
+/* =========================================
+   Контент
+   ========================================= */
+
+.profile-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 35px 25px;
+}
+
+
+/* =========================================
+   Аватар
+   ========================================= */
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #4ee783;
+
+    color: #ffffff;
+
+    font-size: 42px;
+    font-weight: 500;
+
+    margin-bottom: 18px;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================
+   Имя
+   ========================================= */
+
+.profile-name {
+    color: #ffffff;
+
+    font-size: 23px;
+    font-weight: 700;
+
+    text-align: center;
+
+    word-break: break-word;
+}
+
+.profile-id {
+    margin-top: 7px;
+
+    color: #77716b;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   Разделитель
+   ========================================= */
+
+.profile-divider {
+    width: 100%;
+
+    height: 1px;
+
+    background: #302c28;
+
+    margin: 30px 0 20px;
+}
+
+
+/* =========================================
+   Кнопки
+   ========================================= */
+
+.profile-action {
+    width: 100%;
+
+    height: 48px;
+
+    margin-bottom: 10px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #302b26;
+
+    color: #ffffff;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.profile-action:hover {
+    background: #443a2f;
+    color: #ff8a00;
+}
+
+
+/* =========================================
+   Анимация
+   ========================================= */
+
+@keyframes profileSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }

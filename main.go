@@ -73,6 +73,8 @@ func main() {
 		URL:      "/",
 		MinWidth:  380,
 		MinHeight: 540,
+		Zoom: 1.0,
+    	ZoomControlEnabled: false,
 	})
 
 	log.Println("Running app...")

@@ -1,7 +1,6 @@
 import './voiceChat.css';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Menu from '../components/menu';
-import Header from '../components/header';
 import MainHeader from '../components/mainHeader';
 import ChatsMenu from '../components/chatsMenu';
 
@@ -10,6 +9,7 @@ import Settings from './Settings';
 import { Events } from '@wailsio/runtime';
 import { SetRoomID, SetToken as SetVoiceToken } from '@bindings/client/pages/voicechat';
 import { Connect, SetToken as SetChatToken } from '@bindings/client/pages/chatws';
+import { getAvatarColor } from '../utils/avatarHelper';
 
 const setCookie = (name, value, days = 365) => {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -28,7 +28,11 @@ const deleteCookie = (name) => {
 function ChatSearchBar({ value, onChange, onClose, matchCount, matchIdx, onNav }) {
   const inputRef = useRef(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
-
+  const getAvatarColor = (name) => {
+        const colors = ['#5865f2', '#57f287', '#eb459e', '#ed4245', '#faa81a', '#9b59b6', '#1abc9c', '#e67e22', '#3498db', '#e74c3c'];
+        const idx = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
+        return colors[idx];
+    };
   return (
     <div className="chat-search-bar">
       <button className="csb-btn" onClick={onClose} title="Закрыть">
@@ -287,6 +291,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
             onFriendRequestsLoaded={setFriendRequestCount}
             onChatDeleted={handleChatDeleted}
             onSetView={setView}
+            getAvatarColor = {getAvatarColor}
           />
 
           {isMobileMenuOpen && (
@@ -294,16 +299,6 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
           )}
 
           <div className="main-content">
-            <Header
-              token={token}
-              chatName={activeChatName}
-              chatId={activeChatId}
-              onMenuToggle={toggleMobileMenu}
-              searchOpen={searchOpen}
-              onSearchToggle={() =>
-                searchOpen ? closeSearch() : setSearchOpen(true)
-              }
-            />
 
             {activeChatId && searchOpen && (
               <ChatSearchBar
@@ -322,12 +317,16 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
             {activeChatId ? (
               <Chat
                 chatId={activeChatId}
+                chatName={activeChatName}
+                token={token}
                 searchQuery={searchQuery}
                 searchNavIdx={searchMatch.idx}
                 onMatchesFound={count =>
                   setSearchMatch(m => ({ ...m, count }))
                 }
                 onMessageSent={() => triggerRefresh()}
+                onMenuToggle={toggleMobileMenu}
+                getAvatarColor = {getAvatarColor}
               />
             ) : (
               <div className="chat-placeholder">
