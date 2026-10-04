@@ -163,7 +163,7 @@
     padding: 8px 12px;
     margin: 0;
 
-    color: #ffffff;
+    color: var(--header-txt);
 
     font-size: 20px;
     font-weight: 700;
@@ -178,12 +178,12 @@
 }
 
 .chat-name-button:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-hover);
 }
 
 .chat-name-button.active {
-    background: rgba(255, 145, 0, 0.12);
-    color: #ff8a00;
+    background: var(--clr-primary-dim);
+    color: var(--clr-primary);
 }
 
 .chat-name-button .chat-name {
@@ -206,12 +206,12 @@
 
     min-height: 500px;
 
-    background: #211e1b;
+    background: var(--bg-surface);
 
-    border-left: 1px solid #302c28;
+    border-left: 1px solid var(--border-subtle);
 
     box-shadow:
-        -10px 0 30px rgba(0, 0, 0, 0.25);
+        -10px 0 30px var(--shadow);
 
     z-index: 1000;
 
@@ -234,13 +234,13 @@
 
     padding: 0 20px;
 
-    background: #282522;
+    background: var(--bg-elevated);
 
-    border-bottom: 1px solid #302c28;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .profile-title {
-    color: #ffffff;
+    color: var(--txt-primary);
 
     font-size: 19px;
     font-weight: 700;
@@ -259,7 +259,7 @@
 
     background: transparent;
 
-    color: #8f8a84;
+    color: var(--txt-muted);
 
     font-size: 28px;
     line-height: 1;
@@ -272,8 +272,8 @@
 }
 
 .profile-close:hover {
-    background: rgba(255, 255, 255, 0.07);
-    color: #ffffff;
+    background: var(--bg-hover);
+    color: var(--txt-primary);
 }
 
 
@@ -304,7 +304,7 @@
 
     border-radius: 50%;
 
-    background: #4ee783;
+    background: var(--clr-success);
 
     color: #ffffff;
 
@@ -314,7 +314,7 @@
     margin-bottom: 18px;
 
     box-shadow:
-        0 8px 25px rgba(0, 0, 0, 0.25);
+        0 8px 25px var(--shadow);
 }
 
 
@@ -323,7 +323,7 @@
    ========================================= */
 
 .profile-name {
-    color: #ffffff;
+    color: var(--txt-primary);
 
     font-size: 23px;
     font-weight: 700;
@@ -336,7 +336,7 @@
 .profile-id {
     margin-top: 7px;
 
-    color: #77716b;
+    color: var(--txt-muted);
 
     font-size: 14px;
 }
@@ -351,7 +351,7 @@
 
     height: 1px;
 
-    background: #302c28;
+    background: var(--border-subtle);
 
     margin: 30px 0 20px;
 }
@@ -371,9 +371,9 @@
     border: none;
     border-radius: 10px;
 
-    background: #302b26;
+    background: var(--bg-elevated);
 
-    color: #ffffff;
+    color: var(--txt-primary);
 
     font-size: 15px;
     font-weight: 600;
@@ -386,8 +386,8 @@
 }
 
 .profile-action:hover {
-    background: #443a2f;
-    color: #ff8a00;
+    background: var(--bg-hover);
+    color: var(--clr-primary);
 }
 
 

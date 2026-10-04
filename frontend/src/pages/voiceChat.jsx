@@ -80,6 +80,9 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   const [activeChatName, setActiveChatName] = useState(
     getCookie('lastChatName') || localStorage.getItem('lastChatName')
   );
+  const [activeChatUserId, setActiveChatUserId] = useState(
+    localStorage.getItem('lastChatUserId') || ''
+  );
   const [refreshTrigger, setRefreshTrigger] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [friendRequestCount, setFriendRequestCount] = useState(0);
@@ -222,13 +225,15 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   // ─────────────────────────────────────────────────────────
   // 4. Выбор чата — текст идёт через одно WS, room_id — только для WebRTC
   // ─────────────────────────────────────────────────────────
-  const handleChatSelection = async (chatId, name) => {
+  const handleChatSelection = async (chatId, name, userId = '') => {
     setActiveChatId(chatId);
     setCookie('lastActiveChatId', chatId);
     localStorage.setItem('lastActiveChatId', chatId);
     setActiveChatName(name);
     setCookie('lastChatName', name);
     localStorage.setItem('lastChatName', name);
+    setActiveChatUserId(userId);
+    localStorage.setItem('lastChatUserId', userId);
     setIsMobileMenuOpen(false);
 
     // Только если voice-комната реально привязана к чату:
@@ -239,10 +244,12 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
     if (String(id) === String(activeChatIdRef.current)) {
       setActiveChatId(null);
       setActiveChatName('');
+      setActiveChatUserId('');
       deleteCookie('lastActiveChatId');
       deleteCookie('lastChatName');
       localStorage.removeItem('lastActiveChatId');
       localStorage.removeItem('lastChatName');
+      localStorage.removeItem('lastChatUserId');
     }
     triggerRefresh();
   }, [triggerRefresh]);
@@ -320,6 +327,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
               <Chat
                 chatId={activeChatId}
                 chatName={activeChatName}
+                chatUserId={activeChatUserId}
                 token={token}
                 searchQuery={searchQuery}
                 searchNavIdx={searchMatch.idx}

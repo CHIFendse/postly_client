@@ -1,0 +1,168 @@
+/* ============================
+   ПУЗЫРЁК СООБЩЕНИЯ
+   ============================ */
+.message-bubble {
+  max-width: 66%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: flex;
+  flex-direction: column;
+  animation: msgPop 0.16s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+@keyframes msgPop {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.message-bubble.received {
+  align-self: flex-start;
+  background-color: var(--msg-recv-bg);
+  border-radius: 4px 14px 14px 14px;
+  padding: 8px 12px 7px;
+}
+
+.message-bubble.sent {
+  align-self: flex-end;
+  background-color: var(--msg-sent-bg);
+  border-radius: 14px 4px 14px 14px;
+  padding: 8px 13px 9px;
+}
+
+@media (max-width: 850px) {
+  .message-bubble { max-width: 85%; }
+  .message-bubble.media-only {
+    width: min(380px, 85%);
+    max-width: 85%;
+  }
+}
+
+/* ---- Имя отправителя (только в группах) ---- */
+.message-sender {
+  font-size: 11px;
+  color: var(--txt-accent);
+  font-weight: 700;
+  margin-bottom: 3px;
+  opacity: 0.9;
+  line-height: 1;
+}
+
+/* ---- Текст ---- */
+.message-text {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--txt-primary);
+}
+
+.message-bubble.sent .message-text {
+  color: rgba(255, 255, 255, 0.96);
+}
+
+/* ---- Время ---- */
+.message-time {
+  font-size: 11px;
+  color: var(--txt-muted);
+  margin-top: 4px;
+  text-align: right;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.message-bubble.sent .message-time {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ---- Картинка в пузыре ---- */
+.message-bubble.has-image { min-width: 0; }
+
+.message-bubble.media-only {
+  width: min(380px, 66%);
+  max-width: min(380px, 66%);
+  padding: 5px;
+  box-sizing: border-box;
+}
+.message-bubble.media-only .message-attachment,
+.message-bubble.media-only .message-attachment-media {
+  width: 100%;
+  max-width: none;
+}
+.message-bubble.media-only .message-attachment { margin: 0; }
+.message-bubble.media-only .message-sender { padding: 4px 8px 2px; }
+
+/* Время поверх картинки, если подписи нет */
+.message-bubble.media-only { position: relative; }
+.message-bubble.media-only .message-meta {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  margin: 0;
+  padding: 3px 7px;
+  border-radius: 10px;
+  background: rgba(0,0,0,.45);
+}
+.message-bubble.media-only .message-time { color: rgba(255,255,255,.9); opacity: 1; }
+
+.message-bubble.media-only .message-attachment-image {
+  border-radius: 13px;
+  box-shadow: none;
+}
+
+/* ---- Время + статус ---- */
+.message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.message-meta .message-time { margin-top: 0; }
+
+.message-retry {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: #ffb4b4;
+  cursor: pointer;
+}
+
+.message-bubble.received .message-retry { color: #e74c3c; }
+.message-retry:hover { text-decoration: underline; }
+
+.message-bubble.is-failed { opacity: .85; }
+
+.message-text:empty { display: none; }
+
+
+.msg-search-match {
+  outline: 2px solid color-mix(in srgb, var(--clr-primary) 50%, transparent);
+  border-radius: 10px;
+}
+
+.msg-search-active {
+  outline: 2px solid var(--clr-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--clr-primary) 15%, transparent);
+  border-radius: 10px;
+}
+
+/* Анимация удаления сообщения */
+@keyframes msgFadeOut {
+  to {
+    opacity: 0;
+    transform: scale(.85);
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+}
+
+.msg-deleting {
+  animation: msgFadeOut .22s ease forwards;
+  pointer-events: none;
+}
+

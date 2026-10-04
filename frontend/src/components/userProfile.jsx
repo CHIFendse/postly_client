@@ -2,16 +2,55 @@ import './userProfile.css';
 
 import { useState, useEffect } from 'react';
 import { GetFriends, SendFriendRequest, DeleteFriend } from '@bindings/client/components/chatsmenu';
+import Avatar from './Avatar';
+import AvatarGallery from './AvatarGallery';
+import ImageViewer from '../pages/chat/components/ImageViewer';
+import { AVATAR_CHANGED_EVENT, getAvatarUrl, getAvatars, loadAvatarObjectUrl } from '../utils/avatarApi';
 function UserProfile({
     chatName,
     chatId,
+    userId,
     onClose,
     getAvatarColor
 }) {
     const [isFriend, setIsFriend] = useState(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+    const [avatarSrc, setAvatarSrc] = useState(null);
+    const [avatarVersion, setAvatarVersion] = useState('');
+    const [avatarHistory, setAvatarHistory] = useState([]);
+    const [showAvatar, setShowAvatar] = useState(false);
     const token = localStorage.getItem("jwt_token");
+    useEffect(() => {
+        let active = true;
+        setAvatarSrc(null);
+        if (!userId) return undefined;
+        loadAvatarObjectUrl(getAvatarUrl(userId, avatarVersion)).then(src => {
+            if (active) setAvatarSrc(src);
+        }).catch(() => {});
+        getAvatarsForUser(userId).then(history => {
+            if (active) setAvatarHistory(history);
+        }).catch(() => {
+            if (active) setAvatarHistory([]);
+        });
+        return () => { active = false; };
+    }, [userId, avatarVersion]);
+    useEffect(() => {
+        const refresh = event => {
+            if (event.detail?.userId === userId) setAvatarVersion(event.detail.version);
+        };
+        window.addEventListener(AVATAR_CHANGED_EVENT, refresh);
+        return () => window.removeEventListener(AVATAR_CHANGED_EVENT, refresh);
+    }, [userId]);
+
+    const getAvatarsForUser = async targetUserId => {
+        const entries = await getAvatars(targetUserId);
+        return Promise.all((Array.isArray(entries) ? entries : []).map(async entry => ({
+            ...entry,
+            src: await loadAvatarObjectUrl(entry.url),
+            downloadUrl: entry.url
+        })));
+    };
         useEffect(() => {
         let isMounted = true;
         
@@ -67,6 +106,7 @@ function UserProfile({
             : '?';
 
     return (
+        <>
         <aside className="user-profile">
 
             <div className="user-profile-header">
@@ -87,9 +127,14 @@ function UserProfile({
 
             
             <div className="user-profile-content">
-                <div className="user-profile-avatar" style={{backgroundColor: getAvatarColor(chatName)}}>
-                    {firstLetter}
-                </div>
+                <Avatar
+                    userId={userId}
+                    name={chatName}
+                    size={102}
+                    className="user-profile-avatar"
+                    color={getAvatarColor(chatName)}
+                    onClick={avatarSrc ? () => setShowAvatar(true) : undefined}
+                />
 
 
                 <div className="user-profile-name">
@@ -126,6 +171,13 @@ function UserProfile({
             </div>
 
         </aside>
+        {showAvatar && avatarHistory.length > 0 && (
+            <AvatarGallery avatars={avatarHistory} onClose={() => setShowAvatar(false)} />
+        )}
+        {showAvatar && avatarHistory.length === 0 && avatarSrc && (
+            <ImageViewer src={avatarSrc} downloadUrl={getAvatarUrl(userId)} onClose={() => setShowAvatar(false)} />
+        )}
+        </>
     );
 }
 

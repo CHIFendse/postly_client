@@ -3,9 +3,11 @@
 
 import * as ChatsMenu from "./chatsmenu.js";
 import * as CurrentVersion from "./currentversion.js";
+import * as FileSaver from "./filesaver.js";
 export {
     ChatsMenu,
-    CurrentVersion
+    CurrentVersion,
+    FileSaver
 };
 
 export {

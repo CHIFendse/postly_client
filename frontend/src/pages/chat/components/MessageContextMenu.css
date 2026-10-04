@@ -1,0 +1,39 @@
+.msg-ctx-menu {
+  position: fixed;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  z-index: 9000;
+  min-width: 170px;
+  overflow: hidden;
+  padding: 4px 0;
+  animation: popIn .12s cubic-bezier(.34,1.5,.64,1);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(.92) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--txt-primary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background .12s;
+}
+
+.ctx-item:hover { background: var(--bg-hover); }
+.ctx-item svg { flex-shrink: 0; color: var(--txt-muted); }
+.ctx-item-danger { color: var(--clr-danger); }
+.ctx-item-danger svg { color: var(--clr-danger); }
+

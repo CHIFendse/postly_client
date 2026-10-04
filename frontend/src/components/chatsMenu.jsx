@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import './chatsMenu.css';
 import CreateGroupModal from './createGroupModal';
+import Avatar from './Avatar';
 import { Events } from '@wailsio/runtime';
 import {
     CreateChat,
@@ -73,6 +74,8 @@ function ChatsMenu({
                     name: c.name,
                     last_message: c.last_message ?? '',
                     username: c.username ?? '',
+                    user_id: c.user_id ?? '',
+                    avatar_url: c.avatar_url ?? '',
                     updated_at: c.updated_at ?? 0,
                 }));
                 setChats(normalized);
@@ -198,8 +201,8 @@ function ChatsMenu({
     }, [token, reloadFriendData]);
 
     // ── Клик по чату ──
-    const handleSelectChat = useCallback((chatId, name) => {
-        onSelectChat?.(chatId, name);
+    const handleSelectChat = useCallback((chatId, name, userId = '') => {
+        onSelectChat?.(chatId, name, userId);
         onClose?.();
     }, [onSelectChat, onClose]);
 
@@ -412,13 +415,9 @@ function ChatsMenu({
                         <>
                             {filteredReqs.map((req) => {
                                 const name   = req.username || '?';
-                                const color  = getAvatarColor(name);
-                                const letter = getFirstLetter(name);
                                 return (
                                     <div className="chat-item friend-req-item" key={req.id}>
-                                        <div className="avatar" style={{ backgroundColor: color }}>
-                                            <span>{letter}</span>
-                                        </div>
+                                        <Avatar userId={req.sender_id} name={name} color={getAvatarColor(name)} />
                                         <div className="chat-content">
                                             <span className="chat-name-text">{name}</span>
                                             <div className="friend-req-actions">
@@ -443,8 +442,6 @@ function ChatsMenu({
 
                             {filteredFriends.map((friend) => {
                                 const name   = friend.username || '?';
-                                const color  = getAvatarColor(name);
-                                const letter = getFirstLetter(name);
                                 const openChat = async () => {
                                     try {
                                         const freshToken = localStorage.getItem('jwt_token');
@@ -454,14 +451,12 @@ function ChatsMenu({
                                         if (!chatId) return;
                                         onSetViewRef.current?.('chats');
                                         onChatCreatedRef.current?.();
-                                        handleSelectChat(chatId, name);
+                                        handleSelectChat(chatId, name, friend.id);
                                     } catch (err) { console.error(err); }
                                 };
                                 return (
                                     <div className="chat-item friend-item" key={friend.id} onClick={openChat}>
-                                        <div className="avatar" style={{ backgroundColor: color }}>
-                                            <span>{letter}</span>
-                                        </div>
+                                        <Avatar userId={friend.id} name={name} color={getAvatarColor(name)} />
                                         <div className="chat-content">
                                             <span className="chat-name-text">{name}</span>
                                         </div>
@@ -495,21 +490,20 @@ function ChatsMenu({
                             {chats
                                 .filter(chat => !q || (chat.name || '').toLowerCase().includes(q))
                                 .map((chat) => {
-                                    const chatColor  = getAvatarColor(chat.name);
-                                    const chatLetter = getFirstLetter(chat.name);
                                     return (
                                         <div
                                             className={`chat-item ${chat.id === activeChatId ? 'active' : ''}`}
                                             key={chat.id}
-                                            onClick={() => handleSelectChat(chat.id, chat.name)}
-                                            onContextMenu={e => openChatCtx(e, chat.id)}
+                                            onClick={() => handleSelectChat(chat.id, chat.name, chat.user_id)}
+                                            onContextMenu={e => {
+                                                e.stopPropagation();
+                                                openChatCtx(e, chat.id);
+                                            }}
                                             onTouchStart={e => startLongPress(e, chat.id)}
                                             onTouchMove={moveLongPress}
                                             onTouchEnd={endLongPress}
                                         >
-                                            <div className="avatar" style={{ backgroundColor: chatColor }}>
-                                                <span>{chatLetter}</span>
-                                            </div>
+                                            <Avatar userId={chat.user_id} name={chat.name} color={getAvatarColor(chat.name)} />
                                             <div className="chat-content">
                                                 <div className="chat-row">
                                                     <span className="chat-name-text">{chat.name}</span>

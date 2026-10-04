@@ -57,6 +57,7 @@ func main() {
 	chatsComponent := components.NewChats()
 	authService := pages.NewAuthService()
 	getVersion := &components.CurrentVersion{}
+	fileSaver := components.NewFileSaver(app)
 
 	app.RegisterService(application.NewService(voiceService))
 	app.RegisterService(application.NewService(chatWSService))
@@ -64,17 +65,18 @@ func main() {
 	app.RegisterService(application.NewService(chatsComponent))
 	app.RegisterService(application.NewService(authService))
 	app.RegisterService(application.NewService(getVersion))
+	app.RegisterService(application.NewService(fileSaver))
 
 	log.Println("Creating window...")
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:    "Postly",
-		Width:    1024,
-		Height:   768,
-		URL:      "/",
-		MinWidth:  380,
-		MinHeight: 540,
-		Zoom: 1.0,
-    	ZoomControlEnabled: false,
+		Title:              "Postly",
+		Width:              1024,
+		Height:             768,
+		URL:                "/",
+		MinWidth:           380,
+		MinHeight:          540,
+		Zoom:               1.0,
+		ZoomControlEnabled: false,
 	})
 
 	log.Println("Running app...")

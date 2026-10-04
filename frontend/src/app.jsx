@@ -138,9 +138,9 @@ function App() {
     if (isNetworkError) {
         return (
             <FullscreenScreen>
-                <span style={{ fontSize: '32px' }}>🔌</span>
+                <span style={{ color: 'var(--clr-danger)', fontSize: '32px' }}>500</span>
                 <span style={{ color: 'var(--clr-danger)', fontWeight: 600 }}>
-                    Нет соединения с сервером
+                    Internal Server Error
                 </span>
                 <button
                     onClick={() => window.location.reload()}
@@ -175,7 +175,9 @@ function App() {
 export default function Root() {
     return (
         <ThemeProvider>
-            <App />
+            <div onContextMenu={e => e.preventDefault()}>
+                <App />
+            </div>
         </ThemeProvider>
     );
 }

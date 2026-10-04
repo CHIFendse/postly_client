@@ -1,0 +1,35 @@
+.avatar-crop-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgb(0 0 0 / 68%);
+}
+
+.avatar-crop-panel {
+    width: min(620px, 100%);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 18px 60px rgb(0 0 0 / 35%);
+}
+
+.avatar-crop-header,
+.avatar-crop-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.avatar-crop-header { border-bottom: 1px solid var(--border-subtle); color: var(--txt-primary); }
+.avatar-crop-header button { border: 0; background: transparent; color: var(--txt-muted); font-size: 24px; cursor: pointer; }
+.avatar-crop-footer { justify-content: flex-end; border-top: 1px solid var(--border-subtle); }
+.avatar-crop-footer button { border: 0; border-radius: 8px; padding: 9px 15px; cursor: pointer; color: var(--txt-primary); background: var(--bg-hover); }
+.avatar-crop-footer button:last-child { color: white; background: var(--clr-primary); }
+.avatar-crop-footer button:disabled { opacity: .55; cursor: default; }

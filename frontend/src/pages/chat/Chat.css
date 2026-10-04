@@ -1,0 +1,114 @@
+/* ============================
+   ОКНО ЧАТА
+   ============================ */
+
+.chat-window {
+
+    display: flex;
+
+    flex-direction: column;
+
+    width: 100%;
+
+    flex: 1;
+
+    min-height: 0;
+
+    background-color: var(--bg-chat);
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+
+/* ============================
+   ОБЛАСТЬ ПОД HEADER
+   ============================ */
+
+.chat-main {
+
+    display: flex;
+
+    flex-direction: row;
+
+    width: 100%;
+
+    flex: 1;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+}
+
+
+/* ============================
+   САМА ОБЛАСТЬ ЧАТА
+   ============================ */
+
+.chat-content {
+
+    display: flex;
+
+    flex-direction: column;
+
+    flex: 1 1 auto;
+
+    width: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+/* ============================
+   ЗАГЛУШКА "выберите чат"
+   ============================ */
+.chat-placeholder {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg-chat);
+}
+
+.placeholder-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  opacity: 0.45;
+  user-select: none;
+}
+
+.placeholder-icon {
+  width: 52px;
+  height: 52px;
+  color: var(--clr-primary);
+}
+
+.placeholder-content p {
+  color: var(--txt-secondary);
+  font-size: 16px;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Общий спиннер: вложения в сообщениях и кнопка «Отправить» в превью */
+.message-upload-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: msgUploadSpin .8s linear infinite;
+}
+
+@keyframes msgUploadSpin { to { transform: rotate(360deg); } }
+

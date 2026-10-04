@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 export const themes = [
   {
     id: 'orange',
-    name: 'Оранжевый',
+    name: 'Тёмная',
     emoji: '🔥',
     preview: '#FF7A00',
     previewBg: '#1a1815',
@@ -36,6 +36,43 @@ export const themes = [
       '--scrollbar-thumb':  '#35302a',
       '--shadow':           'rgba(0, 0, 0, 0.45)',
       '--icon-filter':      'invert(75%) sepia(60%) saturate(4000%) hue-rotate(3deg) brightness(110%) contrast(105%)',
+    }
+  },
+  {
+    id: 'light',
+    name: 'Светлая',
+    emoji: '☀',
+    preview: '#e46b2e',
+    previewBg: '#ffffff',
+    vars: {
+      '--clr-primary': '#ed6a2f',
+      '--clr-primary-hover': '#f4874d',
+      '--clr-primary-dim': 'rgba(237, 106, 47, 0.18)',
+      '--clr-danger': '#d9534f',
+      '--clr-danger-hover': '#bd3d3a',
+      '--clr-success': '#22a66d',
+      '--bg-app': '#e7eaed',
+      '--bg-sidebar': '#f2f4f6',
+      '--bg-surface': '#f7f8fa',
+      '--bg-elevated': '#ffffff',
+      '--bg-hover': '#fff0e5',
+      '--bg-active': '#f39a5c',
+      '--bg-input': '#ffffff',
+      '--bg-chat': '#e9edf0',
+      '--txt-primary': '#252a30',
+      '--txt-secondary': '#68727c',
+      '--txt-muted': '#9aa3ab',
+      '--txt-accent': '#d45721',
+      '--border-subtle': '#e1e5e8',
+      '--border-medium': '#d2d8dd',
+      '--border-accent': '#ed6a2f',
+      '--header-bg': '#ed6a2f',
+      '--header-txt': '#ffffff',
+      '--msg-sent-bg': '#ed6a2f',
+      '--msg-recv-bg': '#ffffff',
+      '--scrollbar-thumb': '#c4cbd1',
+      '--shadow': 'rgba(30, 40, 50, 0.16)',
+      '--icon-filter': 'invert(43%) sepia(48%) saturate(1100%) hue-rotate(342deg) brightness(90%) contrast(90%)'
     }
   },
   {

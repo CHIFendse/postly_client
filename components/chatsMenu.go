@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
 )
 
 type ChatsMenu struct {
@@ -17,17 +16,17 @@ type ChatsMenu struct {
 	url string
 }
 type Request struct {
-	Id       string `json:"id"`
-	SenderId string `json:"sender_id"`
-	Username string `json:"username"`
-	CreatedAt int64 `json:"created_at"`
+	Id        string `json:"id"`
+	SenderId  string `json:"sender_id"`
+	Username  string `json:"username"`
+	CreatedAt int64  `json:"created_at"`
 }
 
 type ReqOut struct {
-    Id         string `json:"id"`
-    ReceiverId string `json:"receiver_id"`
-    Username   string `json:"username"`
-    CreatedAt  int64  `json:"created_at"`
+	Id         string `json:"id"`
+	ReceiverId string `json:"receiver_id"`
+	Username   string `json:"username"`
+	CreatedAt  int64  `json:"created_at"`
 }
 
 type User struct {
@@ -44,14 +43,12 @@ type Groups struct {
 	UpdatedAt     int    `json:"updated_at"`
 }
 
-
 func NewChats() *ChatsMenu {
 	url := "https://api.postly-mes.ru:8081/"
 	return &ChatsMenu{
 		url: url,
 	}
 }
-
 
 func (cm *ChatsMenu) SetContext(ctx context.Context) {
 	cm.ctx = ctx
@@ -167,10 +164,10 @@ func (cm *ChatsMenu) GetGroups(userId, token string) ([]Groups, error) {
 		var errResp map[string]string
 		if err := json.Unmarshal(bodyBytes, &errResp); err == nil {
 			if msg, ok := errResp["error"]; ok {
-				return nil, fmt.Errorf(msg)
+				return nil, fmt.Errorf("%s", msg)
 			}
 			if msg, ok := errResp["message"]; ok {
-				return nil, fmt.Errorf(msg)
+				return nil, fmt.Errorf("%s", msg)
 			}
 		}
 		return nil, fmt.Errorf("сервер вернул ошибку: %d, тело: %s", resp.StatusCode, string(bodyBytes))
@@ -261,7 +258,7 @@ func (cm *ChatsMenu) SendFriendRequest(username, token string) (string, error) {
 
 func (cm *ChatsMenu) AcceptFriendRequest(requestId, token string) (bool, error) {
 	url := cm.url + "/acceptFriendRequest"
-	
+
 	data := map[string]string{
 		"request_id": requestId,
 	}
@@ -269,7 +266,7 @@ func (cm *ChatsMenu) AcceptFriendRequest(requestId, token string) (bool, error) 
 	if err != nil {
 		return false, fmt.Errorf("ошибка создания JSON: %w", err)
 	}
-	
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return false, fmt.Errorf("ошибка создания запроса: %w", err)
@@ -299,7 +296,7 @@ func (cm *ChatsMenu) AcceptFriendRequest(requestId, token string) (bool, error) 
 func (cm *ChatsMenu) DeclineFriendRequest(requestId, token string) (bool, error) {
 	url := cm.url + "/declineFriendRequest"
 
-	data := map[string]string {
+	data := map[string]string{
 		"request_id": requestId,
 	}
 
@@ -330,7 +327,7 @@ func (cm *ChatsMenu) DeclineFriendRequest(requestId, token string) (bool, error)
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return false, fmt.Errorf("ошибка парсинга: %w", err)
 	}
-	
+
 	return result["status"], nil
 }
 
@@ -341,7 +338,7 @@ func (cm *ChatsMenu) GetFriends(token string) ([]User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
 	}
-	req.Header.Set("Authorization", "Bearer " +token)
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
@@ -368,7 +365,7 @@ func (cm *ChatsMenu) GetFriends(token string) ([]User, error) {
 func (cm *ChatsMenu) DeleteFriend(friendId, token string) (bool, error) {
 	url := cm.url + "/deleteFriend"
 
-	data := map[string]string {
+	data := map[string]string{
 		"friend_id": friendId,
 	}
 
@@ -401,13 +398,13 @@ func (cm *ChatsMenu) DeleteFriend(friendId, token string) (bool, error) {
 		return false, fmt.Errorf("ошибка парсинга: %w", err)
 	}
 
-	return result["success"]=="ok", nil
+	return result["success"] == "ok", nil
 }
 
 func (cm *ChatsMenu) CancelFriendRequest(requestId, token string) (bool, error) {
 	url := cm.url + "/cancelFriendRequest"
-	
-	data := map[string]string {
+
+	data := map[string]string{
 		"request_id": requestId,
 	}
 
@@ -415,26 +412,26 @@ func (cm *ChatsMenu) CancelFriendRequest(requestId, token string) (bool, error) 
 	if err != nil {
 		return false, fmt.Errorf("ошибка создания JSON: %w", err)
 	}
-	
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return false, fmt.Errorf("ошибка создания запроса: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return false, fmt.Errorf("сервер недоступен: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return false, fmt.Errorf("сервер вернул %d: %s", resp.StatusCode, string(bodyBytes))
 	}
-	
+
 	var result map[string]bool
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return false, fmt.Errorf("ошибка парсинга: %w", err)
@@ -445,7 +442,7 @@ func (cm *ChatsMenu) CancelFriendRequest(requestId, token string) (bool, error) 
 
 func (cm *ChatsMenu) GetSentRequests(token string) ([]ReqOut, error) {
 	url := cm.url + "/getSentRequests"
-	
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
@@ -475,11 +472,10 @@ func (cm *ChatsMenu) GetSentRequests(token string) ([]ReqOut, error) {
 
 }
 
-
 func (cm *ChatsMenu) DeleteChat(chatId, token string) (bool, error) {
 	url := cm.url + "/deleteChat"
 
-	data := map[string]string {
+	data := map[string]string{
 		"chat_id": chatId,
 	}
 
@@ -517,16 +513,16 @@ func (cm *ChatsMenu) DeleteChat(chatId, token string) (bool, error) {
 
 func (cm *ChatsMenu) ClearChat(chatId, token string) (bool, error) {
 	url := cm.url + "/clearChat"
-	
-	data := map[string]string {
+
+	data := map[string]string{
 		"chat_id": chatId,
 	}
-	
+
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return false, fmt.Errorf("ошибка создания JSON: %w", err)
 	}
-	
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return false, fmt.Errorf("ошибка создания запроса: %w", err)
@@ -540,28 +536,27 @@ func (cm *ChatsMenu) ClearChat(chatId, token string) (bool, error) {
 		return false, fmt.Errorf("сервер недоступен: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return false, fmt.Errorf("сервер вернул %d: %s", resp.StatusCode, string(bodyBytes))
 	}
-	
+
 	var result map[string]bool
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return false, fmt.Errorf("ошибка парсинга: %w", err)
 	}
-	
+
 	return result["status"], nil
 }
 
-
-func (cm *ChatsMenu) CreateGroup(name, avatarColor, avatarFile, token string,members []string,isPrivate bool) (map[string]interface{}, error) {
+func (cm *ChatsMenu) CreateGroup(name, avatarColor, avatarFile, token string, members []string, isPrivate bool) (map[string]interface{}, error) {
 	url := cm.url + "/createGroup"
 
 	data := map[string]interface{}{
 		"name":         name,
 		"is_private":   isPrivate,
-		"members":      members,     // usernames
+		"members":      members, // usernames
 		"avatar_color": avatarColor,
 		"avatar_file":  avatarFile,
 	}

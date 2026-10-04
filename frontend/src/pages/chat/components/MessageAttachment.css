@@ -1,0 +1,146 @@
+/* ============================
+   ВЛОЖЕНИЕ В ОТПРАВЛЕННОМ СООБЩЕНИИ
+   ============================ */
+.message-attachment {
+  margin: 1px 0 6px;
+  min-width: 0;
+}
+
+.message-attachment-image {
+  display: block;
+  width: min(380px, 100%);
+  max-width: 100%;
+  max-height: 430px;
+  object-fit: contain;
+  border-radius: 15px;
+  cursor: zoom-in;
+  background: rgba(0,0,0,.22);
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+
+.message-attachment-file {
+  width: 100%;
+  max-width: 310px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  background: rgba(0,0,0,.12);
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: default;
+}
+
+.message-attachment-file.is-ready {
+  cursor: pointer;
+  transition: background-color .12s ease;
+}
+
+.message-attachment-file.is-ready:hover { background: rgba(0,0,0,.2); }
+
+.message-bubble.sent .message-attachment-file-icon {
+  color: #fff;
+  background: rgba(255,255,255,.16);
+}
+
+.message-bubble.sent .message-attachment-file-name { color: rgba(255,255,255,.96); }
+.message-bubble.sent .message-attachment-file-size { color: rgba(255,255,255,.6); }
+
+.message-attachment-file-icon {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--clr-primary);
+  background: color-mix(in srgb, var(--clr-primary) 13%, transparent);
+}
+
+.message-attachment-file-info { min-width: 0; flex: 1; }
+
+.message-attachment-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--txt-primary);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.message-attachment-file-size {
+  margin-top: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--txt-muted);
+  font-size: 11px;
+}
+
+.message-attachment-media {
+  position: relative;
+  width: min(380px, 100%);
+  max-width: 100%;
+}
+
+.message-attachment-image-failed {
+  width: min(260px, 100%);
+  padding: 28px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.16);
+  color: var(--txt-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.message-attachment-image-loading {
+  width: min(260px, 100%);
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(0,0,0,.16);
+}
+
+/* ---- Загрузка / отправка ---- */
+.message-upload-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.42);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.message-bubble.received .message-attachment-file-icon .message-upload-spinner {
+  border-color: color-mix(in srgb, var(--clr-primary) 30%, transparent);
+  border-top-color: var(--clr-primary);
+}
+
+.message-upload-bar {
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(255,255,255,.18);
+}
+
+.message-upload-bar > div {
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+  transition: width .15s linear;
+}
+
