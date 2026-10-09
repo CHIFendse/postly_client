@@ -5,7 +5,7 @@ import App from './app';
 import CallWindow from './components/CallWindow';
 import { GetCurrentVersion } from '@bindings/client/components/currentversion';
 
-const lastVersion = "0.1.0";
+const lastVersion = "0.1.1";
 
 // Функция для показа модалки
 function showUpdateModal(required, current) {

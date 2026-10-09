@@ -14,6 +14,7 @@ export function clearMessagesCache() {
 // Подтверждение с сервера приходит без tmp-id — сопоставляем по тексту и имени файла
 export function isPendingMatch(local, incoming) {
     return String(local.id || '').startsWith('tmp_') &&
+        String(local.sender_id || '') === String(incoming.sender_id || '') &&
         (local.text || '') === (incoming.text || '') &&
         (local.attachment?.name || '') === (incoming.file_name || '');
 }
@@ -38,14 +39,14 @@ export function applyNewMessage(list, msg, isMine) {
     const msgId = msg.id || msg.msg_id;
     if (msgId && list.some(m => String(m.id) === String(msgId))) return list;
 
-    if (isMine) {
-        // Сервер подтверждает по порядку — берём самое старое ожидающее
-        const idx = list.findIndex(m => isPendingMatch(m, msg));
-        if (idx !== -1) {
-            const updated = [...list];
-            updated[idx] = confirmPending(updated[idx], msg);
-            return updated;
-        }
+    // Сервер рассылает подтверждение и отправителю. Сверяем pending по
+    // sender_id, чтобы временный пузырь не превратился в дубль при
+    // кратковременном рассинхроне localStorage и WS-флага isMine.
+    const idx = list.findIndex(m => isPendingMatch(m, msg));
+    if (idx !== -1) {
+        const updated = [...list];
+        updated[idx] = confirmPending(updated[idx], msg);
+        return updated;
     }
 
     return [...list, { ...msg, id: msgId, created_at: msg.created_at || new Date().toISOString() }];

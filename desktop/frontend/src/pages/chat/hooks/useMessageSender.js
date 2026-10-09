@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { SendWSMessage } from '@bindings/client/pages/chatws';
+import { GetMessages } from '@bindings/client/pages/chat';
 import { uploadAttachment } from '../lib/api';
 import { getMyId, getMyUsername } from '../lib/messages';
 import { isImageType } from '../lib/files';
@@ -73,7 +74,35 @@ export default function useMessageSender({ token, updateMessages }) {
 
         // Сервер не подтвердил — даём повторить. После подтверждения
         // tmp-id заменён на настоящий, и патч ничего не найдёт
-        setTimeout(() => {
+        setTimeout(async () => {
+            try {
+                const remoteMessages = await GetMessages(
+                    chatId,
+                    token || localStorage.getItem('jwt_token')
+                );
+                const remote = (Array.isArray(remoteMessages) ? remoteMessages : [])
+                    .slice()
+                    .reverse()
+                    .find(item => (
+                        String(item.sender_id) === String(getMyId()) &&
+                        (item.text || '') === (msg.text || '') &&
+                        (item.file_name || '') === (att?.name || '')
+                    ));
+
+                if (remote) {
+                    patchMessage(chatId, msg.id, {
+                        ...remote,
+                        id: remote.id,
+                        status: null,
+                        progress: null,
+                        attachment: msg.attachment
+                    });
+                    return;
+                }
+            } catch (err) {
+                console.error('Не удалось проверить отправленное сообщение:', err);
+            }
+
             patchMessage(chatId, msg.id, m => (
                 m.status === 'sending' && m.attempt === attempt ? { status: 'error' } : {}
             ));

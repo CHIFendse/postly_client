@@ -1,6 +1,26 @@
-// id читаем при каждом вызове: после смены аккаунта без перезагрузки
-// значение, запомненное при первом рендере, было бы чужим
-export const getMyId = () => localStorage.getItem('id');
+function getTokenUserId() {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return '';
+    try {
+        const payload = token.split('.')[1];
+        const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')));
+        return String(decoded.user_id || decoded.sub || '');
+    } catch (_) {
+        return '';
+    }
+}
+
+// JWT является источником истины. Старый localStorage.id мог остаться от
+// другого аккаунта после обновления desktop-клиента.
+export const getMyId = () => {
+    const tokenUserId = getTokenUserId();
+    if (tokenUserId) {
+        if (localStorage.getItem('id') !== tokenUserId) localStorage.setItem('id', tokenUserId);
+        return tokenUserId;
+    }
+    return localStorage.getItem('id');
+};
 export const getMyUsername = () => localStorage.getItem('username');
 
 export const isMine = senderId => String(senderId) === String(getMyId());

@@ -16,6 +16,12 @@ export function SendWSMessage(payload: string): $CancellablePromise<void> {
     return $Call.ByID(952733252, payload);
 }
 
+/**
+ * Смена токена = смена аккаунта (или выход). Соединение авторизовано старым
+ * токеном, и сервер берёт отправителя из него — поэтому закрываем его.
+ * Горутина чтения сама переподключится уже с новым токеном (или не станет,
+ * если токен пустой).
+ */
 export function SetToken(token: string): $CancellablePromise<void> {
     return $Call.ByID(1687395988, token);
 }

@@ -39,10 +39,21 @@ type MessageDTO struct {
 
 func (s *ChatWS) ServiceName() string { return "ChatWS" }
 
+// Смена токена = смена аккаунта (или выход). Соединение авторизовано старым
+// токеном, и сервер берёт отправителя из него — поэтому закрываем его.
+// Горутина чтения сама переподключится уже с новым токеном (или не станет,
+// если токен пустой).
 func (a *ChatWS) SetToken(token string) {
 	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.token == token {
+		return
+	}
 	a.token = token
-	a.mu.Unlock()
+	if a.conn != nil {
+		a.conn.Close()
+		a.conn = nil
+	}
 }
 
 func (a *ChatWS) Connect(chatID string) error {
@@ -87,6 +98,16 @@ func (a *ChatWS) Connect(chatID string) error {
 	}
 
 	a.mu.Lock()
+	// Пока дозванивались, сменился аккаунт — это соединение уже чужое
+	if a.token != tok {
+		hasToken := a.token != ""
+		a.mu.Unlock()
+		c.Close()
+		if hasToken {
+			return a.Connect("")
+		}
+		return nil
+	}
 	// Кто-то успел подключиться, пока мы дозванивались — закрываем новый
 	if a.conn != nil {
 		a.mu.Unlock()
