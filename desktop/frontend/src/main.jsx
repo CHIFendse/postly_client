@@ -2,10 +2,9 @@ import { createRoot } from 'react-dom/client';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import './style.css';
 import App from './app'; 
-import CallWindow from './components/CallWindow';
 import { GetCurrentVersion } from '@bindings/client/components/currentversion';
 
-const lastVersion = "0.1.1";
+const lastVersion = "0.1.2";
 
 // Функция для показа модалки
 function showUpdateModal(required, current) {
@@ -52,8 +51,6 @@ async function initApp() {
         <Router>
             <Routes>
                 <Route path="/" element={<App currentVersion={lastVersion} />} />
-                <Route path="/call/:chatId/:userName" element={<CallWindow />} />
-                <Route path="/call/:chatId/:userName/:typing" element={<CallWindow />} />
             </Routes>
         </Router>
     );

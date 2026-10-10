@@ -1,157 +1,38 @@
-import { useState, useEffect } from 'react';
 import './header.css';
-import {
-    StartVoice,
-    Disconnect,
-    SetToken,
-    OpenCallWindow,
-    SetRoomID
-} from '@bindings/client/pages/voicechat';
-import { SendWSMessage } from '@bindings/client/pages/chatws';
 import decall from '../assets/images/phone-line.png';
 import callIcon from '../assets/images/phone-fill.png';
-import { Events } from '@wailsio/runtime';
+import { useCall } from '../call/CallProvider';
+
+const CALL_STATUS = {
+    outgoing: 'Звоним...',
+    connecting: 'Соединение...',
+    active: 'В разговоре',
+};
 
 function Header({
-    token,
     chatName,
     chatId,
+    chatUserId,
     onMenuToggle,
     onProfileToggle
 }) {
-    const [status, setStatus] = useState('');
-    const [isConnected, setIsConnected] = useState(false);
+    const { call, startCall, hangup } = useCall();
 
-    useEffect(() => {
-        const unsubscribe = Events.On("server_message", async (event) => {
-            const msg = event.data;
-            const msgType = msg.type || msg.typing;
+    const inCall = Boolean(call && call.state !== 'ended' && call.state !== 'incoming');
+    const inThisChat = inCall && call.chatId === String(chatId);
+    const busyElsewhere = inCall && !inThisChat;
 
-            console.log(event.data);
-
-            if (msgType === "CALL_INVITE") {
-                await OpenCallWindow(
-                    msg.chat_id.toString(),
-                    msg.name,
-                    "incoming"
-                );
-            }
-
-            if (msgType === "CALL_ACCEPT") {
-                setStatus('В разговоре');
-                setIsConnected(true);
-            }
-
-            if (msgType === "CALL_REJECT" || msgType === "CALL_HANGUP") {
-                setStatus('Звонок завершен');
-                await Disconnect();
-
-                setIsConnected(false);
-
-                setTimeout(() => {
-                    setStatus('');
-                }, 3000);
-            }
-        });
-
-        const subAccept = Events.On("ui_call_accept", async (event) => {
-            const targetId = event.data?.toString();
-
-            await SendWSMessage(JSON.stringify({
-                type: "CALL_ACCEPT",
-                chat_id: targetId,
-                sender_id: localStorage.getItem("id")
-            }));
-
-            startVoiceSession(targetId);
-        });
-
-        const subReject = Events.On("ui_call_reject", async (event) => {
-            const targetId = event.data?.toString();
-
-            await SendWSMessage(JSON.stringify({
-                type: "CALL_REJECT",
-                chat_id: targetId,
-                sender_id: localStorage.getItem("id")
-            }));
-
-            await Disconnect();
-
-            setStatus('Звонок отклонен');
-            setIsConnected(false);
-
-            setTimeout(() => {
-                setStatus('');
-            }, 2000);
-        });
-
-        return () => {
-            unsubscribe();
-            subAccept();
-            subReject();
-        };
-    }, [token, chatId]);
-
-    const startVoiceSession = async (cId) => {
-        try {
-            await SetToken(token);
-            await SetRoomID(cId.toString());
-            await StartVoice();
-
-            setIsConnected(true);
-        } catch (e) {
-            console.error("Ошибка старта голоса:", e);
+    const handleCallClick = () => {
+        if (inThisChat) {
+            hangup();
+            return;
         }
-    };
-
-    const handleToggleCall = async () => {
-        if (!chatId) return;
-
-        const inviteData = {
-            type: "CALL_INVITE",
-            chat_id: chatId.toString(),
-            sender_id: localStorage.getItem("id"),
-            name: chatName
-        };
-
-        try {
-            await SendWSMessage(JSON.stringify(inviteData));
-
-            await OpenCallWindow(
-                chatId.toString(),
-                chatName,
-                "outgoing"
-            );
-
-            setStatus('Звоним...');
-        } catch (err) {
-            console.error(
-                "Ошибка при инициации звонка:",
-                err
-            );
-        }
-    };
-
-    const handleDisconnect = async () => {
-        try {
-            await Disconnect();
-
-            setIsConnected(false);
-            setStatus('Звонок завершен');
-
-            setTimeout(() => {
-                setStatus('');
-            }, 2000);
-        } catch (err) {
-            console.error(err);
-        }
+        if (busyElsewhere || !chatId) return;
+        startCall(String(chatId), chatName, chatUserId ? 'direct' : 'group');
     };
 
     const handleMenuClick = (e) => {
         e.stopPropagation();
-
-        console.log('Menu button clicked!');
-
         if (onMenuToggle) {
             onMenuToggle();
         }
@@ -159,7 +40,6 @@ function Header({
 
     const handleProfileClick = (e) => {
         e.stopPropagation();
-
         if (onProfileToggle) {
             onProfileToggle();
         }
@@ -202,33 +82,28 @@ function Header({
             </div>
 
             <div className="header-right">
-                {isConnected && (
+                {inThisChat && (
                     <span className="status-text">
-                        {status}
+                        {CALL_STATUS[call.state]}
                     </span>
                 )}
 
                 <button
-                    className={`call-button ${isConnected ? 'connected' : 'disconnected'}`}
-                    onClick={
-                        isConnected
-                            ? handleDisconnect
-                            : handleToggleCall
-                    }
+                    className={`call-button ${inThisChat ? 'connected' : 'disconnected'}`}
+                    onClick={handleCallClick}
+                    disabled={busyElsewhere}
                     title={
-                        isConnected
+                        inThisChat
                             ? 'Завершить звонок'
-                            : 'Позвонить'
+                            : busyElsewhere
+                                ? 'Идёт другой звонок'
+                                : 'Позвонить'
                     }
                     type="button"
                 >
                     <img
-                        src={isConnected ? decall : callIcon}
-                        alt={
-                            isConnected
-                                ? "Hang Up"
-                                : "Call"
-                        }
+                        src={inThisChat ? decall : callIcon}
+                        alt={inThisChat ? 'Hang Up' : 'Call'}
                         className="button-icon"
                     />
                 </button>

@@ -31,21 +31,23 @@ contents:
     dst: "/usr/share/applications/postly.desktop"
 
 # ── Зависимости для DEB (Ubuntu 22.04+ / Debian Bookworm+) ──────────────────
-# opus статически вшит в бинарник — отдельный пакет не нужен.
 depends:
   - libgtk-3-0
   - libwebkit2gtk-4.1-0
+  - libasound2t64 | libasound2
 
 overrides:
   rpm:
     depends:
       - gtk3
       - webkit2gtk4.1
+      - alsa-lib
 
   archlinux:
     depends:
       - gtk3
       - webkit2gtk-4.1
+      - alsa-lib
 
 scripts:
   postinstall: "./build/linux/nfpm/scripts/postinstall.sh"

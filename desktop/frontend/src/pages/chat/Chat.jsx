@@ -172,9 +172,9 @@ function Chat({
     return (
         <div className="chat-window" onClick={ctx.close}>
             <Header
-                token={token}
                 chatName={chatName}
                 chatId={chatId}
+                chatUserId={chatUserId}
                 onMenuToggle={onMenuToggle}
                 onProfileToggle={() => setIsProfileOpen(prev => !prev)}
             />

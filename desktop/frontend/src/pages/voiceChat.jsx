@@ -7,7 +7,7 @@ import ChatsMenu from '../components/chatsMenu';
 import Chat from './chat';
 import Settings from './Settings';
 import { Events } from '@wailsio/runtime';
-import { SetRoomID, SetToken as SetVoiceToken } from '@bindings/client/pages/voicechat';
+import { CallProvider } from '../call/CallProvider';
 import { Connect, SetToken as SetChatToken } from '@bindings/client/pages/chatws';
 import { getAvatarColor } from '../utils/avatarHelper';
 import { clearMessagesCache } from '../components/messagesCache';
@@ -118,7 +118,6 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   // 1. Инициализация WS — один раз на токен
   //    - SetChatToken → chatws.SetToken
   //    - Connect('')  → chatws.Connect (одно соединение, chat_id не в URL)
-  //    - SetVoiceToken + SetRoomID → WebRTC-комната (отдельный модуль)
   // ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!token) return;
@@ -130,17 +129,6 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
         await Connect('');
       } catch (err) {
         if (!cancelled) console.error('WS init error:', err);
-      }
-
-      const savedId =
-        getCookie('lastActiveChatId') || localStorage.getItem('lastActiveChatId');
-      if (savedId) {
-        try {
-          await SetVoiceToken(token);
-          await SetRoomID(savedId);
-        } catch (err) {
-          if (!cancelled) console.error('Voice room restore error:', err);
-        }
       }
     })();
 
@@ -266,6 +254,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   };
 
   return (
+    <CallProvider myId={myId}>
     <div className="container">
       <MainHeader
         handleLogout={handleLogoutWithClear}
@@ -364,6 +353,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
         </div>
       </div>
     </div>
+    </CallProvider>
   );
 }
 

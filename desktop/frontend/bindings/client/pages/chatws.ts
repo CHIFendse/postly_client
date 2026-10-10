@@ -9,6 +9,10 @@ export function Connect(chatID: string): $CancellablePromise<void> {
     return $Call.ByID(244968285, chatID);
 }
 
+export function LogCall(line: string): $CancellablePromise<void> {
+    return $Call.ByID(1446367289, line);
+}
+
 /**
  * SendWSMessage возвращает error — Wails-биндинг отдаёт его в JS вторым значением.
  */

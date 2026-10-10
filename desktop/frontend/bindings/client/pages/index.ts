@@ -4,12 +4,10 @@
 import * as AuthService from "./authservice.js";
 import * as Chat from "./chat.js";
 import * as ChatWS from "./chatws.js";
-import * as VoiceChat from "./voicechat.js";
 export {
     AuthService,
     Chat,
-    ChatWS,
-    VoiceChat
+    ChatWS
 };
 
 export {

@@ -61,7 +61,7 @@ function Auth({ onLogin }) {
                 <input
                     type="text"
                     placeholder="Логин"
-                    value={form.user}
+                    val ue={form.user}
                     className="auth-input"
                     onChange={e => setForm({ ...form, user: e.target.value })}
                     autoComplete="username"
