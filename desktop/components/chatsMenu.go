@@ -187,7 +187,7 @@ func (cm *ChatsMenu) GetGroups(userId, token string) ([]Groups, error) {
 }
 
 func (cm *ChatsMenu) GetFriendRequests(token string) ([]Request, error) {
-	url := cm.url + "/getFriendRequests"
+	url := cm.url + "getFriendRequests"
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -218,7 +218,7 @@ func (cm *ChatsMenu) GetFriendRequests(token string) ([]Request, error) {
 }
 
 func (cm *ChatsMenu) SendFriendRequest(username, token string) (string, error) {
-	url := cm.url + "/sendFriendRequest"
+	url := cm.url + "sendFriendRequest"
 
 	data := map[string]string{
 		"username": username,
@@ -257,7 +257,7 @@ func (cm *ChatsMenu) SendFriendRequest(username, token string) (string, error) {
 }
 
 func (cm *ChatsMenu) AcceptFriendRequest(requestId, token string) (bool, error) {
-	url := cm.url + "/acceptFriendRequest"
+	url := cm.url + "acceptFriendRequest"
 
 	data := map[string]string{
 		"request_id": requestId,
@@ -294,7 +294,7 @@ func (cm *ChatsMenu) AcceptFriendRequest(requestId, token string) (bool, error) 
 }
 
 func (cm *ChatsMenu) DeclineFriendRequest(requestId, token string) (bool, error) {
-	url := cm.url + "/declineFriendRequest"
+	url := cm.url + "declineFriendRequest"
 
 	data := map[string]string{
 		"request_id": requestId,
@@ -332,7 +332,7 @@ func (cm *ChatsMenu) DeclineFriendRequest(requestId, token string) (bool, error)
 }
 
 func (cm *ChatsMenu) GetFriends(token string) ([]User, error) {
-	url := cm.url + "/getFriends"
+	url := cm.url + "getFriends"
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -363,7 +363,7 @@ func (cm *ChatsMenu) GetFriends(token string) ([]User, error) {
 }
 
 func (cm *ChatsMenu) DeleteFriend(friendId, token string) (bool, error) {
-	url := cm.url + "/deleteFriend"
+	url := cm.url + "deleteFriend"
 
 	data := map[string]string{
 		"friend_id": friendId,
@@ -402,7 +402,7 @@ func (cm *ChatsMenu) DeleteFriend(friendId, token string) (bool, error) {
 }
 
 func (cm *ChatsMenu) CancelFriendRequest(requestId, token string) (bool, error) {
-	url := cm.url + "/cancelFriendRequest"
+	url := cm.url + "cancelFriendRequest"
 
 	data := map[string]string{
 		"request_id": requestId,
@@ -441,7 +441,7 @@ func (cm *ChatsMenu) CancelFriendRequest(requestId, token string) (bool, error) 
 }
 
 func (cm *ChatsMenu) GetSentRequests(token string) ([]ReqOut, error) {
-	url := cm.url + "/getSentRequests"
+	url := cm.url + "getSentRequests"
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -473,7 +473,7 @@ func (cm *ChatsMenu) GetSentRequests(token string) ([]ReqOut, error) {
 }
 
 func (cm *ChatsMenu) DeleteChat(chatId, token string) (bool, error) {
-	url := cm.url + "/deleteChat"
+	url := cm.url + "deleteChat"
 
 	data := map[string]string{
 		"chat_id": chatId,
@@ -512,7 +512,7 @@ func (cm *ChatsMenu) DeleteChat(chatId, token string) (bool, error) {
 }
 
 func (cm *ChatsMenu) ClearChat(chatId, token string) (bool, error) {
-	url := cm.url + "/clearChat"
+	url := cm.url + "clearChat"
 
 	data := map[string]string{
 		"chat_id": chatId,
@@ -551,7 +551,7 @@ func (cm *ChatsMenu) ClearChat(chatId, token string) (bool, error) {
 }
 
 func (cm *ChatsMenu) CreateGroup(name, avatarColor, avatarFile, token string, members []string, isPrivate bool) (map[string]interface{}, error) {
-	url := cm.url + "/createGroup"
+	url := cm.url + "createGroup"
 
 	data := map[string]interface{}{
 		"name":         name,
