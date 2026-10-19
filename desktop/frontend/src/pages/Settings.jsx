@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar';
 import AvatarGallery from '../components/AvatarGallery';
 import AvatarCropModal from '../components/AvatarCropModal';
 import { getAvatarUrl, loadAvatarObjectUrl, uploadAvatar, deleteAvatar, clearAvatarCache, getAvatars } from '../utils/avatarApi';
+import { getNotifSettings, saveNotifSettings, notificationsAvailable, showNotification } from '../utils/notifier';
 
 /* ── Секции настроек (для будущих пунктов добавить сюда) ── */
 const NAV_ITEMS = [
@@ -14,7 +15,7 @@ const NAV_ITEMS = [
   { id: 'account', label: 'Аккаунт', icon: (
     <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
   )},
-  { id: 'notifications', label: 'Уведомления', disabled: true, icon: (
+  { id: 'notifications', label: 'Уведомления', icon: (
     <svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
   )},
   { id: 'about', label: 'О приложении', icon: (
@@ -72,6 +73,73 @@ function AppearanceSection() {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ── Уведомления ── */
+const NOTIF_ROWS = [
+  { key: 'enabled', title: 'Уведомления', desc: 'Общий выключатель всех системных уведомлений' },
+  { key: 'messages', title: 'Новые сообщения', desc: 'Уведомлять о сообщениях в чатах и группах' },
+  { key: 'friends', title: 'Друзья', desc: 'Заявки в друзья и принятые заявки' },
+  { key: 'preview', title: 'Показывать текст сообщения', desc: 'Если выключено, будет написано «Новое сообщение»' },
+  { key: 'onlyWhenUnfocused', title: 'Только когда окно не активно', desc: 'В открытом окне вместо уведомления показывается счётчик' },
+];
+
+function NotificationsSection() {
+  const [settings, setSettings] = useState(getNotifSettings);
+  const [testSent, setTestSent] = useState(false);
+  const available = notificationsAvailable();
+
+  const toggle = key => setSettings(saveNotifSettings({ [key]: !settings[key] }));
+
+  const sendTest = async () => {
+    const ok = await showNotification({
+      id: `test-${Date.now()}`,
+      title: 'Postly',
+      body: 'Так будут выглядеть уведомления',
+      kind: 'test',
+    });
+    setTestSent(ok);
+  };
+
+  return (
+    <div className="settings-section">
+      <div className="settings-section-title">Уведомления</div>
+      <p className="settings-section-desc">Настройки хранятся на этом устройстве</p>
+
+      {!available && (
+        <p className="settings-note">
+          Системные уведомления в этой сборке недоступны. Счётчики непрочитанных работают.
+        </p>
+      )}
+
+      <div className="settings-toggle-list">
+        {NOTIF_ROWS.map(row => {
+          const disabled = row.key !== 'enabled' && !settings.enabled;
+          return (
+            <label key={row.key} className={`settings-toggle-row ${disabled ? 'disabled' : ''}`}>
+              <span className="settings-toggle-text">
+                <span className="settings-toggle-title">{row.title}</span>
+                <span className="settings-toggle-desc">{row.desc}</span>
+              </span>
+              <input
+                type="checkbox"
+                className="settings-switch"
+                checked={Boolean(settings[row.key])}
+                disabled={disabled}
+                onChange={() => toggle(row.key)}
+              />
+            </label>
+          );
+        })}
+      </div>
+
+      {available && (
+        <button className="settings-test-btn" onClick={sendTest} disabled={!settings.enabled}>
+          {testSent ? 'Отправлено ✓' : 'Проверить уведомление'}
+        </button>
+      )}
     </div>
   );
 }
@@ -219,6 +287,7 @@ function Settings({ onBack }) {
     switch (activeSection) {
       case 'appearance':    return <AppearanceSection />;
       case 'account':       return <AccountSection />;
+      case 'notifications': return <NotificationsSection />;
       case 'about':         return <AboutSection/>;
       default:              return (
         <div className="settings-section settings-soon">

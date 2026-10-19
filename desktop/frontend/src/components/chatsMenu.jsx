@@ -5,41 +5,52 @@ import Avatar from './Avatar';
 import { Events } from '@wailsio/runtime';
 import {
     CreateChat,
-    GetGroups,
-    GetFriendRequests,
     SendFriendRequest,
     AcceptFriendRequest,
     DeclineFriendRequest,
-    GetFriends,
     DeleteFriend,
     CancelFriendRequest,
-    GetSentRequests,
     DeleteChat,
     ClearChat,
     CreateGroup,
 } from '@bindings/client/components/chatsmenu';
-import { GetUserChats } from '@bindings/client/pages/chat';
+import { useInitData } from '../context/InitDataContext';
+import { markSelfAction } from '../utils/notifier';
 import { applyNewMessageToCache } from './messagesCache';
 
 function ChatsMenu({
     currentUserId,
     onSelectChat,
     activeChatId,
-    refreshTrigger,
     onChatCreated,
     view,
     isOpen,
     onClose,
-    onFriendRequestsLoaded,
     onChatDeleted,
     onSetView,
     getAvatarColor
 }) {
     const [inputText, setInputText] = useState('');
-    const [chats, setChats] = useState([]);
-    const [reqs, setReqs] = useState([]);
-    const [friends, setFriends] = useState([]);
-    const [sentReqs, setSentReqs] = useState([]);
+    // Данные берём из общего хранилища (/init_client), вкладки не ходят на сервер
+    const {
+        chats: allChats,
+        groups,
+        friends,
+        friendRequests: reqs,
+        sentRequests: sentReqs,
+        setChats: setAllChats,
+        setGroups,
+        setFriends,
+        setFriendRequests: setReqs,
+        setSentRequests: setSentReqs,
+        reload,
+        unread,
+    } = useInitData();
+    const chats = view === 'groups' ? groups : allChats;
+    const allChatsRef = useRef(allChats);
+    const groupsRef = useRef(groups);
+    allChatsRef.current = allChats;
+    groupsRef.current = groups;
     const [showCreateGroup, setShowCreateGroup] = useState(false);
     const [chatCtx, setChatCtx] = useState(null);
     const [confirm, setConfirm] = useState(null);
@@ -55,63 +66,6 @@ function ChatsMenu({
     const token = localStorage.getItem('jwt_token');
     const username = localStorage.getItem('username') || '';
 
-    // ── Загрузка чатов / групп ──
-    useEffect(() => {
-        if (!token) return;
-        const userId = currentUserId || localStorage.getItem('id');
-        if (!userId) return;
-
-        (async () => {
-            try {
-                let list;
-                if (view === 'groups') {
-                    list = await GetGroups(String(userId), token);
-                } else {
-                    list = await GetUserChats(String(userId), token);
-                }
-                const normalized = (Array.isArray(list) ? list : []).map(c => ({
-                    id: c.id,
-                    name: c.name,
-                    last_message: c.last_message ?? '',
-                    username: c.username ?? '',
-                    user_id: c.user_id ?? '',
-                    avatar_url: c.avatar_url ?? '',
-                    updated_at: c.updated_at ?? 0,
-                }));
-                setChats(normalized);
-            } catch (e) {
-                console.error('load chats error:', e);
-                setChats([]);
-            }
-        })();
-    }, [refreshTrigger, view, token, currentUserId]);
-
-    // ── Загрузка данных друзей ──
-    const reloadFriendData = useCallback(async () => {
-        if (!token) return;
-
-        try {
-            const arr = await GetFriendRequests(token);
-            const list = Array.isArray(arr) ? arr : [];
-            setReqs(list);
-            onFriendRequestsLoaded?.(list.length);
-        } catch (_) {}
-
-        try {
-            const arr = await GetFriends(token);
-            setFriends(Array.isArray(arr) ? arr : []);
-        } catch (_) {}
-
-        try {
-            const arr = await GetSentRequests(token);
-            setSentReqs(Array.isArray(arr) ? arr : []);
-        } catch (_) {}
-    }, [token, onFriendRequestsLoaded]);
-
-    useEffect(() => {
-        reloadFriendData();
-    }, [refreshTrigger, view, reloadFriendData]);
-
     // ── WS: обновление чатов + друзей ──
     useEffect(() => {
         if (!token) return;
@@ -122,26 +76,25 @@ function ChatsMenu({
 
             switch (msg.type) {
                 // ── Друзья ──
-                case 'FRIEND_REQUEST':
-                case 'FRIEND_ACCEPTED':
+                // FRIEND_REQUEST и FRIEND_ACCEPTED обрабатывает useNotifications
+                // (обновляет данные и показывает уведомление)
                 case 'FRIEND_DECLINED':
                 case 'DELETE_FRIEND':
                 case 'FRIEND_REQUEST_CANCELED':
-                    reloadFriendData();
-                    if (msg.type === 'FRIEND_ACCEPTED') {
-                        onChatCreatedRef.current?.();
-                    }
+                    // друзья, заявки и (при принятии) чаты — один общий запрос
+                    reload();
                     break;
 
                 // ── Новое сообщение — обновляем список локально ──
                 case 'NEW_MESSAGE': {
-                    // 1. Обновляем список чатов
-                    setChats(prev => {
-                        const idx = prev.findIndex(c => String(c.id) === String(msg.chat_id));
-                        if (idx === -1) {
-                            onChatCreatedRef.current?.();
-                            return prev;
-                        }
+                    // 1. Обновляем нужный список (личные чаты или группы) локально
+                    const chatId = String(msg.chat_id);
+                    const inChats = allChatsRef.current.some(c => String(c.id) === chatId);
+                    const inGroups = !inChats && groupsRef.current.some(c => String(c.id) === chatId);
+
+                    const applyMessage = prev => {
+                        const idx = prev.findIndex(c => String(c.id) === chatId);
+                        if (idx === -1) return prev;
                         const updated = [...prev];
                         updated[idx] = {
                             ...updated[idx],
@@ -155,7 +108,11 @@ function ChatsMenu({
                         const [chat] = updated.splice(idx, 1);
                         updated.unshift(chat);
                         return updated;
-                    });
+                    };
+
+                    if (inChats) setAllChats(applyMessage);
+                    else if (inGroups) setGroups(applyMessage);
+                    else onChatCreatedRef.current?.(); // неизвестный чат — подтянуть список
 
                     // 2. Обновляем кэш сообщений (чтобы при заходе в чат сразу показать)
                     // Общая с chat.jsx логика: своё сообщение заменяет tmp, а не дублируется
@@ -169,13 +126,15 @@ function ChatsMenu({
 
                 // ── Очистка истории ──
                 case 'CLEAR_CHAT': {
-                    setChats(prev => {
+                    const clear = prev => {
                         const idx = prev.findIndex(c => String(c.id) === String(msg.chat_id));
                         if (idx === -1) return prev;
                         const updated = [...prev];
                         updated[idx] = { ...updated[idx], last_message: '', updated_at: 0 };
                         return updated;
-                    });
+                    };
+                    setAllChats(clear);
+                    setGroups(clear);
                     break;
                 }
 
@@ -198,7 +157,7 @@ function ChatsMenu({
             }
         });
         return () => unsub();
-    }, [token, reloadFriendData]);
+    }, [token, reload, setAllChats, setGroups]);
 
     // ── Клик по чату ──
     const handleSelectChat = useCallback((chatId, name, userId = '') => {
@@ -209,9 +168,10 @@ function ChatsMenu({
     // ── Друзья ──
     const acceptFriendRequest = async (reqId) => {
         try {
+            markSelfAction('friend_accepted'); // событие FRIEND_ACCEPTED придёт и нам, но мы о нём знаем
             await AcceptFriendRequest(String(reqId), token);
             setReqs(prev => prev.filter(r => r.id !== reqId));
-            onFriendRequestsLoaded?.(Math.max(0, reqs.length - 1));
+            reload(); // появился друг (и, возможно, чат)
         } catch (e) { console.error(e); }
     };
 
@@ -219,14 +179,13 @@ function ChatsMenu({
         try {
             await DeclineFriendRequest(String(reqId), token);
             setReqs(prev => prev.filter(r => r.id !== reqId));
-            onFriendRequestsLoaded?.(Math.max(0, reqs.length - 1));
         } catch (e) { console.error(e); }
     };
 
     const sendFriendRequest = async (targetUsername) => {
         try {
             await SendFriendRequest(targetUsername, token);
-            reloadFriendData();
+            reload();
         } catch (e) { console.error(e); }
     };
 
@@ -521,6 +480,11 @@ function ChatsMenu({
                                                         </>
                                                     ) : (
                                                         <span className="no-messages">Нет сообщений...</span>
+                                                    )}
+                                                    {unread[chat.id] > 0 && (
+                                                        <span className="chat-unread">
+                                                            {unread[chat.id] > 99 ? '99+' : unread[chat.id]}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>

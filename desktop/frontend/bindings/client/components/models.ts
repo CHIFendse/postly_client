@@ -5,6 +5,54 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+/**
+ * ChatItem — элемент списка личных чатов из /init_client
+ */
+export class ChatItem {
+    "id": string;
+    "user_id": string;
+    "name": string;
+    "last_message": string;
+    "username": string;
+    "avatar_url": string;
+    "updated_at": number;
+
+    /** Creates a new ChatItem instance. */
+    constructor($$source: Partial<ChatItem> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("user_id" in $$source)) {
+            this["user_id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("last_message" in $$source)) {
+            this["last_message"] = "";
+        }
+        if (!("username" in $$source)) {
+            this["username"] = "";
+        }
+        if (!("avatar_url" in $$source)) {
+            this["avatar_url"] = "";
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ChatItem instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ChatItem {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ChatItem($$parsedSource as Partial<ChatItem>);
+    }
+}
+
 export class Groups {
     "id": string;
     "name": string;
@@ -43,6 +91,66 @@ export class Groups {
     static createFrom($$source: any = {}): Groups {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new Groups($$parsedSource as Partial<Groups>);
+    }
+}
+
+/**
+ * InitData — всё, что нужно клиенту для первого экрана, одним запросом
+ */
+export class InitData {
+    "friends": User[];
+    "friend_requests": Request[];
+    "sent_requests": ReqOut[];
+    "chats": ChatItem[];
+    "groups": Groups[];
+
+    /** Creates a new InitData instance. */
+    constructor($$source: Partial<InitData> = {}) {
+        if (!("friends" in $$source)) {
+            this["friends"] = [];
+        }
+        if (!("friend_requests" in $$source)) {
+            this["friend_requests"] = [];
+        }
+        if (!("sent_requests" in $$source)) {
+            this["sent_requests"] = [];
+        }
+        if (!("chats" in $$source)) {
+            this["chats"] = [];
+        }
+        if (!("groups" in $$source)) {
+            this["groups"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new InitData instance from a string or object.
+     */
+    static createFrom($$source: any = {}): InitData {
+        const $$createField0_0 = $$createType1;
+        const $$createField1_0 = $$createType3;
+        const $$createField2_0 = $$createType5;
+        const $$createField3_0 = $$createType7;
+        const $$createField4_0 = $$createType9;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("friends" in $$parsedSource) {
+            $$parsedSource["friends"] = $$createField0_0($$parsedSource["friends"]);
+        }
+        if ("friend_requests" in $$parsedSource) {
+            $$parsedSource["friend_requests"] = $$createField1_0($$parsedSource["friend_requests"]);
+        }
+        if ("sent_requests" in $$parsedSource) {
+            $$parsedSource["sent_requests"] = $$createField2_0($$parsedSource["sent_requests"]);
+        }
+        if ("chats" in $$parsedSource) {
+            $$parsedSource["chats"] = $$createField3_0($$parsedSource["chats"]);
+        }
+        if ("groups" in $$parsedSource) {
+            $$parsedSource["groups"] = $$createField4_0($$parsedSource["groups"]);
+        }
+        return new InitData($$parsedSource as Partial<InitData>);
     }
 }
 
@@ -161,3 +269,15 @@ export class VersionResponse {
         return new VersionResponse($$parsedSource as Partial<VersionResponse>);
     }
 }
+
+// Private type creation functions
+const $$createType0 = User.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = Request.createFrom;
+const $$createType3 = $Create.Array($$createType2);
+const $$createType4 = ReqOut.createFrom;
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = ChatItem.createFrom;
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = Groups.createFrom;
+const $$createType9 = $Create.Array($$createType8);

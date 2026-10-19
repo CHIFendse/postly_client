@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Auth from './pages/auth';
 import VoiceChat from './pages/voiceChat';
 import { ThemeProvider } from './context/ThemeContext';
+import { InitDataProvider } from './context/InitDataContext';
 import { SetToken, Connect } from '@bindings/client/pages/chatws';
 import { VerifyToken } from '@bindings/client/pages/authservice';
 import { GetCurrentVersion } from '@bindings/client/components/currentversion';
@@ -166,7 +167,11 @@ function App() {
 
     if (token === null) return <Auth onLogin={handleLogin} />;
 
-    return <VoiceChat token={token} handleLogout={handleLogout} currentVersion={appVersion} />;
+    return (
+        <InitDataProvider token={token}>
+            <VoiceChat token={token} handleLogout={handleLogout} currentVersion={appVersion} />
+        </InitDataProvider>
+    );
 }
 
 /* ──────────────────────────────────────────────

@@ -1,7 +1,8 @@
 import './userProfile.css';
 
-import { useState, useEffect } from 'react';
-import { GetFriends, SendFriendRequest, DeleteFriend } from '@bindings/client/components/chatsmenu';
+import { useState, useEffect, useRef } from 'react';
+import { SendFriendRequest, DeleteFriend } from '@bindings/client/components/chatsmenu';
+import { useInitData } from '../context/InitDataContext';
 import Avatar from './Avatar';
 import AvatarGallery from './AvatarGallery';
 import ImageViewer from '../pages/chat/components/ImageViewer';
@@ -21,6 +22,9 @@ function UserProfile({
     const [avatarHistory, setAvatarHistory] = useState([]);
     const [showAvatar, setShowAvatar] = useState(false);
     const token = localStorage.getItem("jwt_token");
+    const { friends, loaded, reload } = useInitData();
+    const friendsRef = useRef(friends);
+    friendsRef.current = friends;
     useEffect(() => {
         let active = true;
         setAvatarSrc(null);
@@ -51,33 +55,17 @@ function UserProfile({
             downloadUrl: entry.url
         })));
     };
-        useEffect(() => {
-        let isMounted = true;
-        
-        // Убрали chatName из параметров функции (async () вместо async (chatName))
-        const viewFriendStatus = async () => {
-            try {
-                if (!token || !chatName) return;
-                const arr = await GetFriends(token);
-                const found = arr.some(friend => friend.username === chatName);
-
-                if (isMounted) {
-                    setIsFriend(found);
-                    setLoading(false);
-                }
-            } catch (_) {
-                if (isMounted) {
-                    setIsFriend(false);
-                    setLoading(false);
-                }
-            }
-        };
-        
-        setLoading(true);
-        viewFriendStatus();
-
-        return () => { isMounted = false; };
-    }, [chatName, token]);
+        // Статус «друг» читаем из общего хранилища (/init_client). Эффект зависит только от
+    // chatName и loaded: оптимистичное обновление ниже не затирается при перезагрузке списков.
+    useEffect(() => {
+        if (!chatName) return;
+        if (!loaded) {
+            setLoading(true);
+            return;
+        }
+        setIsFriend(friendsRef.current.some(friend => friend.username === chatName));
+        setLoading(false);
+    }, [chatName, loaded]);
 
     const handleFriendAction = async () => {
         if (actionLoading) return; // Защита от спам-кликов
@@ -87,11 +75,13 @@ function UserProfile({
             if (isFriend) {
                 await DeleteFriend(chatName, token);
                 setIsFriend(false); // Оптимистичное обновление интерфейса
+                reload();
             } else {
                 await SendFriendRequest(chatName, token);
                 // Если это запрос в друзья, возможно статус изменится не сразу, 
                 // но для интерактива можно временно переключить или оставить как есть
                 setIsFriend(true); 
+                reload();
             }
         } catch (err) {
             console.error("Ошибка при изменении статуса друга:", err);

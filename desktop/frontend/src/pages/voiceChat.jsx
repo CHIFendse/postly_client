@@ -11,6 +11,8 @@ import { CallProvider } from '../call/CallProvider';
 import { Connect, SetToken as SetChatToken } from '@bindings/client/pages/chatws';
 import { getAvatarColor } from '../utils/avatarHelper';
 import { clearMessagesCache } from '../components/messagesCache';
+import { useInitData } from '../context/InitDataContext';
+import useNotifications from '../hooks/useNotifications';
 
 const setCookie = (name, value, days = 365) => {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -83,9 +85,10 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   const [activeChatUserId, setActiveChatUserId] = useState(
     localStorage.getItem('lastChatUserId') || ''
   );
-  const [refreshTrigger, setRefreshTrigger] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [friendRequestCount, setFriendRequestCount] = useState(0);
+  // Данные первого экрана приходят одним запросом /init_client (см. InitDataContext)
+  const { friendRequests, reload, refreshFriendRequests } = useInitData();
+  const friendRequestCount = friendRequests.length;
 
   // Search state
   const [searchOpen,  setSearchOpen]  = useState(false);
@@ -110,7 +113,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   const activeChatIdRef = useRef(activeChatId);
   useEffect(() => { activeChatIdRef.current = activeChatId; }, [activeChatId]);
 
-  const triggerRefresh = useCallback(() => setRefreshTrigger(prev => !prev), []);
+  const triggerRefresh = reload;
   const toggleMobileMenu = () => setIsMobileMenuOpen(v => !v);
   const closeMobileMenu  = () => setIsMobileMenuOpen(false);
 
@@ -136,27 +139,13 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
   }, [token]);
 
   // ─────────────────────────────────────────────────────────
-  // 2. Friend requests: GET + polling каждые 30 сек
+  // 2. Friend requests: запасной опрос каждые 30 сек (первичная загрузка — /init_client)
   // ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!token) return;
-
-    const load = async () => {
-      try {
-        const r = await fetch(`${API_BASE}/getFriendRequests`, {
-          method: 'GET',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) return;
-        const data = await r.json().catch(() => []);
-        setFriendRequestCount(Array.isArray(data) ? data.length : 0);
-      } catch (_) {}
-    };
-
-    load();
-    const id = setInterval(load, 30_000);
+    const id = setInterval(refreshFriendRequests, 30_000);
     return () => clearInterval(id);
-  }, [token]);
+  }, [token, refreshFriendRequests]);
 
   // ─────────────────────────────────────────────────────────
   // 3. Единый слушатель server_message — обновление списка чатов и
@@ -177,27 +166,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
             localStorage.removeItem('lastActiveChatId');
             localStorage.removeItem('lastChatName');
           }
-          triggerRefresh();
-          break;
-        }
-        case 'NEW_CHAT':
-        case 'CLEAR_CHAT': {
-          triggerRefresh();
-          break;
-        }
-        case 'FRIEND_REQUEST': {
-          // На случай если сервер всё-таки эмитит — перезагрузим счётчик
-          (async () => {
-            try {
-              const r = await fetch(`${API_BASE}/getFriendRequests`, {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              if (!r.ok) return;
-              const data = await r.json().catch(() => []);
-              setFriendRequestCount(Array.isArray(data) ? data.length : 0);
-            } catch (_) {}
-          })();
+          // список чатов обновит ChatsMenu (общий reload по /init_client)
           break;
         }
         default:
@@ -205,7 +174,7 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
       }
     });
     return () => unsub();
-  }, [token, triggerRefresh]);
+  }, [token]);
 
   // Дублирующий Events.On("friend_added") больше не нужен — покрыт polling'ом
   // и (опционально) FRIEND_REQUEST выше.
@@ -227,6 +196,16 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
     // Только если voice-комната реально привязана к чату:
     // try { await SetRoomID(chatId); } catch (err) { console.error(err); }
   };
+
+  // Уведомления: счётчики непрочитанных, системные тосты, переход по клику на уведомление
+  useNotifications({
+    activeChatId,
+    onOpenChat: (id, name, userId, isGroup) => {
+      setView(isGroup ? 'groups' : 'chats');
+      handleChatSelection(id, name, userId);
+    },
+    onOpenFriends: () => setView('friends'),
+  });
 
   const handleChatDeleted = useCallback((id) => {
     if (String(id) === String(activeChatIdRef.current)) {
@@ -281,12 +260,10 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
             currentUserId={myId}
             onSelectChat={handleChatSelection}
             activeChatId={activeChatId}
-            refreshTrigger={refreshTrigger}
             onChatCreated={triggerRefresh}
             view={view}
             isOpen={isMobileMenuOpen}
             onClose={closeMobileMenu}
-            onFriendRequestsLoaded={setFriendRequestCount}
             onChatDeleted={handleChatDeleted}
             onSetView={setView}
             getAvatarColor = {getAvatarColor}
@@ -323,7 +300,6 @@ function VoiceChat({ token, handleLogout, currentVersion }) {
                 onMatchesFound={count =>
                   setSearchMatch(m => ({ ...m, count }))
                 }
-                onMessageSent={() => triggerRefresh()}
                 onMenuToggle={toggleMobileMenu}
                 getAvatarColor = {getAvatarColor}
               />
