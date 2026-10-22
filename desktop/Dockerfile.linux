@@ -24,7 +24,7 @@
 #   *.rpm              Fedora/RHEL package
 #   *.pkg.tar.zst      Arch Linux package
 #
-# Внутри приложения frontend встроен в binary. Opus/Ogg/Opusfile линкуются статически.
+# Внутри приложения frontend встроен в binary.
 # GTK/WebKit остаются системными зависимостями Linux.
 # AppImage не собирается в обязательном Docker-шаге: Wails скачивает
 # отдельный linuxdeploy-инструмент во время генерации и может упасть без сети.
@@ -34,10 +34,11 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
 ENV GOTOOLCHAIN=auto
+ENV GOPROXY="https://proxy.golang.org|https://goproxy.io|direct"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential ca-certificates curl file git pkg-config \
-    libgtk-3-dev libgtk-4-dev libogg-dev libopus-dev libopusfile-dev \
+    libgtk-3-dev libgtk-4-dev libopus-dev \
     libwebkit2gtk-4.1-dev libwebkitgtk-6.0-dev nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
@@ -60,14 +61,14 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
-RUN wails3 generate bindings \
+RUN wails3 generate bindings -clean=true -ts \
     && cd frontend \
     && npm install --no-fund --no-audit \
     && npm run build \
     && cd .. \
     && mkdir -p build/bin \
-    && CGO_ENABLED=1 CGO_LDFLAGS="-Wl,-Bstatic -lopusfile -logg -lopus -Wl,-Bdynamic" \
-       go build -tags production -trimpath -buildvcs=false \
+    && CGO_ENABLED=1 CGO_LDFLAGS="-Wl,--as-needed -Wl,-Bstatic -lopus -Wl,-Bdynamic" \
+       go build -tags production,nolibopusfile -trimpath -buildvcs=false \
        -ldflags="-w -s" -o build/bin/postly .
 
 RUN wails3 tool package -name postly -format deb \

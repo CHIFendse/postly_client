@@ -35,6 +35,10 @@ type MessageDTO struct {
 	FileURL     string `json:"file_url"`
 	FileName    string `json:"file_name"`
 	FileSize    string `json:"file_size"`
+	SDP         string `json:"sdp,omitempty"`
+	UserIDs     string `json:"user_ids,omitempty"`
+	Kind        string `json:"kind,omitempty"`
+	Error       string `json:"error,omitempty"`
 }
 
 func (s *ChatWS) ServiceName() string { return "ChatWS" }
@@ -159,6 +163,7 @@ func (a *ChatWS) listenToMessages(c *websocket.Conn) {
 		if msg.Type == "" {
 			msg.Type = "NEW_MESSAGE"
 		}
+		logCallSignal(msg)
 
 		app := application.Get()
 		if app != nil {

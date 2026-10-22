@@ -11,7 +11,9 @@ export {
 };
 
 export {
+    ChatItem,
     Groups,
+    InitData,
     ReqOut,
     Request,
     User,

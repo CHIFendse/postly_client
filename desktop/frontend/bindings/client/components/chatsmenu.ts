@@ -73,11 +73,20 @@ export function GetSentRequests(token: string): $CancellablePromise<$models.ReqO
 }
 
 /**
+ * InitClient загружает друзей, заявки, чаты и группы одним запросом к /init_client
+ */
+export function InitClient(token: string): $CancellablePromise<$models.InitData | null> {
+    return $Call.ByID(1126649568, token).then(($result: any) => {
+        return $$createType10($result);
+    });
+}
+
+/**
  * SearchUsers можно добавить сюда же метод для поиска новых людей по никнейму
  */
 export function SearchUsers(query: string, token: string): $CancellablePromise<{ [_ in string]?: any }[]> {
     return $Call.ByID(3345169643, query, token).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType11($result);
     });
 }
 
@@ -99,4 +108,6 @@ const $$createType5 = $models.Groups.createFrom;
 const $$createType6 = $Create.Array($$createType5);
 const $$createType7 = $models.ReqOut.createFrom;
 const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = $Create.Array($$createType0);
+const $$createType9 = $models.InitData.createFrom;
+const $$createType10 = $Create.Nullable($$createType9);
+const $$createType11 = $Create.Array($$createType0);

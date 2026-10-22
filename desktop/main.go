@@ -9,9 +9,12 @@ import (
 	"time"
 
 	"client/components"
+	"client/media"
+	"client/nativecall"
 	"client/pages"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed all:frontend/dist
@@ -43,23 +46,37 @@ func main() {
 	}
 
 	log.Println("Creating application...")
+	var mainWindow *application.WebviewWindow
 	app := application.New(application.Options{
 		Name: "Postly",
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
+		SingleInstance: &application.SingleInstanceOptions{
+			UniqueID: "ru.postly-mes.desktop",
+			OnSecondInstanceLaunch: func(application.SecondInstanceData) {
+				if mainWindow == nil {
+					return
+				}
+				mainWindow.UnMinimise()
+				mainWindow.Show()
+				mainWindow.Focus()
+			},
+		},
 	})
 
 	log.Println("Registering services...")
-	voiceService := pages.NewVoiceChat()
 	chatWSService := &pages.ChatWS{}
 	chatService := pages.GetChat()
 	chatsComponent := components.NewChats()
 	authService := pages.NewAuthService()
 	getVersion := &components.CurrentVersion{}
 	fileSaver := components.NewFileSaver(app)
+	microphone := media.NewMicrophoneService()
+	nativeCall := nativecall.New(chatWSService)
 
-	app.RegisterService(application.NewService(voiceService))
+	app.RegisterService(application.NewService(microphone))
+	app.RegisterService(application.NewService(nativeCall))
 	app.RegisterService(application.NewService(chatWSService))
 	app.RegisterService(application.NewService(chatService))
 	app.RegisterService(application.NewService(chatsComponent))
@@ -68,7 +85,7 @@ func main() {
 	app.RegisterService(application.NewService(fileSaver))
 
 	log.Println("Creating window...")
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	mainWindow = app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:              "Postly",
 		Width:              1024,
 		Height:             768,
@@ -77,6 +94,14 @@ func main() {
 		MinHeight:          540,
 		Zoom:               1.0,
 		ZoomControlEnabled: false,
+		Windows: application.WindowsWindow{
+			Permissions: map[application.CoreWebView2PermissionKind]application.CoreWebView2PermissionState{
+				application.CoreWebView2PermissionKindMicrophone: application.CoreWebView2PermissionStateAllow,
+			},
+		},
+	})
+	mainWindow.OnWindowEvent(events.Common.WindowRuntimeReady, func(*application.WindowEvent) {
+		media.EnableWebviewMedia(mainWindow)
 	})
 
 	log.Println("Running app...")

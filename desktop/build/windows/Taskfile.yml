@@ -40,9 +40,7 @@ tasks:
       GOARCH: '{{.ARCH | default ARCH}}'
       CC: C:/msys64/mingw64/bin/x86_64-w64-mingw32-gcc.exe
       CXX: C:/msys64/mingw64/bin/x86_64-w64-mingw32-g++.exe
-      PKG_CONFIG_PATH: C:/msys64/mingw64/lib/pkgconfig
-      CGO_CFLAGS: -IC:/msys64/mingw64/include
-      CGO_LDFLAGS: -LC:/msys64/mingw64/lib -Wl,-Bstatic -lopusfile -lopus -logg -Wl,-Bdynamic -static-libgcc -static-libstdc++
+      CGO_LDFLAGS: -static-libgcc -static-libstdc++
 
   generate:syso:
     summary: Generate Windows resources

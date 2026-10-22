@@ -1,0 +1,280 @@
+.co-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  animation: co-fade 0.15s ease-out;
+}
+
+.co-incoming {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, calc(100vw - 32px));
+  padding: 32px 24px 28px;
+  border-radius: 20px;
+  background: #1f1f1f;
+  color: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.co-pulse {
+  position: relative;
+  margin-bottom: 12px;
+  border-radius: 50%;
+}
+
+.co-pulse::before,
+.co-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  animation: co-pulse 2s linear infinite;
+}
+
+.co-pulse::after {
+  animation-delay: 1s;
+}
+
+.co-avatar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.co-name {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  word-break: break-word;
+}
+
+.co-status {
+  font-size: 13px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.co-actions {
+  display: flex;
+  gap: 48px;
+  margin-top: 24px;
+}
+
+.co-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.co-btn:hover {
+  transform: scale(1.08);
+  filter: brightness(1.1);
+}
+
+.co-btn:active {
+  transform: scale(0.94);
+}
+
+.co-btn-accept {
+  background: #34c759;
+  box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4);
+}
+
+.co-btn-decline {
+  background: #ff3b30;
+  box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
+}
+
+.co-btn-neutral {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.co-btn-muted {
+  background: #fff;
+  color: #1f1f1f;
+}
+
+.co-btn-small {
+  width: 40px;
+  height: 40px;
+  box-shadow: none;
+}
+
+.co-panel {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(340px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #1f1f1f;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  animation: co-slide 0.2s ease-out;
+}
+
+.co-panel-ended {
+  opacity: 0.85;
+}
+
+.co-panel-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.co-panel-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.co-panel-status {
+  font-size: 12px;
+  color: #aaa;
+  font-variant-numeric: tabular-nums;
+}
+
+.co-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@keyframes co-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.co-panel-status-warn {
+  color: #ffb340;
+}
+
+.co-backdrop-top {
+  z-index: 1100;
+}
+
+.co-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 28px 24px 22px;
+  border-radius: 18px;
+  background: #1f1f1f;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.co-dialog-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+
+.co-dialog-icon-error {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+}
+
+.co-dialog-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.co-dialog-text {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #c7c7c7;
+}
+
+.co-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.co-dialog-btn {
+  min-width: 120px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.co-dialog-btn:hover {
+  filter: brightness(1.2);
+}
+
+.co-dialog-btn-primary {
+  background: #34c759;
+}
+
+@keyframes co-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes co-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -43,6 +43,26 @@ type Groups struct {
 	UpdatedAt     int    `json:"updated_at"`
 }
 
+// ChatItem — элемент списка личных чатов из /init_client
+type ChatItem struct {
+	Id          string `json:"id"`
+	UserID      string `json:"user_id"`
+	Name        string `json:"name"`
+	LastMessage string `json:"last_message"`
+	Username    string `json:"username"`
+	AvatarURL   string `json:"avatar_url"`
+	UpdatedAt   int64  `json:"updated_at"`
+}
+
+// InitData — всё, что нужно клиенту для первого экрана, одним запросом
+type InitData struct {
+	Friends        []User     `json:"friends"`
+	FriendRequests []Request  `json:"friend_requests"`
+	SentRequests   []ReqOut   `json:"sent_requests"`
+	Chats          []ChatItem `json:"chats"`
+	Groups         []Groups   `json:"groups"`
+}
+
 func NewChats() *ChatsMenu {
 	url := "https://api.postly-mes.ru:8081/"
 	return &ChatsMenu{
@@ -360,6 +380,48 @@ func (cm *ChatsMenu) GetFriends(token string) ([]User, error) {
 		result = []User{}
 	}
 	return result, nil
+}
+
+// InitClient загружает друзей, заявки, чаты и группы одним запросом к /init_client
+func (cm *ChatsMenu) InitClient(token string) (*InitData, error) {
+	req, err := http.NewRequest("GET", cm.url+"init_client", nil)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("сервер недоступен: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("сервер вернул %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var result InitData
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("ошибка парсинга: %w", err)
+	}
+	if result.Friends == nil {
+		result.Friends = []User{}
+	}
+	if result.FriendRequests == nil {
+		result.FriendRequests = []Request{}
+	}
+	if result.SentRequests == nil {
+		result.SentRequests = []ReqOut{}
+	}
+	if result.Chats == nil {
+		result.Chats = []ChatItem{}
+	}
+	if result.Groups == nil {
+		result.Groups = []Groups{}
+	}
+	return &result, nil
 }
 
 func (cm *ChatsMenu) DeleteFriend(friendId, token string) (bool, error) {

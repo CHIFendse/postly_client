@@ -19,13 +19,15 @@ export default function Avatar({ userId, name, size = 40, className = '', versio
 
     useEffect(() => {
         let active = true;
-        setSrc(null);
         setFailed(false);
         if (!url) return undefined;
         loadAvatarObjectUrl(url).then(next => {
             if (active) {
                 setSrc(next);
                 setFailed(!next);
+            } else {
+                setSrc(null);
+                setFailed(next);
             }
         }).catch(() => active && setFailed(true));
         return () => { active = false; };
