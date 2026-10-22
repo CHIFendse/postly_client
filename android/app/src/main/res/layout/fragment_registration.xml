@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
-    tools:context=".RegistrationFragment">
+    tools:context=".fragments.RegistrationFragment">
 
     <TextView
         android:id="@+id/registration_logo"
@@ -120,7 +120,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/registration_button_login"
+        android:id="@+id/registration_button"
         style="@style/Widget.MaterialComponents.Button"
         android:layout_width="0dp"
         android:layout_height="56dp"
@@ -144,7 +144,7 @@
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/registration_button_login">
+        app:layout_constraintTop_toBottomOf="@id/registration_button">
 
         <TextView
             android:id="@+id/registration_text_question"
