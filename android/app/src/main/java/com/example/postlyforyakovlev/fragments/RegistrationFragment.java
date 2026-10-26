@@ -12,17 +12,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.postlyforyakovlev.services.AuthCallback;
-import com.example.postlyforyakovlev.services.AuthService;
 import com.example.postlyforyakovlev.R;
 import com.example.postlyforyakovlev.dto.registration.RegistrationRequest;
+import com.example.postlyforyakovlev.dto.registration.RegistrationResponse;
+import com.example.postlyforyakovlev.services.AuthCallback;
+import com.example.postlyforyakovlev.services.AuthService;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class RegistrationFragment extends Fragment {
-
     private final AuthService authService = new AuthService();
 
-    public RegistrationFragment(){
+    public RegistrationFragment() {
     }
 
     @Override
@@ -35,70 +35,55 @@ public class RegistrationFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TextView textView = view.findViewById(R.id.registration_text_enter);
+        TextView enterLink = view.findViewById(R.id.registration_text_enter);
         Button registerButton = view.findViewById(R.id.registration_button);
+        TextInputEditText usernameInput = view.findViewById(R.id.registration_input_username);
+        TextInputEditText passwordInput = view.findViewById(R.id.registration_input_password);
+        TextInputEditText emailInput = view.findViewById(R.id.registration_input_email);
+        TextInputEditText phoneInput = view.findViewById(R.id.registration_input_phone);
 
+        if (registerButton != null) {
+            registerButton.setOnClickListener(v -> {
+                String username = usernameInput.getText() != null ? usernameInput.getText().toString().trim() : "";
+                String password = passwordInput.getText() != null ? passwordInput.getText().toString() : "";
+                String email = emailInput.getText() != null ? emailInput.getText().toString().trim() : "";
+                String phone = phoneInput.getText() != null ? phoneInput.getText().toString().trim() : "";
 
-
-        if (registerButton!=null){
-            registerButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-
-                    TextInputEditText username = view.findViewById(R.id.registration_input_username);
-                    TextInputEditText password = view.findViewById(R.id.registration_input_password);
-                    TextInputEditText email = view.findViewById(R.id.registration_input_email);
-                    TextInputEditText phone = view.findViewById(R.id.registration_input_phone);
-
-                    RegistrationRequest registrationRequest = new RegistrationRequest(
-                            username.getText().toString(),
-                            password.getText().toString(),
-                            email.getText().toString(),
-                            phone.getText().toString()
-                    );
-
-                    authService.sendRegistrationRequest(registrationRequest, new AuthCallback() {
-                        @Override
-                        public void onSuccess(String status) {
-                            if (isAdded() && getContext() != null) {
-                                Toast.makeText(requireContext(),"Вы успешно зарегистрировались, статус: " + status, Toast.LENGTH_LONG).show();
-                            }
-                            getParentFragmentManager().beginTransaction()
-                                    .replace(R.id.fragment_container, new ChatListFragment())
-                                    .setCustomAnimations(android.R.anim.fade_in,
-                                            android.R.anim.fade_out,
-                                            android.R.anim.fade_in,
-                                            android.R.anim.fade_out)
-                                    .commit();
-                        }
-
-                        @Override
-                        public void onError(String errorMessage) {
-                            if (isAdded() && getContext() != null) {
-                                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    });
+                if (username.isEmpty() || password.isEmpty() || email.isEmpty() || phone.isEmpty()) {
+                    Toast.makeText(requireContext(), "Заполните все поля", Toast.LENGTH_SHORT).show();
+                    return;
                 }
+
+                registerButton.setEnabled(false);
+
+                RegistrationRequest registrationRequest = new RegistrationRequest(
+                        username,
+                        password,
+                        email,
+                        phone
+                );
+
+                authService.sendRegistrationRequest(registrationRequest, new AuthCallback<RegistrationResponse>() {
+                    @Override
+                    public void onSuccess(RegistrationResponse result) {
+                        if (!isAdded()) return;
+                        registerButton.setEnabled(true);
+                        Toast.makeText(requireContext(), "Регистрация успешна! Войдите в аккаунт", Toast.LENGTH_SHORT).show();
+                        getParentFragmentManager().popBackStack();
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        if (!isAdded()) return;
+                        registerButton.setEnabled(true);
+                        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                });
             });
         }
 
-        if (textView != null){
-            textView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    getParentFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, new LoginFragment())
-                            .setCustomAnimations(
-                                    android.R.anim.fade_in,
-                                    android.R.anim.fade_out,
-                                    android.R.anim.fade_in,
-                                    android.R.anim.fade_out
-                            )
-                            .addToBackStack(null)
-                            .commit();
-                }
-            });
+        if (enterLink != null) {
+            enterLink.setOnClickListener(v -> getParentFragmentManager().popBackStack());
         }
     }
 }

@@ -4,8 +4,15 @@ public class LoginResponse {
     private String id;
     private String token;
     private String username;
+    private String message;
 
-    public LoginResponse(String token, String username) {
+    public LoginResponse() {
+    }
+
+    public LoginResponse(String id, String token, String username) {
+        this.id = id;
+        this.token = token;
+        this.username = username;
     }
 
     public String getId() {
@@ -32,11 +39,21 @@ public class LoginResponse {
         this.username = username;
     }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     @Override
     public String toString() {
-        return "id='" + id + '\'' +
+        return "LoginResponse{" +
+                "id='" + id + '\'' +
                 ", token='" + token + '\'' +
                 ", username='" + username + '\'' +
+                ", message='" + message + '\'' +
                 '}';
     }
 }

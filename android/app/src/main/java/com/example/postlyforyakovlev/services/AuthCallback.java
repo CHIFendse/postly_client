@@ -1,6 +1,6 @@
 package com.example.postlyforyakovlev.services;
 
-public interface AuthCallback {
-    void onSuccess(String result);
+public interface AuthCallback<T> {
+    void onSuccess(T result);
     void onError(String errorMessage);
 }

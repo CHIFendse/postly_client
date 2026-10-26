@@ -12,16 +12,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.postlyforyakovlev.R;
+import com.example.postlyforyakovlev.dto.login.LoginResponse;
 import com.example.postlyforyakovlev.services.AuthCallback;
 import com.example.postlyforyakovlev.services.AuthService;
-import com.example.postlyforyakovlev.R;
+import com.example.postlyforyakovlev.util.SessionManager;
 import com.google.android.material.textfield.TextInputEditText;
-
 
 public class LoginFragment extends Fragment {
     private final AuthService authService = new AuthService();
 
-    public LoginFragment(){
+    public LoginFragment() {
     }
 
     @Override
@@ -34,42 +35,33 @@ public class LoginFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TextView textView = view.findViewById(R.id.login_text_register);
+        SessionManager sessionManager = new SessionManager(requireContext());
+        TextView registerLink = view.findViewById(R.id.login_text_register);
         Button loginButton = view.findViewById(R.id.login_button_login);
+        TextInputEditText usernameInput = view.findViewById(R.id.login_input_username);
+        TextInputEditText passwordInput = view.findViewById(R.id.login_input_password);
 
+        loginButton.setOnClickListener(v -> {
+            String username = usernameInput.getText() != null ? usernameInput.getText().toString().trim() : "";
+            String password = passwordInput.getText() != null ? passwordInput.getText().toString() : "";
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                TextInputEditText username = view.findViewById(R.id.login_input_username);
-                TextInputEditText password = view.findViewById(R.id.login_input_password);
-
-                authService.sendLoginRequest(username.getText().toString(), password.getText().toString(), new AuthCallback() {
-                    @Override
-                    public void onSuccess(String result) {
-                        Toast.makeText(requireContext(), "Успешный вход!" + result, Toast.LENGTH_SHORT).show();
-                        getParentFragmentManager().beginTransaction()
-                                .replace(R.id.fragment_container, new ChatListFragment())
-                                .setCustomAnimations(android.R.anim.fade_in,
-                                        android.R.anim.fade_out,
-                                        android.R.anim.fade_in,
-                                        android.R.anim.fade_out)
-                                .commit();
-                    }
-
-                    @Override
-                    public void onError(String errorMessage) {
-                        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
-                    }
-                });
+            if (username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(requireContext(), "Введите логин и пароль", Toast.LENGTH_SHORT).show();
+                return;
             }
-        });
 
-        if (textView!=null){
-            textView.setOnClickListener(new View.OnClickListener() {
+            loginButton.setEnabled(false);
+
+            authService.sendLoginRequest(username, password, new AuthCallback<LoginResponse>() {
                 @Override
-                public void onClick(View v) {
+                public void onSuccess(LoginResponse result) {
+                    if (!isAdded()) return;
+                    loginButton.setEnabled(true);
+
+                    String resolvedUsername = result.getUsername() != null ? result.getUsername() : username;
+                    sessionManager.saveSession(result.getToken(), result.getId(), resolvedUsername);
+
+                    Toast.makeText(requireContext(), "Добро пожаловать, " + resolvedUsername + "!", Toast.LENGTH_SHORT).show();
                     getParentFragmentManager().beginTransaction()
                             .setCustomAnimations(
                                     android.R.anim.fade_in,
@@ -77,11 +69,30 @@ public class LoginFragment extends Fragment {
                                     android.R.anim.fade_in,
                                     android.R.anim.fade_out
                             )
-                            .replace(R.id.fragment_container, new RegistrationFragment())
-                            .addToBackStack(null)
+                            .replace(R.id.fragment_container, new ChatListFragment())
                             .commit();
                 }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (!isAdded()) return;
+                    loginButton.setEnabled(true);
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                }
             });
+        });
+
+        if (registerLink != null) {
+            registerLink.setOnClickListener(v -> getParentFragmentManager().beginTransaction()
+                    .setCustomAnimations(
+                            android.R.anim.fade_in,
+                            android.R.anim.fade_out,
+                            android.R.anim.fade_in,
+                            android.R.anim.fade_out
+                    )
+                    .replace(R.id.fragment_container, new RegistrationFragment())
+                    .addToBackStack(null)
+                    .commit());
         }
     }
 }

@@ -8,7 +8,10 @@ import androidx.annotation.NonNull;
 import com.example.postlyforyakovlev.dto.login.LoginRequest;
 import com.example.postlyforyakovlev.dto.login.LoginResponse;
 import com.example.postlyforyakovlev.dto.registration.RegistrationRequest;
+import com.example.postlyforyakovlev.dto.registration.RegistrationResponse;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 
@@ -21,91 +24,133 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class AuthService {
+    private static String BASE_URL = "https://api.postly-mes.ru:8081";
+    private static MediaType JSON_MEDIA_TYPE = MediaType.get("application/json; charset=utf-8");
     private final OkHttpClient client = new OkHttpClient();
     private final Gson gson = new Gson();
-    private static String URL = "https://api.postly-mes.ru:8081";
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private static MediaType TYPE = MediaType.get("application/json; charset=utf-8");
-
-    public void sendLoginRequest(String username, String password, AuthCallback callback){
+    public void sendLoginRequest(String username, String password, AuthCallback<LoginResponse> callback){
         LoginRequest loginRequest = new LoginRequest(username, password);
         String jsonBody = gson.toJson(loginRequest);
         RequestBody requestBody = RequestBody.create(
                 jsonBody,
-                TYPE
+                JSON_MEDIA_TYPE
         );
 
         Request request = new Request.Builder()
-                .url(URL+"/login")
+                .url(BASE_URL+"/login")
                 .post(requestBody)
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Handler mainHandler =new Handler(Looper.getMainLooper());
                 mainHandler.post(() -> callback.onError("Ошибка сети: " + e.getMessage()));
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                LoginResponse loginResponse = mapToLoginResponse(response);
-                Handler mainHandler = new Handler(Looper.getMainLooper());
-
-                mainHandler.post(() -> {
-                    if (response.isSuccessful()) {
-                        callback.onSuccess(loginResponse.toString());
+                try (Response res = response){
+                    String bodyString = res.body() != null ? res.body().string() : "";
+                    if (res.isSuccessful()){
+                        LoginResponse loginResponse = gson.fromJson(bodyString, LoginResponse.class);
+                        if (loginResponse != null && loginResponse.getToken() != null){
+                            mainHandler.post(() -> callback.onSuccess(loginResponse));
+                        } else {
+                            mainHandler.post(() -> callback.onError("Сервер вернул пустой токен"));
+                        }
                     } else {
-                        callback.onError("Ошибка сервера " + response.code());
+                        String errorMsg = extractErrorMessage(bodyString, res.code());
+                        mainHandler.post(() -> callback.onError(errorMsg));
                     }
-                });
+                } catch (IOException | JsonSyntaxException exception){
+                    mainHandler.post(() -> callback.onError("Ошибка чтения ответа " + exception.getMessage()));
+                }
             }
         });
     }
 
-    public void sendRegistrationRequest(RegistrationRequest registrationRequest, AuthCallback callback){
+    public void sendRegistrationRequest(RegistrationRequest registrationRequest, AuthCallback<RegistrationResponse> callback){
         String jsonBody = gson.toJson(registrationRequest);
 
         RequestBody requestBody = RequestBody.create(
                 jsonBody,
-                TYPE
+                JSON_MEDIA_TYPE
         );
 
         Request request = new Request.Builder()
+                .url(BASE_URL + "/register")
                 .post(requestBody)
-                .url(URL + "/register")
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Handler mainHandler = new Handler(Looper.getMainLooper());
                 mainHandler.post(() -> callback.onError("Ошибка сети: " + e.getMessage()));
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                String status = mapToRegistrationRequest(response);
-                Handler mainHandler = new Handler(Looper.getMainLooper());
-
-                mainHandler.post(() -> {
-                    if (response.isSuccessful()) {
-                        callback.onSuccess(status);
+                try (Response res = response){
+                    String bodyString = res.body() != null ? res.body().string() : "";
+                    if (res.isSuccessful()){
+                        RegistrationResponse regResponse;
+                        try{
+                            regResponse = gson.fromJson(bodyString, RegistrationResponse.class);
+                        } catch (JsonSyntaxException e){
+                            regResponse = new RegistrationResponse("OK");
+                        }
+                        if (regResponse == null || regResponse.getStatus() == null){
+                            regResponse = new RegistrationResponse("Регистрация прошла успешно, войдите в аккаунт");
+                        }
+                        final RegistrationResponse finalResponse = regResponse;
+                        mainHandler.post(() -> callback.onSuccess(finalResponse));
                     } else {
-                        callback.onError("Ошибка сервера " + response.code());
+                        String errorMsg = extractErrorMessage(bodyString, res.code());
+                        mainHandler.post(() -> callback.onError(errorMsg));
                     }
-                });
+                } catch (IOException e) {
+                    mainHandler.post(() -> callback.onError("Ошибка чтения ответа: " + e.getMessage()));
+                }
             }
         });
     }
 
-    private LoginResponse mapToLoginResponse(Response response) throws IOException {
-        String bodyString = response.body() != null ? response.body().string() : "";
-        return new Gson().fromJson(bodyString, LoginResponse.class);
+    public void verifyToken(String token, AuthCallback<Boolean> callback){
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/verify")
+                .get()
+                .addHeader("Authorization", "Bearer " + token)
+                .addHeader("Content-Type", "application/json")
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                mainHandler.post(() -> callback.onError("Ошибка сети: " + e.getMessage()));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                try (Response res = response){
+                    boolean isValid = res.isSuccessful();
+                    mainHandler.post(() -> callback.onSuccess(isValid));
+                }
+            }
+        });
     }
 
-    private String mapToRegistrationRequest(Response response){
-        String bodyString = response.body() != null ? response.body().toString() : "";
-        return new Gson().fromJson(bodyString, String.class);
+    private String extractErrorMessage(String bodyString, int statusCode){
+        if (bodyString != null && !bodyString.isEmpty()){
+            try {
+                JsonObject jsonObject = gson.fromJson(bodyString, JsonObject.class);
+                if (jsonObject != null && jsonObject.has("message") && !jsonObject.get("message").isJsonNull()){
+                    return jsonObject.get("message").getAsString();
+                }
+            } catch (JsonSyntaxException ignored) {
+            }
+        }
+        return "Ошибка сервера (" + statusCode + ")";
     }
 }
