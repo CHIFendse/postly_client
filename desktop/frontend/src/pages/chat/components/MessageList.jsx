@@ -1,5 +1,5 @@
 import './MessageList.css';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import { getDateLabel, isMine } from '../lib/messages';
 
@@ -10,21 +10,53 @@ export default function MessageList({
     chatId,
     messages,
     isLoading,
+    isLoadingMore,
+    hasMore,
+    onLoadMore,
     searchQuery,
     searchNavIdx,
     onMatchesFound,
     bubbleHandlers
 }) {
     const listRef = useRef(null);
+    const triggerRef = useRef(null); 
     const msgRefs = useRef({});
-    const isInitialMount = useRef(true);
     const stickToBottomRef = useRef(true);
-    const resizeObserverRef = useRef(null);
-    const searchQueryRef = useRef(searchQuery);
-    searchQueryRef.current = searchQuery;
 
-    // ---- Поиск ----
-    // Считаем при рендере, а не в эффекте: иначе подсветка отстаёт на рендер
+    const onLoadMoreRef = useRef(onLoadMore);
+    onLoadMoreRef.current = onLoadMore;
+
+    // ---- Intersection Observer для подгрузки истории ----
+    useEffect(() => {
+        const triggerEl = triggerRef.current;
+        const listEl = listRef.current;
+
+        if (!triggerEl || !listEl || isLoading || isLoadingMore || !hasMore || messages.length === 0) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const [entry] = entries;
+                if (entry.isIntersecting) {
+                    onLoadMoreRef.current?.();
+                }
+            },
+            {
+                root: listEl,
+                rootMargin: '350px 0px 0px 0px',
+                threshold: 0,
+            }
+        );
+
+        observer.observe(triggerEl);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [isLoading, isLoadingMore, hasMore, messages.length]);
+    
+    // ---- Поиск ----  
     const matchIndices = useMemo(() => {
         if (!searchQuery) return NO_MATCHES;
         const q = searchQuery.toLowerCase();
@@ -34,13 +66,12 @@ export default function MessageList({
         });
         return indices;
     }, [searchQuery, messages]);
+
     const matchSet = useMemo(() => new Set(matchIndices), [matchIndices]);
     const activeMatchIdx = matchIndices.length
         ? matchIndices[searchNavIdx % matchIndices.length]
         : -1;
 
-    // Родитель передаёт колбэк инлайном — держим его в ref, иначе эффект
-    // срабатывает на каждый рендер родителя и уходит в бесконечный цикл
     const onMatchesFoundRef = useRef(onMatchesFound);
     onMatchesFoundRef.current = onMatchesFound;
 
@@ -56,65 +87,51 @@ export default function MessageList({
         msgRefs.current[activeKey]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, [activeKey, searchNavIdx]);
 
-    // ---- Прижатие к низу ----
-    // Высота сообщений меняется уже после отрисовки (картинки грузятся
-    // через fetch с токеном), поэтому одной прокрутки при открытии мало —
-    // ResizeObserver докручивает, пока пользователь внизу.
-    const scrollToBottom = () => {
-        const list = listRef.current;
-        if (list) list.scrollTop = list.scrollHeight;
-    };
-
     const handleScroll = () => {
         const list = listRef.current;
         if (!list) return;
-        stickToBottomRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < STICK_TO_BOTTOM_PX;
+        // В column-reverse 0 — это физический низ (самые свежие сообщения)
+        stickToBottomRef.current = Math.abs(list.scrollTop) < STICK_TO_BOTTOM_PX;
     };
-
-    useLayoutEffect(() => {
-        isInitialMount.current = true;
-        stickToBottomRef.current = true;
+    
+    // При смене чата сбрасываем вьюпорт на самые свежие сообщения
+    useEffect(() => {
         msgRefs.current = {};
+        stickToBottomRef.current = true;
+        if (listRef.current) {
+            listRef.current.scrollTop = 0;
+        }
     }, [chatId]);
 
-    useLayoutEffect(() => {
-        if (!messages.length || searchQuery) return;
-        const last = messages[messages.length - 1];
-        // Своё сообщение всегда показываем; чужое — только если пользователь внизу
-        if (isInitialMount.current || stickToBottomRef.current || isMine(last?.sender_id)) {
-            stickToBottomRef.current = true;
-            scrollToBottom();
-        }
-        isInitialMount.current = false;
-    }, [messages, searchQuery]);
+    // Следим за новыми сообщениями (только когда меняется самое свежее messages[0])
+    const latestMsgIdRef = useRef(messages[0]?.id);
 
     useEffect(() => {
-        const list = listRef.current;
-        if (!list || typeof ResizeObserver === 'undefined') return;
-        if (!resizeObserverRef.current) {
-            resizeObserverRef.current = new ResizeObserver(() => {
-                if (stickToBottomRef.current && !searchQueryRef.current) scrollToBottom();
-            });
+        if (!messages.length || searchQuery) return;
+
+        const currentLatest = messages[0];
+        const prevLatestId = latestMsgIdRef.current;
+        latestMsgIdRef.current = currentLatest?.id;
+
+        // Если messages[0] не изменился — значит, добавились старые сообщения вверх списка. Ничего не трогаем!
+        if (prevLatestId === currentLatest?.id) {
+            return;
         }
-        // observe() для уже отслеживаемого элемента ничего не делает
-        Array.from(list.children).forEach(el => resizeObserverRef.current.observe(el));
-    }, [messages]);
 
-    useEffect(() => () => resizeObserverRef.current?.disconnect(), []);
+        // Если пришло действительно НОВОЕ сообщение снизу — прокручиваем к нему
+        const isNewMessageFromMe = isMine(currentLatest?.sender_id);
+        if (stickToBottomRef.current || isNewMessageFromMe) {
+            if (listRef.current) {
+                listRef.current.scrollTop = 0;
+            }
+        }
+    }, [messages, searchQuery]);
 
-    // ---- Отрисовка ----
     const items = [];
-    let lastLabel = null;
-    messages.forEach((msg, i) => {
-        const label = getDateLabel(msg.created_at);
-        if (label && label !== lastLabel) {
-            lastLabel = label;
-            items.push(
-                <div key={`sep-${i}`} className="date-separator"><span>{label}</span></div>
-            );
-        }
-
+    for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
         const key = msg.id || i;
+
         items.push(
             <MessageBubble
                 key={key}
@@ -126,23 +143,52 @@ export default function MessageList({
                 {...bubbleHandlers}
             />
         );
-    });
+        const currentLabel = getDateLabel(msg.created_at);
+        const nextMsg = messages[i + 1];
+        const nextLabel = nextMsg ? getDateLabel(nextMsg.created_at) : null;
+
+        if (currentLabel && currentLabel !== nextLabel) {
+            items.push(
+                <div key={`sep-${currentLabel}-${i}`} className="date-separator">
+                    <span>{currentLabel}</span>
+                </div>
+            );
+        }
+    }
 
     return (
         <div className="messages-list" ref={listRef} onScroll={handleScroll}>
-            <div className="messages-spacer" />
+            {/* 1. Сообщения: messages[0] физически внизу экрана */}
+            {items}
 
+            {/* 2. Триггер подгрузки истории (физически вверху экрана) */}
+            {hasMore && !isLoading && messages.length > 0 && (
+                <div 
+                    ref={triggerRef} 
+                    className="invisible-trigger" 
+                    style={{ height: '1px', width: '100%', pointerEvents: 'none' }} 
+                />
+            )}
+
+            {/* 3. Индикатор загрузки старых сообщений (вверху) */}
+            {isLoadingMore && (
+                <div className="chat-loading">
+                    <div className="spinner" />
+                    <p>Загрузка истории...</p>
+                </div>
+            )}
+
+            {/* 4. Первичная загрузка чата */}
             {isLoading && (
-                <div className="chat-loading"><div className="spinner" /><p>Загрузка...</p></div>
+                <div className="chat-loading">
+                    <div className="spinner" />
+                    <p>Загрузка...</p>
+                </div>
             )}
 
             {!isLoading && messages.length === 0 && (
                 <div className="no-messages-empty">Сообщений пока нет...</div>
             )}
-
-            {items}
-
-            <div style={{ height: '1px' }} />
         </div>
     );
 }

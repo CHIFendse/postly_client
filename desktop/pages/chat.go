@@ -2,6 +2,7 @@ package pages
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -68,7 +69,7 @@ func (c *Chat) GetMessages(chatId string, token string) ([]MessageInfo, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
-
+	fmt.Printf("now you're here, chat_ID: %s\n", chatId)
 	resp, err := apiClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("сервер недоступен: %w", err)
@@ -150,4 +151,43 @@ func (c *Chat) DeleteMessage(messageId, token string) (string, error) {
 	}
 
 	return result["chat_id"], nil
+}
+
+type MoreMessagesReq struct {
+	ChatId string `json:"chat_id"`
+	LastMessageId string `json:"last_message_id"`
+	LastMessageCreatedAt int64 `json:"last_message_created_at"`
+}
+func (c *Chat) GetMoreMessages(ctx context.Context, chatId, token, lastMessageId string, lastMessageCreatedAt int64) ([]MessageInfo, error) {
+	jsonData, err := json.Marshal(MoreMessagesReq{
+		ChatId: chatId, 
+		LastMessageId: lastMessageId, 
+		LastMessageCreatedAt: lastMessageCreatedAt,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("ошибка сериализации запроса: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url+"/getMoreMessages", bytes.NewReader(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := apiClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("сервер недоступен: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		errBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		return nil, fmt.Errorf("сервер вернул статус %d: %s", resp.StatusCode, string(errBody))	}
+
+	var messages []MessageInfo
+	if err := json.NewDecoder(resp.Body).Decode(&messages); err != nil {
+		return nil, fmt.Errorf("ошибка парсинга сообщений: %w", err)
+	}
+	return messages, nil
 }

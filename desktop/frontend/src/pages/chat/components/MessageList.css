@@ -6,11 +6,12 @@
   overflow-x: hidden;
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   width: 100%;
   gap: 6px;
   box-sizing: border-box;
   min-height: 0;
+  overflow-anchor: auto; /* Нативное удержание позиции браузером */
 }
 
 .messages-list::-webkit-scrollbar { width: 5px; }
@@ -19,9 +20,6 @@
   background: var(--scrollbar-thumb);
   border-radius: 10px;
 }
-
-/* Spacer — прижимает сообщения к низу */
-.messages-spacer { flex: 1 1 auto; }
 
 /* Десктоп — контент центрируется, max 780px */
 @media (min-width: 851px) {
@@ -34,7 +32,7 @@
 /* Мобилки */
 @media (max-width: 850px) {
   .messages-list {
-    padding: 12px 12px 8px;
+    padding: 8px 12px 12px;
     gap: 5px;
   }
 }

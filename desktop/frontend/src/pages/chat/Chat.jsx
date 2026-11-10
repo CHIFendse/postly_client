@@ -30,7 +30,17 @@ function Chat({
     onMessageSent,
     onMenuToggle
 }) {
-    const { messages, isLoading, typingUser, updateMessages } = useChatMessages(chatId, token, onMessageSent);
+    // Получаем состояние пагинации и функцию подгрузки из хука
+    const {
+        messages,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        loadMoreMessages,
+        typingUser,
+        updateMessages
+    } = useChatMessages(chatId, token, onMessageSent);
+
     const { sendMessage, retryMessage } = useMessageSender({ token, updateMessages });
     const typing = useTypingNotifier(chatId);
     const ctx = useMessageContextMenu();
@@ -185,6 +195,9 @@ function Chat({
                         chatId={chatId}
                         messages={messages}
                         isLoading={isLoading}
+                        isLoadingMore={isLoadingMore}
+                        hasMore={hasMore}
+                        onLoadMore={loadMoreMessages}
                         searchQuery={searchQuery}
                         searchNavIdx={searchNavIdx}
                         onMatchesFound={onMatchesFound}

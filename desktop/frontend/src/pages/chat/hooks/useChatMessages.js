@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GetMessages } from '@bindings/client/pages/chat';
+import { GetMessages, GetMoreMessages } from '@bindings/client/pages/chat';
 import { SetToken } from '@bindings/client/pages/chatws';
 import { Events } from '@wailsio/runtime';
 import {
@@ -12,28 +12,31 @@ import { isMine } from '../lib/messages';
 
 const TYPING_HIDE_MS = 3500;
 
-// Сообщения открытого чата: загрузка с кэшем и события с сервера по WS.
-// Ключ кэша — всегда строка: chatId приходит то строкой (из localStorage),
-// то числом (из списка чатов), а события WS кладутся по String(chat_id)
 export default function useChatMessages(chatId, token, onMessageSent) {
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const [typingUser, setTypingUser] = useState(null);
-    const typingClearRef = useRef(null);
 
+    const typingClearRef = useRef(null);
     const chatIdRef = useRef(chatId);
     chatIdRef.current = chatId;
-    // Родитель передаёт колбэк инлайном — подписку на WS из-за него не пересоздаём
+
     const onMessageSentRef = useRef(onMessageSent);
     onMessageSentRef.current = onMessageSent;
+
+    // Рефы для предотвращения гонок и устаревших замыканий при пагинации
+    const isLoadingMoreRef = useRef(false);
+    const hasMoreRef = useRef(true);
+    const messagesRef = useRef(messages);
+    messagesRef.current = messages;
 
     const hideTyping = () => {
         clearTimeout(typingClearRef.current);
         setTypingUser(null);
     };
 
-    // Меняет сообщения чата и в кэше, и на экране (если чат сейчас открыт).
-    // fn — чистая функция от списка
     const updateMessages = useCallback((targetChatId, fn) => {
         const key = String(targetChatId);
         const cached = _msgsCache.get(key);
@@ -41,15 +44,67 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         if (key !== String(chatIdRef.current)) return;
         setMessages(prev => {
             const next = fn(prev);
-            // Загрузка не удалась и кэша нет — заводим, чтобы локальные
-            // сообщения пережили смену чата; ts: 0 — при открытии перезапросим
             if (!cached) _msgsCache.set(key, { data: next, ts: 0 });
             return next;
         });
     }, []);
 
+    const loadMoreMessages = useCallback(async () => {
+        const currentChatId = chatIdRef.current;
+        if (!currentChatId || isLoadingMoreRef.current || !hasMoreRef.current) return;
+
+        const currentList = messagesRef.current;
+
+        // СТРОГИЙ БАРЬЕР: если список пуст, подгружать нечего (ждём GetMessages)
+        if (!currentList || currentList.length === 0) {
+            return;
+        }
+
+        const oldestMsg = currentList[currentList.length - 1];
+        if (!oldestMsg) return;
+
+        // Достаем id и created_at (с поддержкой разных регистров и форматов)
+        const msgId = String(oldestMsg.id || oldestMsg.Id || '');
+        const createdAt = Number(oldestMsg.created_at || oldestMsg.createdAt || 0);
+
+        // Если данные старейшего сообщения не валидны — прерываем выполнение
+        if (!msgId || createdAt === 0 || isNaN(createdAt)) {
+            console.warn('Пропущен вызов пагинации: некорректный опорный элемент', oldestMsg);
+            return;
+        }
+
+        isLoadingMoreRef.current = true;
+        setIsLoadingMore(true);
+
+        const tok = token || localStorage.getItem('jwt_token');
+
+        try {
+            const olderBatch = await GetMoreMessages(currentChatId, tok, msgId, createdAt);
+            
+            if (!olderBatch || olderBatch.length === 0) {
+                hasMoreRef.current = false;
+                setHasMore(false);
+                return;
+            }
+
+            updateMessages(currentChatId, prev => [...prev, ...olderBatch]);
+        } catch (err) {
+            console.error('GetMoreMessages error:', err);
+        } finally {
+            isLoadingMoreRef.current = false;
+            setIsLoadingMore(false);
+        }
+    }, [token, updateMessages]);
+
+    // Инициализация и смена чата
+    // Инициализация и смена чата
     useEffect(() => {
         hideTyping();
+        hasMoreRef.current = true;
+        setHasMore(true);
+        isLoadingMoreRef.current = false;
+        setIsLoadingMore(false);
+
         if (!chatId) {
             setMessages([]);
             setIsLoading(false);
@@ -64,8 +119,8 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         setMessages(hit ? hit.data : []);
         setIsLoading(!hit);
         if (hit && Date.now() - hit.ts < MSGS_TTL) return undefined;
-
         let isCancelled = false;
+        // ИСПРАВЛЕНО: первичная загрузка идет через GetMessages
         GetMessages(chatId, tok)
             .then(r => {
                 if (isCancelled) return;
@@ -83,6 +138,7 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         return () => { isCancelled = true; };
     }, [chatId, token]);
 
+    // WebSocket-события
     useEffect(() => {
         const unsub = Events.On('server_message', event => {
             const msg = event.data;
@@ -117,8 +173,6 @@ export default function useChatMessages(chatId, token, onMessageSent) {
                     return;
 
                 case 'NEW_MESSAGE': {
-                    // Общая с chatsMenu.jsx идемпотентная логика — второй вызов на то же
-                    // событие ничего не меняет, поэтому дублей в кэше не бывает
                     const mine = isMine(msg.sender_id);
                     applyNewMessageToCache(msg, mine);
                     if (!isActive) return;
@@ -138,5 +192,13 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         };
     }, [updateMessages]);
 
-    return { messages, isLoading, typingUser, updateMessages };
+    return {
+        messages,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        loadMoreMessages,
+        typingUser,
+        updateMessages
+    };
 }

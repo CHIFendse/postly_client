@@ -19,6 +19,12 @@ export function GetMessages(chatId: string, token: string): $CancellablePromise<
     });
 }
 
+export function GetMoreMessages(chatId: string, token: string, lastMessageId: string, lastMessageCreatedAt: number): $CancellablePromise<$models.MessageInfo[]> {
+    return $Call.ByID(2140603296, chatId, token, lastMessageId, lastMessageCreatedAt).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
 export function GetUserChats(userId: string, token: string): $CancellablePromise<{ [_ in string]?: any }[]> {
     return $Call.ByID(1683522713, userId, token).then(($result: any) => {
         return $$createType3($result);
