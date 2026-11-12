@@ -4,7 +4,7 @@ import './style.css';
 import App from './app'; 
 import { GetCurrentVersion } from '@bindings/client/components/currentversion';
 
-const lastVersion = "0.1.3";
+const lastVersion = "0.1.4";
 
 // Функция для показа модалки
 function showUpdateModal(required, current) {
