@@ -150,13 +150,20 @@ function ChatsMenu({
                         // Если это было последнее сообщение в чате — подтягиваем свежие данные
                         // либо сбрасываем локально, чтобы не висел призрак
                         const updated = [...prev];
-                        // Если сервер прислал новое последнее сообщение в payload:
+                        // Сервер прислал новое последнее сообщение ('' — чат опустел)
                         if (msg.last_message !== undefined) {
+                            const cur = updated[idx];
+                            const myId = String(localStorage.getItem('id') || '');
+                            const fromMe = String(msg.sender_id || '') === myId;
+                            // Имя отправителя нового последнего сообщения: я / автор из payload / собеседник
+                            const author = fromMe
+                                ? username
+                                : (msg.username || (cur.username === username ? cur.name : cur.username) || '');
                             updated[idx] = {
-                                ...updated[idx],
+                                ...cur,
                                 last_message: msg.last_message,
-                                username: msg.username || '',
-                                updated_at: msg.updated_at || updated[idx].updated_at
+                                username: msg.last_message ? author : '',
+                                updated_at: msg.last_message ? (msg.updated_at || cur.updated_at) : 0
                             };
                         }
                         return updated;
