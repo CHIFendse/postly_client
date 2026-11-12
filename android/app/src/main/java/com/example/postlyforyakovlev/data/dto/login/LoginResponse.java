@@ -1,4 +1,4 @@
-package com.example.postlyforyakovlev.dto.login;
+package com.example.postlyforyakovlev.data.dto.login;
 
 public class LoginResponse {
     private String id;

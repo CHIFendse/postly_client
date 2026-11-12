@@ -8,15 +8,15 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
-import com.example.postlyforyakovlev.fragments.ChatListFragment;
-import com.example.postlyforyakovlev.fragments.LoginFragment;
-import com.example.postlyforyakovlev.services.AuthCallback;
-import com.example.postlyforyakovlev.services.AuthService;
-import com.example.postlyforyakovlev.util.SessionManager;
+import com.example.postlyforyakovlev.data.repository.AuthRepository;
+import com.example.postlyforyakovlev.ui.chatlist.ChatListFragment;
+import com.example.postlyforyakovlev.ui.auth.LoginFragment;
+import com.example.postlyforyakovlev.ui.start.StartupViewModel;
 
 public class MainActivity extends AppCompatActivity {
-    private final AuthService authService = new AuthService();
+    private final AuthRepository authRepository = new AuthRepository(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,32 +29,16 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        if (savedInstanceState == null) {
-            SessionManager sessionManager = new SessionManager(this);
-            if (sessionManager.hasToken()) {
-                authService.verifyToken(sessionManager.getToken(), new AuthCallback<Boolean>() {
-                    @Override
-                    public void onSuccess(Boolean isValid) {
-                        if (isFinishing() || isDestroyed()) return;
-                        if (Boolean.TRUE.equals(isValid)) {
-                            openRootFragment(new ChatListFragment());
-                        } else {
-                            sessionManager.clearSession();
-                            openRootFragment(new LoginFragment());
-                        }
-                    }
+        StartupViewModel vm = new ViewModelProvider(this).get(StartupViewModel.class);
+        vm.getDestination().observe(this, dest -> {
+            if (dest == StartupViewModel.Destination.LOADING) return;
 
-                    @Override
-                    public void onError(String errorMessage) {
-                        if (isFinishing() || isDestroyed()) return;
-                        // При временной ошибке сети пускаем в список чатов с сохраненной сессией
-                        openRootFragment(new ChatListFragment());
-                    }
-                });
-            } else {
-                openRootFragment(new LoginFragment());
-            }
-        }
+            if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) return;
+
+            openRootFragment(dest == StartupViewModel.Destination.CHAT_LIST
+                    ? new ChatListFragment()
+                    : new LoginFragment());
+        });
     }
 
     private void openRootFragment(Fragment fragment) {

@@ -1,14 +1,20 @@
-package com.example.postlyforyakovlev.services;
+package com.example.postlyforyakovlev.data.repository;
 
-import android.os.Handler;
+import static com.example.postlyforyakovlev.config.ApiConfig.BASE_URL;
+import static com.example.postlyforyakovlev.config.ApiConfig.JSON_MEDIA_TYPE;
+
+import android.content.Context;
 import android.os.Looper;
+import android.os.Handler;
 
 import androidx.annotation.NonNull;
 
-import com.example.postlyforyakovlev.dto.login.LoginRequest;
-import com.example.postlyforyakovlev.dto.login.LoginResponse;
-import com.example.postlyforyakovlev.dto.registration.RegistrationRequest;
-import com.example.postlyforyakovlev.dto.registration.RegistrationResponse;
+import com.example.postlyforyakovlev.data.dto.login.LoginRequest;
+import com.example.postlyforyakovlev.data.dto.login.LoginResponse;
+import com.example.postlyforyakovlev.data.dto.registration.RegistrationRequest;
+import com.example.postlyforyakovlev.data.dto.registration.RegistrationResponse;
+import com.example.postlyforyakovlev.data.network.ApiCallback;
+import com.example.postlyforyakovlev.data.network.ApiClient;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
@@ -17,20 +23,20 @@ import java.io.IOException;
 
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class AuthService {
-    private static String BASE_URL = "https://api.postly-mes.ru:8081";
-    private static MediaType JSON_MEDIA_TYPE = MediaType.get("application/json; charset=utf-8");
-    private final OkHttpClient client = new OkHttpClient();
+public class AuthRepository {
+    private final OkHttpClient client;
     private final Gson gson = new Gson();
-    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    public AuthRepository(Context context){
+        this.client = ApiClient.get(context);
+    }
 
-    public void sendLoginRequest(String username, String password, AuthCallback<LoginResponse> callback){
+    public void sendLoginRequest(String username, String password, ApiCallback<LoginResponse> callback){
         LoginRequest loginRequest = new LoginRequest(username, password);
         String jsonBody = gson.toJson(loginRequest);
         RequestBody requestBody = RequestBody.create(
@@ -71,7 +77,7 @@ public class AuthService {
         });
     }
 
-    public void sendRegistrationRequest(RegistrationRequest registrationRequest, AuthCallback<RegistrationResponse> callback){
+    public void sendRegistrationRequest(RegistrationRequest registrationRequest, ApiCallback<RegistrationResponse> callback){
         String jsonBody = gson.toJson(registrationRequest);
 
         RequestBody requestBody = RequestBody.create(
@@ -117,7 +123,7 @@ public class AuthService {
         });
     }
 
-    public void verifyToken(String token, AuthCallback<Boolean> callback){
+    public void verifyToken(String token, ApiCallback<Boolean> callback){
         Request request = new Request.Builder()
                 .url(BASE_URL + "/verify")
                 .get()
@@ -153,4 +159,5 @@ public class AuthService {
         }
         return "Ошибка сервера (" + statusCode + ")";
     }
+
 }

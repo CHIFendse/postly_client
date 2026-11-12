@@ -1,4 +1,4 @@
-package com.example.postlyforyakovlev.dto.registration;
+package com.example.postlyforyakovlev.data.dto.registration;
 
 public class RegistrationRequest {
     private String username;

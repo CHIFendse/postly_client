@@ -1,4 +1,4 @@
-package com.example.postlyforyakovlev.fragments;
+package com.example.postlyforyakovlev.ui.chatlist;
 
 import android.os.Bundle;
 

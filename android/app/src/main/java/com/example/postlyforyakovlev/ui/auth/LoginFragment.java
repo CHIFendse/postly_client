@@ -1,4 +1,4 @@
-package com.example.postlyforyakovlev.fragments;
+package com.example.postlyforyakovlev.ui.auth;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,15 +12,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.postlyforyakovlev.data.repository.AuthRepository;
 import com.example.postlyforyakovlev.R;
-import com.example.postlyforyakovlev.dto.login.LoginResponse;
-import com.example.postlyforyakovlev.services.AuthCallback;
-import com.example.postlyforyakovlev.services.AuthService;
-import com.example.postlyforyakovlev.util.SessionManager;
+import com.example.postlyforyakovlev.data.dto.login.LoginResponse;
+import com.example.postlyforyakovlev.data.network.ApiCallback;
+import com.example.postlyforyakovlev.data.local.SessionManager;
+import com.example.postlyforyakovlev.ui.chatlist.ChatListFragment;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class LoginFragment extends Fragment {
-    private final AuthService authService = new AuthService();
+    private final AuthRepository authRepository = new AuthRepository(this.getContext());
 
     public LoginFragment() {
     }
@@ -52,7 +53,7 @@ public class LoginFragment extends Fragment {
 
             loginButton.setEnabled(false);
 
-            authService.sendLoginRequest(username, password, new AuthCallback<LoginResponse>() {
+            authRepository.sendLoginRequest(username, password, new ApiCallback<LoginResponse>() {
                 @Override
                 public void onSuccess(LoginResponse result) {
                     if (!isAdded()) return;

@@ -1,4 +1,4 @@
-package com.example.postlyforyakovlev.util;
+package com.example.postlyforyakovlev.data.local;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -40,6 +40,6 @@ public class SessionManager {
     }
 
     public void clearSession(){
-        prefs.edit().clear();
+        prefs.edit().clear().apply();
     }
 }

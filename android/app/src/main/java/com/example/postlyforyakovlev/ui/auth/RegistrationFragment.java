@@ -1,4 +1,4 @@
-package com.example.postlyforyakovlev.fragments;
+package com.example.postlyforyakovlev.ui.auth;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,15 +12,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.postlyforyakovlev.data.repository.AuthRepository;
 import com.example.postlyforyakovlev.R;
-import com.example.postlyforyakovlev.dto.registration.RegistrationRequest;
-import com.example.postlyforyakovlev.dto.registration.RegistrationResponse;
-import com.example.postlyforyakovlev.services.AuthCallback;
-import com.example.postlyforyakovlev.services.AuthService;
+import com.example.postlyforyakovlev.data.dto.registration.RegistrationRequest;
+import com.example.postlyforyakovlev.data.dto.registration.RegistrationResponse;
+import com.example.postlyforyakovlev.data.network.ApiCallback;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class RegistrationFragment extends Fragment {
-    private final AuthService authService = new AuthService();
+    private final AuthRepository authRepository = new AuthRepository(this.getContext());
 
     public RegistrationFragment() {
     }
@@ -63,7 +63,7 @@ public class RegistrationFragment extends Fragment {
                         phone
                 );
 
-                authService.sendRegistrationRequest(registrationRequest, new AuthCallback<RegistrationResponse>() {
+                authRepository.sendRegistrationRequest(registrationRequest, new ApiCallback<RegistrationResponse>() {
                     @Override
                     public void onSuccess(RegistrationResponse result) {
                         if (!isAdded()) return;
