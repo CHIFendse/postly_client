@@ -8,7 +8,7 @@ const NO_MATCHES = [];
 
 export default function MessageList({
     chatId,
-    messages,
+    messages = [],
     isLoading,
     isLoadingMore,
     hasMore,
@@ -113,12 +113,12 @@ export default function MessageList({
         const prevLatestId = latestMsgIdRef.current;
         latestMsgIdRef.current = currentLatest?.id;
 
-        // Если messages[0] не изменился — значит, добавились старые сообщения вверх списка. Ничего не трогаем!
+        // Если messages[0] не изменился — значит, добавились старые сообщения вверх списка
         if (prevLatestId === currentLatest?.id) {
             return;
         }
 
-        // Если пришло действительно НОВОЕ сообщение снизу — прокручиваем к нему
+        // Если пришло действительно новое сообщение снизу — прокручиваем к нему
         const isNewMessageFromMe = isMine(currentLatest?.sender_id);
         if (stickToBottomRef.current || isNewMessageFromMe) {
             if (listRef.current) {

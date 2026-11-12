@@ -30,7 +30,6 @@ function Chat({
     onMessageSent,
     onMenuToggle
 }) {
-    // Получаем состояние пагинации и функцию подгрузки из хука
     const {
         messages,
         isLoading,
@@ -52,7 +51,7 @@ function Chat({
     const [isSending, setIsSending] = useState(false);
 
     const crop = useImageCrop(isImageType(attachment?.type) ? attachment.url : null);
-
+    const deletingRef = useRef(new Set());
     const inputTextRef = useRef('');
     const attachmentRef = useRef(null);
     const sendingRef = useRef(false);
@@ -142,29 +141,46 @@ function Chat({
         ctx.close();
     };
 
-    const handleDelete = async () => {
+    const handleDelete = async (e) => {
+        if (e) {
+            e.preventDefault?.();
+            e.stopPropagation?.();
+        }
+
         const menu = ctx.menu;
-        ctx.close();
         if (!menu?.canDelete) return;
 
-        const id = menu.msgId;
+        const id = String(menu.msgId || '');
         const targetChatId = chatId;
-        const removeById = list => list.filter(m => String(m.id) !== String(id));
 
-        // Неотправленное сообщение живёт только локально
+        ctx.close();
+
+        if (!id || deletingRef.current.has(id)) return;
+        deletingRef.current.add(id);
+
+        const removeById = list => (list || []).filter(m => String(m.id || m.Id || '') !== id);
+
         if (isTmpId(id)) {
-            const local = messages.find(m => m.id === id);
-            if (local?.status !== 'error') return;
-            if (local.attachment?.url) URL.revokeObjectURL(local.attachment.url);
-            updateMessages(targetChatId, removeById);
+            const local = messages.find(m => String(m.id || m.Id) === id);
+            if (local?.status === 'error') {
+                if (local.attachment?.url) URL.revokeObjectURL(local.attachment.url);
+                updateMessages(targetChatId, removeById);
+            }
+            deletingRef.current.delete(id);
             return;
         }
 
+        // Оптимистичное мгновенное удаление из UI
+        updateMessages(targetChatId, removeById);
+
         try {
-            await DeleteMessage(String(id), localStorage.getItem('jwt_token'));
-            updateMessages(targetChatId, removeById);
+            await DeleteMessage(id, localStorage.getItem('jwt_token') || token);
         } catch (err) {
             console.error('deleteMessage error:', err);
+        } finally {
+            setTimeout(() => {
+                deletingRef.current.delete(id);
+            }, 800);
         }
     };
 
@@ -248,11 +264,19 @@ function Chat({
             )}
 
             {ctx.menu && (
-                <MessageContextMenu menu={ctx.menu} onCopy={handleCopy} onDelete={handleDelete} />
+                <MessageContextMenu
+                    menu={ctx.menu}
+                    onCopy={handleCopy}
+                    onDelete={handleDelete}
+                />
             )}
 
             {previewImage && (
-                <ImageViewer src={previewImage.src} downloadUrl={previewImage.downloadUrl} onClose={() => setPreviewImage(null)} />
+                <ImageViewer
+                    src={previewImage.src}
+                    downloadUrl={previewImage.downloadUrl}
+                    onClose={() => setPreviewImage(null)}
+                />
             )}
         </div>
     );

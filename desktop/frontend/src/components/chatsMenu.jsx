@@ -140,7 +140,32 @@ function ChatsMenu({
 
                 // ── Удаление сообщения — last_message мог измениться ──
                 case 'DELETE_MESSAGE': {
-                    // Если удалили последнее — last_message нужно пересчитать с сервера
+                    const deletedChatId = String(msg.chat_id);
+                    const deletedMsgId = String(msg.message_id || msg.id);
+
+                    const updateLastMsgOnDelete = prev => {
+                        const idx = prev.findIndex(c => String(c.id) === deletedChatId);
+                        if (idx === -1) return prev;
+
+                        // Если это было последнее сообщение в чате — подтягиваем свежие данные
+                        // либо сбрасываем локально, чтобы не висел призрак
+                        const updated = [...prev];
+                        // Если сервер прислал новое последнее сообщение в payload:
+                        if (msg.last_message !== undefined) {
+                            updated[idx] = {
+                                ...updated[idx],
+                                last_message: msg.last_message,
+                                username: msg.username || '',
+                                updated_at: msg.updated_at || updated[idx].updated_at
+                            };
+                        }
+                        return updated;
+                    };
+
+                    setAllChats(updateLastMsgOnDelete);
+                    setGroups(updateLastMsgOnDelete);
+
+                    // Запрашиваем актуальный список чатов с сервера
                     onChatCreatedRef.current?.();
                     break;
                 }

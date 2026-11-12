@@ -140,7 +140,7 @@ export default function useMessageSender({ token, updateMessages }) {
             } : null
         };
 
-        updateMessages(chatId, list => [...list, localMessage]);
+        updateMessages(chatId, list => [localMessage, ...list]);
         deliver(chatId, localMessage);
     };
 

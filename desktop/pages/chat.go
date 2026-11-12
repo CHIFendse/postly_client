@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 var apiClient = &http.Client{}
 
@@ -119,12 +118,11 @@ func (c *Chat) DeleteMessage(messageId, token string) (string, error) {
 	url := c.url + "/deleteMessage"
 
 	data := map[string]string{"message_id": messageId}
-
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("ошибка создания JSON: %w", err)
 	}
-	
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("ошибка создания запроса: %w", err)
@@ -132,25 +130,34 @@ func (c *Chat) DeleteMessage(messageId, token string) (string, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{Timeout: 10 * time.Second}
-
-	resp, err := client.Do(req)
+	resp, err := apiClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("сервер недоступен: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("сервер вернул %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
-	var result map[string]string
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("ошибка парсинга: %w", err)
+	if resp.StatusCode == http.StatusNoContent || resp.ContentLength == 0 {
+		return messageId, nil
 	}
 
-	return result["chat_id"], nil
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil || len(bytes.TrimSpace(bodyBytes)) == 0 {
+		return messageId, nil
+	}
+
+	var result map[string]string
+	_ = json.Unmarshal(bodyBytes, &result)
+
+	if chatID, ok := result["chat_id"]; ok && chatID != "" {
+		return chatID, nil
+	}
+
+	return messageId, nil
 }
 
 type MoreMessagesReq struct {

@@ -26,7 +26,6 @@ export default function useChatMessages(chatId, token, onMessageSent) {
     const onMessageSentRef = useRef(onMessageSent);
     onMessageSentRef.current = onMessageSent;
 
-    // Рефы для предотвращения гонок и устаревших замыканий при пагинации
     const isLoadingMoreRef = useRef(false);
     const hasMoreRef = useRef(true);
     const messagesRef = useRef(messages);
@@ -40,11 +39,15 @@ export default function useChatMessages(chatId, token, onMessageSent) {
     const updateMessages = useCallback((targetChatId, fn) => {
         const key = String(targetChatId);
         const cached = _msgsCache.get(key);
-        if (cached) _msgsCache.set(key, { data: fn(cached.data), ts: cached.ts });
+        if (cached) {
+            _msgsCache.set(key, { data: fn(cached.data), ts: cached.ts });
+        }
         if (key !== String(chatIdRef.current)) return;
         setMessages(prev => {
             const next = fn(prev);
-            if (!cached) _msgsCache.set(key, { data: next, ts: 0 });
+            if (!cached) {
+                _msgsCache.set(key, { data: next, ts: 0 });
+            }
             return next;
         });
     }, []);
@@ -54,20 +57,14 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         if (!currentChatId || isLoadingMoreRef.current || !hasMoreRef.current) return;
 
         const currentList = messagesRef.current;
-
-        // СТРОГИЙ БАРЬЕР: если список пуст, подгружать нечего (ждём GetMessages)
-        if (!currentList || currentList.length === 0) {
-            return;
-        }
+        if (!currentList || currentList.length === 0) return;
 
         const oldestMsg = currentList[currentList.length - 1];
         if (!oldestMsg) return;
 
-        // Достаем id и created_at (с поддержкой разных регистров и форматов)
         const msgId = String(oldestMsg.id || oldestMsg.Id || '');
         const createdAt = Number(oldestMsg.created_at || oldestMsg.createdAt || 0);
 
-        // Если данные старейшего сообщения не валидны — прерываем выполнение
         if (!msgId || createdAt === 0 || isNaN(createdAt)) {
             console.warn('Пропущен вызов пагинации: некорректный опорный элемент', oldestMsg);
             return;
@@ -76,17 +73,15 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         isLoadingMoreRef.current = true;
         setIsLoadingMore(true);
 
-        const tok = token || localStorage.getItem('jwt_token');
+        const tok = localStorage.getItem('jwt_token') || token;
 
         try {
             const olderBatch = await GetMoreMessages(currentChatId, tok, msgId, createdAt);
-            
             if (!olderBatch || olderBatch.length === 0) {
                 hasMoreRef.current = false;
                 setHasMore(false);
                 return;
             }
-
             updateMessages(currentChatId, prev => [...prev, ...olderBatch]);
         } catch (err) {
             console.error('GetMoreMessages error:', err);
@@ -96,8 +91,7 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         }
     }, [token, updateMessages]);
 
-    // Инициализация и смена чата
-    // Инициализация и смена чата
+    // Инициализация и загрузка истории строго при смене chatId
     useEffect(() => {
         hideTyping();
         hasMoreRef.current = true;
@@ -112,15 +106,16 @@ export default function useChatMessages(chatId, token, onMessageSent) {
         }
 
         const key = String(chatId);
-        const tok = token || localStorage.getItem('jwt_token');
+        const tok = localStorage.getItem('jwt_token') || token;
         if (tok) SetToken(tok).catch(err => console.error('SetToken error:', err));
 
         const hit = _msgsCache.get(key);
         setMessages(hit ? hit.data : []);
         setIsLoading(!hit);
+
         if (hit && Date.now() - hit.ts < MSGS_TTL) return undefined;
+
         let isCancelled = false;
-        // ИСПРАВЛЕНО: первичная загрузка идет через GetMessages
         GetMessages(chatId, tok)
             .then(r => {
                 if (isCancelled) return;
@@ -135,16 +130,18 @@ export default function useChatMessages(chatId, token, onMessageSent) {
                 if (!isCancelled) setIsLoading(false);
             });
 
-        return () => { isCancelled = true; };
-    }, [chatId, token]);
+        return () => {
+            isCancelled = true;
+        };
+    }, [chatId]);
 
-    // WebSocket-события
+    // Обработка WebSocket-событий
     useEffect(() => {
         const unsub = Events.On('server_message', event => {
             const msg = event.data;
             if (!msg) return;
 
-            const msgChatId = String(msg.chat_id);
+            const msgChatId = String(msg.chat_id || '');
             const isActive = msgChatId === String(chatIdRef.current);
 
             switch (msg.type) {
@@ -156,8 +153,12 @@ export default function useChatMessages(chatId, token, onMessageSent) {
                     return;
 
                 case 'DELETE_MESSAGE': {
-                    const mid = msg.message_id || msg.id;
-                    if (mid) updateMessages(msgChatId, list => list.filter(m => String(m.id) !== String(mid)));
+                    const mid = String(msg.message_id || msg.id || '');
+                    if (!mid) return;
+                    // Проверяем оба регистра ключа id
+                    updateMessages(msgChatId, list =>
+                        (list || []).filter(m => String(m.id || m.Id || '') !== mid)
+                    );
                     return;
                 }
 
