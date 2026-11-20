@@ -15,7 +15,7 @@ public class StartupViewModel extends AndroidViewModel {
     public enum Destination {LOADING, CHAT_LIST, LOGIN}
 
     private final MutableLiveData<Destination> destination = new MutableLiveData<>(Destination.LOADING);
-    private final AuthRepository authService = new AuthRepository(this.getApplication());
+    private final AuthRepository authRepository = new AuthRepository(this.getApplication());
 
     public StartupViewModel(@NonNull Application application) {
         super(application);
@@ -26,7 +26,7 @@ public class StartupViewModel extends AndroidViewModel {
             return;
         }
 
-        authService.verifyToken(session.getToken(), new ApiCallback<Boolean>() {
+        authRepository.verifyToken(session.getToken(), new ApiCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean isValid) {
                 if (Boolean.TRUE.equals(isValid)){

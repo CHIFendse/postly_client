@@ -1,6 +1,7 @@
 package com.example.postlyforyakovlev.ui.auth;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,11 +18,13 @@ import com.example.postlyforyakovlev.R;
 import com.example.postlyforyakovlev.data.dto.login.LoginResponse;
 import com.example.postlyforyakovlev.data.network.ApiCallback;
 import com.example.postlyforyakovlev.data.local.SessionManager;
+import com.example.postlyforyakovlev.data.repository.ChatListRepository;
 import com.example.postlyforyakovlev.ui.chatlist.ChatListFragment;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class LoginFragment extends Fragment {
     private final AuthRepository authRepository = new AuthRepository(this.getContext());
+    private final ChatListRepository chatListRepository = new ChatListRepository(this.getContext());
 
     public LoginFragment() {
     }
@@ -37,6 +40,7 @@ public class LoginFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         SessionManager sessionManager = new SessionManager(requireContext());
+
         TextView registerLink = view.findViewById(R.id.login_text_register);
         Button loginButton = view.findViewById(R.id.login_button_login);
         TextInputEditText usernameInput = view.findViewById(R.id.login_input_username);

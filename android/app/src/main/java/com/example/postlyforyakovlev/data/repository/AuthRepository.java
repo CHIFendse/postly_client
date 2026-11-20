@@ -2,6 +2,7 @@ package com.example.postlyforyakovlev.data.repository;
 
 import static com.example.postlyforyakovlev.config.ApiConfig.BASE_URL;
 import static com.example.postlyforyakovlev.config.ApiConfig.JSON_MEDIA_TYPE;
+import static com.example.postlyforyakovlev.config.ApiConfig.extractErrorMessage;
 
 import android.content.Context;
 import android.os.Looper;
@@ -9,6 +10,7 @@ import android.os.Handler;
 
 import androidx.annotation.NonNull;
 
+import com.example.postlyforyakovlev.config.ApiConfig;
 import com.example.postlyforyakovlev.data.dto.login.LoginRequest;
 import com.example.postlyforyakovlev.data.dto.login.LoginResponse;
 import com.example.postlyforyakovlev.data.dto.registration.RegistrationRequest;
@@ -67,7 +69,7 @@ public class AuthRepository {
                             mainHandler.post(() -> callback.onError("Сервер вернул пустой токен"));
                         }
                     } else {
-                        String errorMsg = extractErrorMessage(bodyString, res.code());
+                        String errorMsg = extractErrorMessage(bodyString, res.code(), gson);
                         mainHandler.post(() -> callback.onError(errorMsg));
                     }
                 } catch (IOException | JsonSyntaxException exception){
@@ -113,7 +115,7 @@ public class AuthRepository {
                         final RegistrationResponse finalResponse = regResponse;
                         mainHandler.post(() -> callback.onSuccess(finalResponse));
                     } else {
-                        String errorMsg = extractErrorMessage(bodyString, res.code());
+                        String errorMsg = extractErrorMessage(bodyString, res.code(), gson);
                         mainHandler.post(() -> callback.onError(errorMsg));
                     }
                 } catch (IOException e) {
@@ -146,18 +148,4 @@ public class AuthRepository {
             }
         });
     }
-
-    private String extractErrorMessage(String bodyString, int statusCode){
-        if (bodyString != null && !bodyString.isEmpty()){
-            try {
-                JsonObject jsonObject = gson.fromJson(bodyString, JsonObject.class);
-                if (jsonObject != null && jsonObject.has("message") && !jsonObject.get("message").isJsonNull()){
-                    return jsonObject.get("message").getAsString();
-                }
-            } catch (JsonSyntaxException ignored) {
-            }
-        }
-        return "Ошибка сервера (" + statusCode + ")";
-    }
-
 }

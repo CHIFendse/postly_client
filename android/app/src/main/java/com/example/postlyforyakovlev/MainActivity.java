@@ -16,7 +16,6 @@ import com.example.postlyforyakovlev.ui.auth.LoginFragment;
 import com.example.postlyforyakovlev.ui.start.StartupViewModel;
 
 public class MainActivity extends AppCompatActivity {
-    private final AuthRepository authRepository = new AuthRepository(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

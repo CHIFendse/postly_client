@@ -2,7 +2,6 @@ package com.example.postlyforyakovlev.data.dto.registration;
 
 public class RegistrationResponse {
     private String status;
-//    private String message;
 
 
     public RegistrationResponse(String status) {
@@ -16,12 +15,4 @@ public class RegistrationResponse {
     public void setStatus(String status) {
         this.status = status;
     }
-
-//    public String getMessage() {
-//        return message;
-//    }
-//
-//    public void setMessage(String message) {
-//        this.message = message;
-//    }
 }
